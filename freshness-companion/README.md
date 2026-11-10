@@ -147,6 +147,7 @@ See [`examples/policy.example.json`](examples/policy.example.json). Unknown fiel
 | `-tavily-depth` | `basic` | Extract `extract_depth`: `basic` or `advanced` |
 | `-tavily-format` | `text` | `text` or `markdown` (text keeps patterns simple) |
 | `-tavily-timeout` | `10s` | Extract's server-side `timeout` parameter (clamped to 1–60 s) |
+| `-tavily-fresh` | `true` | Add a unique `_fresh=<unix>` query parameter to the source URL so Tavily fetches the live page. Without it Tavily returned a remembered copy: on 10 Nov 2026 a page changed from $49 to $59 and the bare URL kept returning $49. |
 | `-direct-raw` | `false` | direct provider: match against raw HTML instead of visible text |
 | `-evidence-ttl` | `60s` | reuse evidence per source URL for this long |
 | `-evidence-error-ttl` | `10s` | remember an evidence failure for this long (no hammering during outages) |

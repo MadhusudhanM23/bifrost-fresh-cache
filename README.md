@@ -110,7 +110,15 @@ Embeddings still come from the local mock in this mode. See the "Real model" sec
 
 ### With Tavily
 
-The default compose stack reads the demo page directly, because Tavily cannot reach a page that only exists on your machine. To use Tavily for real: put `TAVILY_API_KEY` in `.env`, host `demo-page/index.html` somewhere public (GitHub Pages is enough), point `docker/policy.json` at that URL, and switch the companion flag to `-provider=tavily_extract`. The companion's Tavily code is exercised by `freshness-companion/cmd/tavilycheck`, which reads one public page through the exact same client.
+Put `TAVILY_API_KEY` in `.env` and start with the Tavily overlay:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.tavily.yml up -d
+```
+
+The companion now reads the watched price through Tavily Extract from the public copy of the demo page, https://madhusudhanm23.github.io/bifrost-fresh-cache/acme-pricing/ (source in `docs/acme-pricing/`, served by GitHub Pages). Tavily cannot reach a page that exists only on your machine, which is why the default stack reads the local page directly instead.
+
+Proven live on 10 Nov 2026: the price question was cached while the page said $49 (Tavily: `confirmed`), the page was changed to $59, and the next ask came back `x-freshness-status: stale`, `x-freshness-action: corrected`, with the answer "$59 per month" and the source URL. One thing we learned on the way: Tavily keeps a remembered copy of a URL it has seen, so the companion stamps each request with a unique `_fresh=` parameter (`-tavily-fresh`, on by default).
 
 ## How the two technologies are used
 
@@ -169,7 +177,7 @@ DOCKER.md             the walkthrough judges should follow
 ## Honest limits
 
 - Every benchmark number here uses a mock model and mock embeddings. They show the mechanics and the trade-off, not real-model quality or a savings forecast.
-- Tavily is proven live on single page reads; the full price-change demo through Tavily needs the demo page hosted publicly.
+- The Tavily demo depends on a public copy of the demo page (GitHub Pages) and on GitHub Pages redeploying after an edit, which takes about a minute. Tavily's remembered copies are bypassed with a `_fresh=` URL stamp; a site that rejects unknown query parameters would need that switched off.
 - The audit's default comparison is exact text. With a real model (Groq, 10 Nov) that flagged 2 of 2 correct paraphrase reuses as wrong, because real models word things differently each time. A `judge` mode, where a model decides if two answers agree, got both test cases right. Two cases is a test, not a validation.
 - The gate covers hits below its line and fails open if it cannot run. Exact-hash hits on a pre-planted answer in a shared bucket are not gated.
 - Row-level security guards against bugs and forgotten filters, not against someone holding the app role's password.

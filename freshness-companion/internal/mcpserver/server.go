@@ -25,8 +25,17 @@ import (
 
 	"freshness-companion/internal/changes"
 	"freshness-companion/internal/decision"
+	"freshness-companion/internal/discover"
 	"freshness-companion/internal/policy"
 )
+
+// Discoverer is discovery as the tools use it (normally *discover.Service):
+// find a page for a question no watched fact covers, and list what was
+// learned.
+type Discoverer interface {
+	decision.Discoverer
+	Sources() []discover.Learned
+}
 
 // Protocol versions this server understands, oldest first. The server's
 // own cap (Options.MaxProtocolVersion) picks how far up this list it goes.
@@ -87,6 +96,10 @@ type Deps struct {
 	// "Authorization: Bearer <token>" or in the X-Freshness-Notice-Token
 	// header. It is the same token POST /freshness/changes requires.
 	NoticeToken string
+	// Discover, when set, lets check_freshness find a source page with
+	// Tavily Search for a question that no watched fact covers, and lets
+	// list_watched_sources show the learned sources. Optional.
+	Discover Discoverer
 }
 
 // Options name the server.

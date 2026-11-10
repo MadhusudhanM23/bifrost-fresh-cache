@@ -46,6 +46,9 @@ func (s *Server) EnableMCP(opts MCPOptions) ([]string, error) {
 			return e.Plain, e, true
 		}
 	}
+	if dd, ok := s.cfg.Engine.Discover.(mcpserver.Discoverer); ok && dd != nil {
+		deps.Discover = dd
+	}
 	srv, err := mcpserver.New(deps, mcpserver.Options{
 		Name: opts.ServerName, Version: opts.ServerVersion,
 		MaxProtocolVersion: opts.MaxProtocolVersion, Now: s.cfg.Now,

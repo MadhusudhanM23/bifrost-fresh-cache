@@ -166,6 +166,9 @@ type Category struct {
 	OnUnknown        OnUnknown      `json:"on_unknown,omitempty"`
 	VerifyNewAnswers *bool          `json:"verify_new_answers,omitempty"`
 	OnContradicted   OnContradicted `json:"on_contradicted,omitempty"`
+	// Discover, when enabled and the companion runs with -discover, lets
+	// Tavily Search find a source page for hits that no watched fact covers.
+	Discover *Discover `json:"discover,omitempty"`
 
 	matcher          *regexp.Regexp
 	maxAge           time.Duration
@@ -192,6 +195,9 @@ type Fact struct {
 	AnswerPattern string `json:"answer_pattern"`
 	// Compare is "exact", "numeric" or "boolean".
 	Compare extract.Mode `json:"compare"`
+	// Discovered marks a fact built for a source that discovery found
+	// (NewDiscoveredFact). Such a fact is never part of the policy file.
+	Discovered bool `json:"-"`
 
 	matcher  *regexp.Regexp
 	sourceRE *regexp.Regexp
@@ -442,6 +448,11 @@ func (p *Policy) compile() error {
 			}
 			c.onContradicted = c.OnContradicted
 		}
+		if c.Discover != nil {
+			if err := c.Discover.compile(c.Name); err != nil {
+				return err
+			}
+		}
 		categories[c.Name] = c
 	}
 
@@ -515,6 +526,10 @@ type Effective struct {
 	VerifyNewAnswers bool
 	OnContradicted   OnContradicted
 	Facts            []*Fact
+	// Discover is the discovery block of the first matched category that has
+	// one enabled (nil = none), and DiscoverCategory names that category.
+	Discover         *Discover
+	DiscoverCategory string
 }
 
 // Classify returns the categories whose keywords appear in text, in policy order.
@@ -584,6 +599,9 @@ func (p *Policy) effective(cats []*Category, text string) Effective {
 			eff.OnContradicted = c.onContradicted
 		}
 		eff.VerifyNewAnswers = eff.VerifyNewAnswers || c.verifyNewAnswers
+		if eff.Discover == nil && c.Discover.Active() {
+			eff.Discover, eff.DiscoverCategory = c.Discover, c.Name
+		}
 	}
 	for _, f := range p.Facts {
 		if matched[f.Category] && (f.matcher == nil || f.matcher.MatchString(text)) {

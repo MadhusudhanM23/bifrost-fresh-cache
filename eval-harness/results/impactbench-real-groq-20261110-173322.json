@@ -1,0 +1,3464 @@
+{
+  "tool": "impactbench",
+  "banner": "REAL MODEL (groq/openai/gpt-oss-20b) + MOCK EMBEDDINGS: this benchmark shows how often each setup serves a stale or mismatched answer on a small scripted workload, with answers from a real model. Which questions count as similar is still decided by the mock embedding. It is not a measurement of real traffic.",
+  "command": [
+    "go",
+    "run",
+    "./cmd/impactbench",
+    "-repeat",
+    "1",
+    "-arms",
+    "plain,companion,plain-ttl",
+    "-plain-url",
+    "http://127.0.0.1:18590",
+    "-companion-url",
+    "http://127.0.0.1:8590",
+    "-mock-url",
+    "http://127.0.0.1:18580",
+    "-model",
+    "groq/openai/gpt-oss-20b",
+    "-max-tokens",
+    "800",
+    "-tool-call-message",
+    "-truth",
+    "context",
+    "-calls-from",
+    "bifrost-metrics",
+    "-write-gap",
+    "5s",
+    "-settle",
+    "60s",
+    "-plain-ttl",
+    "30s",
+    "-label",
+    "real-groq",
+    "-bifrost-config",
+    "<scratch>/realbench/bifrost-config.realbench.json",
+    "-compose",
+    "<scratch>/realbench/realbench.override.yml",
+    "-containers",
+    "realbench-bifrost-1,realbench-freshness-companion-1,realbench-mock-openai-1,realbench-postgres-1,realbench-demoserver-1"
+  ],
+  "started_at": "2026-11-10T11:48:35Z",
+  "finished_at": "2026-11-10T12:03:22Z",
+  "settings": {
+    "repeat": 1,
+    "seed": 20261105,
+    "settle_wait": "1m0s",
+    "write_gap_after_non_hit": "5s",
+    "burst_size": 16,
+    "base_price": 49,
+    "changed_price": 59,
+    "burst_price": 69,
+    "model": "groq/openai/gpt-oss-20b",
+    "arms": "plain,companion,plain-ttl",
+    "plain_ttl_arm_ttl": "30s",
+    "assumed_usd_per_model_call": 0.002,
+    "assumed_usd_per_embedding_call": 0,
+    "plain_url": "http://127.0.0.1:18590",
+    "companion_url": "http://127.0.0.1:8590",
+    "mock_url": "http://127.0.0.1:18580",
+    "page_path": "..\\freshness-companion\\demo-page\\index.html",
+    "bifrost_config_path": "<scratch>/realbench/bifrost-config.realbench.json",
+    "compose_path": "<scratch>/realbench/realbench.override.yml",
+    "policy_path": "..\\docker\\policy.json",
+    "cache_key_pattern": "impact-\u003carm\u003e-\u003cunix-time\u003e-r\u003crun\u003e  (fresh per arm per run, different for every arm)",
+    "truth": "context",
+    "model_calls_counted_from": "bifrost-metrics",
+    "max_tokens": 800,
+    "tool_call_message": true
+  },
+  "stack": {
+    "bifrost_semantic_cache_plugin_config": {
+      "cache_by_model": true,
+      "cache_by_provider": true,
+      "conversation_history_threshold": 3,
+      "dimension": 256,
+      "embedding_model": "mock-embedding",
+      "exclude_system_prompt": true,
+      "provider": "openai",
+      "threshold": 0.8,
+      "ttl": "30m"
+    },
+    "companion_flags_from_compose": [
+      "-listen=:8090",
+      "-bifrost=http://bifrost:8080",
+      "-policy=/app/policy.json",
+      "-provider=direct",
+      "-evidence-ttl=5s",
+      "-check-adaptive=false",
+      "-check-max=60s",
+      "-watch=false",
+      "-watch-max-per-hour=120",
+      "-audit-rate=0",
+      "-audit-near-margin=0",
+      "-audit-max-per-minute=120",
+      "-audit-compare=judge",
+      "-verify-below=0.90",
+      "-verified=/app/verified.json"
+    ],
+    "policy_guard": {
+      "_comment": "Requests kept out of the cache entirely. tool_results: a request carrying a tool's result is built from live data. side_effect_tools: a cached text answer would skip the action.",
+      "sensitive": "bypass",
+      "side_effect_tools": [
+        "create_*",
+        "send_*",
+        "delete_*",
+        "update_*"
+      ],
+      "tool_results": "bypass"
+    },
+    "companion_audits_endpoint": {
+      "compare": "judge",
+      "enabled": true
+    }
+  },
+  "environment": {
+    "captured_at": "2026-11-10T11:48:37Z",
+    "client_location": "windows host",
+    "os": "Microsoft Windows 11 Pro 10.0.26300 build 26300",
+    "cpu_model": "12th Gen Intel(R) Core(TM) i3-12100",
+    "logical_cpus": 8,
+    "memory_bytes": 16950685696,
+    "go_version": "go1.27.3",
+    "goos": "windows",
+    "goarch": "amd64",
+    "latency_clock": "QueryPerformanceCounter",
+    "latency_clock_median_step_ns": 100,
+    "docker": {
+      "containers": {
+        "realbench-bifrost-1": "hackathon-workspace-bifrost image_id=sha256:3512c6dcd4fca1f81658371f6ec1f7e41871b608040eb20940f8f5453abe90c3 limits: nano_cpus=0 memory=0",
+        "realbench-demoserver-1": "realbench-demoserver image_id=sha256:46c36c16a12dfb1b23c06d1cf9323b4c8fa3a89e215ed072552513da1ae69974 limits: nano_cpus=0 memory=0",
+        "realbench-freshness-companion-1": "realbench-freshness-companion image_id=sha256:f0ef2e088a7c421f2b83118fbbc6a56a5d59216f1546f216f2f01637eb5c4186 limits: nano_cpus=0 memory=0",
+        "realbench-mock-openai-1": "realbench-mock-openai image_id=sha256:4bc1a75e7e4ac68758f71199245b9b3dbc24a0f150840a488f0524f778e6faf1 limits: nano_cpus=0 memory=0",
+        "realbench-postgres-1": "pgvector/pgvector:pg16 image_id=sha256:0dd3149a06e4579a0d70d8fef9945636cd514005e7237deb27f9b67886f8dc4f limits: nano_cpus=0 memory=0"
+      },
+      "engine": "os=Docker Desktop kernel=6.18.33.2-microsoft-standard-WSL2 ncpu=8 mem_bytes=8212049920",
+      "server_version": "29.7.2"
+    },
+    "code_under_test": {
+      "bifrost_dir": "..\\bifrost",
+      "build_fingerprint": "none (not built by scripts/build.ps1; go run compiles the tree as it is at start-up)",
+      "build_info_bifrost_modules": null,
+      "framework/vectorstore": {
+        "errors.go": "sha256:4067a613b322588c modified:2026-11-02T10:38:02Z",
+        "pgvector.go": "sha256:93895c0083adfb98 modified:2026-11-06T04:54:27Z",
+        "qdrant.go": "sha256:15badda21919e257 modified:2026-11-02T10:38:02Z",
+        "redis.go": "sha256:66e906d78c6307b4 modified:2026-11-02T10:38:02Z",
+        "store.go": "sha256:0cdf763f4658a9b3 modified:2026-11-03T11:19:23Z",
+        "utils.go": "sha256:eb7c4f685ce1209f modified:2026-11-02T10:38:02Z"
+      },
+      "git_head": "bb13ea759d51b1c288ba3020facb68e8f832e12e (refs/heads/feat/pgvector-vectorstore)"
+    }
+  },
+  "arms": [
+    {
+      "name": "plain",
+      "label": "Bifrost alone",
+      "url": "http://127.0.0.1:18590"
+    },
+    {
+      "name": "companion",
+      "label": "Bifrost + freshness companion",
+      "url": "http://127.0.0.1:8590"
+    },
+    {
+      "name": "plain-ttl",
+      "label": "Bifrost alone, short TTL 30s",
+      "url": "http://127.0.0.1:18590",
+      "extra_headers": {
+        "x-bf-cache-ttl": "30s"
+      }
+    }
+  ],
+  "workload": {
+    "requests_per_phase": {
+      "after": 27,
+      "burst": 16,
+      "warm": 13
+    },
+    "seed_per_run": [
+      20261105
+    ],
+    "first_run_items": [
+      {
+        "id": "warm-01",
+        "phase": "warm",
+        "kind": "price",
+        "scenario": "warm (all kinds)",
+        "question": "Acme Pro plan price per month?",
+        "price": 49
+      },
+      {
+        "id": "warm-02",
+        "phase": "warm",
+        "kind": "price",
+        "scenario": "warm (all kinds)",
+        "question": "How much is the Acme Pro plan each month?",
+        "price": 49
+      },
+      {
+        "id": "warm-03",
+        "phase": "warm",
+        "kind": "price",
+        "scenario": "warm (all kinds)",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 49
+      },
+      {
+        "id": "warm-04",
+        "phase": "warm",
+        "kind": "price",
+        "scenario": "warm (all kinds)",
+        "question": "What does the Acme Pro plan cost monthly?",
+        "price": 49
+      },
+      {
+        "id": "warm-05",
+        "phase": "warm",
+        "kind": "price",
+        "scenario": "warm (all kinds)",
+        "question": "What is the price of the Acme Pro plan?",
+        "price": 49
+      },
+      {
+        "id": "warm-06",
+        "phase": "warm",
+        "kind": "faq",
+        "scenario": "warm (all kinds)",
+        "question": "Can I export my project to CSV?"
+      },
+      {
+        "id": "warm-07",
+        "phase": "warm",
+        "kind": "faq",
+        "scenario": "warm (all kinds)",
+        "question": "Can I import my project from CSV?"
+      },
+      {
+        "id": "warm-08",
+        "phase": "warm",
+        "kind": "faq",
+        "scenario": "warm (all kinds)",
+        "question": "How do I reset my Acme account password from the mobile app?"
+      },
+      {
+        "id": "warm-09",
+        "phase": "warm",
+        "kind": "faq",
+        "scenario": "warm (all kinds)",
+        "question": "How do I reset my Acme account username from the mobile app?"
+      },
+      {
+        "id": "warm-10",
+        "phase": "warm",
+        "kind": "faq",
+        "scenario": "warm (all kinds)",
+        "question": "How do I turn on two-factor login?"
+      },
+      {
+        "id": "warm-11",
+        "phase": "warm",
+        "kind": "faq",
+        "scenario": "warm (all kinds)",
+        "question": "How do I turn off two-factor login?"
+      },
+      {
+        "id": "warm-12",
+        "phase": "warm",
+        "kind": "benign",
+        "scenario": "warm (all kinds)",
+        "question": "At what temperature does water boil?"
+      },
+      {
+        "id": "warm-13",
+        "phase": "warm",
+        "kind": "benign",
+        "scenario": "warm (all kinds)",
+        "question": "What is the chemical symbol for gold?"
+      },
+      {
+        "id": "after-01",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: new wording after the change",
+        "question": "How much is the Acme Pro plan per month?",
+        "price": 59
+      },
+      {
+        "id": "after-02",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "What does the Acme Pro plan cost monthly?",
+        "price": 59
+      },
+      {
+        "id": "after-03",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "What is the price of the Acme Pro plan?",
+        "price": 59
+      },
+      {
+        "id": "after-04",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "Acme Pro plan price per month?",
+        "price": 59
+      },
+      {
+        "id": "after-05",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "How much is the Acme Pro plan each month?",
+        "price": 59
+      },
+      {
+        "id": "after-06",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: new wording after the change",
+        "question": "What's the monthly cost of the Acme Pro plan?",
+        "price": 59
+      },
+      {
+        "id": "after-07",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 59
+      },
+      {
+        "id": "after-08",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "look-alike: password vs username (second of pair first)",
+        "question": "How do I reset my Acme account username from the mobile app?"
+      },
+      {
+        "id": "after-09",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "look-alike: password vs username (second of pair first)",
+        "question": "How do I reset my Acme account password from the mobile app?"
+      },
+      {
+        "id": "after-10",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "look-alike: export vs import CSV (second of pair first)",
+        "question": "Can I import my project from CSV?"
+      },
+      {
+        "id": "after-11",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "look-alike: export vs import CSV (second of pair first)",
+        "question": "Can I export my project to CSV?"
+      },
+      {
+        "id": "after-12",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "look-alike: two-factor on vs off (second of pair first)",
+        "question": "How do I turn off two-factor login?"
+      },
+      {
+        "id": "after-13",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "look-alike: two-factor on vs off (second of pair first)",
+        "question": "How do I turn on two-factor login?"
+      },
+      {
+        "id": "after-14",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "same-meaning paraphrase of a FAQ",
+        "question": "How can I reset the password for my Acme account on the mobile app?"
+      },
+      {
+        "id": "after-15",
+        "phase": "after",
+        "kind": "faq",
+        "scenario": "same-meaning paraphrase of a FAQ",
+        "question": "Is it possible to export a project as CSV?"
+      },
+      {
+        "id": "after-16",
+        "phase": "after",
+        "kind": "benign",
+        "scenario": "benign question, same meaning",
+        "question": "What temperature does water boil at?"
+      },
+      {
+        "id": "after-17",
+        "phase": "after",
+        "kind": "benign",
+        "scenario": "benign question, same meaning",
+        "question": "What is the boiling point of water?"
+      },
+      {
+        "id": "after-18",
+        "phase": "after",
+        "kind": "benign",
+        "scenario": "benign question, same meaning",
+        "question": "Which chemical symbol stands for gold?"
+      },
+      {
+        "id": "after-19",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "Acme Pro plan price per month?",
+        "price": 59
+      },
+      {
+        "id": "after-20",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "How much is the Acme Pro plan each month?",
+        "price": 59
+      },
+      {
+        "id": "after-21",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 59
+      },
+      {
+        "id": "after-22",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "What is the price of the Acme Pro plan?",
+        "price": 59
+      },
+      {
+        "id": "after-23",
+        "phase": "after",
+        "kind": "price",
+        "scenario": "price: same wording as before the change",
+        "question": "What does the Acme Pro plan cost monthly?",
+        "price": 59
+      },
+      {
+        "id": "after-24",
+        "phase": "after",
+        "kind": "tool",
+        "scenario": "request carries a tool result",
+        "question": "What is the status of my order?",
+        "tool": "{\"status\":\"shipped\"}"
+      },
+      {
+        "id": "after-25",
+        "phase": "after",
+        "kind": "tool",
+        "scenario": "request carries a tool result",
+        "question": "What is the status of my order?",
+        "tool": "{\"status\":\"delivered\"}"
+      },
+      {
+        "id": "after-26",
+        "phase": "after",
+        "kind": "tool",
+        "scenario": "request carries a tool result",
+        "question": "What is my account balance?",
+        "tool": "{\"balance\":120.50}"
+      },
+      {
+        "id": "after-27",
+        "phase": "after",
+        "kind": "tool",
+        "scenario": "request carries a tool result",
+        "question": "What is my account balance?",
+        "tool": "{\"balance\":95.00}"
+      },
+      {
+        "id": "burst-01",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-02",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-03",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-04",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-05",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-06",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-07",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-08",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-09",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-10",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-11",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-12",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-13",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-14",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-15",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      },
+      {
+        "id": "burst-16",
+        "phase": "burst",
+        "kind": "price",
+        "scenario": "burst: concurrent identical price asks",
+        "question": "How much does the Acme Pro plan cost per month?",
+        "price": 69
+      }
+    ],
+    "mock_embedding_similarity": [
+      {
+        "label": "look-alike pair: password",
+        "a": "How do I reset my Acme account password from the mobile app?",
+        "b": "How do I reset my Acme account username from the mobile app?",
+        "cosine": 0.8394195609836836
+      },
+      {
+        "label": "same-meaning rewording: password",
+        "a": "How do I reset my Acme account password from the mobile app?",
+        "b": "How can I reset the password for my Acme account on the mobile app?",
+        "cosine": 1
+      },
+      {
+        "label": "look-alike pair: csv",
+        "a": "Can I export my project to CSV?",
+        "b": "Can I import my project from CSV?",
+        "cosine": 0.7183811165192393
+      },
+      {
+        "label": "same-meaning rewording: csv",
+        "a": "Can I export my project to CSV?",
+        "b": "Is it possible to export a project as CSV?",
+        "cosine": 0.8366600265340759
+      },
+      {
+        "label": "look-alike pair: two-factor",
+        "a": "How do I turn on two-factor login?",
+        "b": "How do I turn off two-factor login?",
+        "cosine": 1
+      },
+      {
+        "label": "price wording vs first price wording",
+        "a": "How much does the Acme Pro plan cost per month?",
+        "b": "What does the Acme Pro plan cost monthly?",
+        "cosine": 0.7002186247515694
+      },
+      {
+        "label": "price wording vs first price wording",
+        "a": "How much does the Acme Pro plan cost per month?",
+        "b": "Acme Pro plan price per month?",
+        "cosine": 0.7677159338596804
+      },
+      {
+        "label": "price wording vs first price wording",
+        "a": "How much does the Acme Pro plan cost per month?",
+        "b": "How much is the Acme Pro plan each month?",
+        "cosine": 0.8342815943867791
+      },
+      {
+        "label": "price wording vs first price wording",
+        "a": "How much does the Acme Pro plan cost per month?",
+        "b": "What is the price of the Acme Pro plan?",
+        "cosine": 0.5144957554275266
+      },
+      {
+        "label": "new price wording vs first price wording",
+        "a": "How much does the Acme Pro plan cost per month?",
+        "b": "How much is the Acme Pro plan per month?",
+        "cosine": 0.9157230764999131
+      },
+      {
+        "label": "new price wording vs first price wording",
+        "a": "How much does the Acme Pro plan cost per month?",
+        "b": "What's the monthly cost of the Acme Pro plan?",
+        "cosine": 0.7002186247515694
+      },
+      {
+        "label": "benign: boiling water",
+        "a": "At what temperature does water boil?",
+        "b": "What temperature does water boil at?",
+        "cosine": 1
+      },
+      {
+        "label": "benign: boiling water, different wording",
+        "a": "At what temperature does water boil?",
+        "b": "What is the boiling point of water?",
+        "cosine": 0.4179570038185724
+      },
+      {
+        "label": "benign: gold",
+        "a": "What is the chemical symbol for gold?",
+        "b": "Which chemical symbol stands for gold?",
+        "cosine": 0.8589058727506841
+      }
+    ]
+  },
+  "page": {
+    "path": "..\\freshness-companion\\demo-page\\index.html",
+    "original_bytes": 2313,
+    "original_sha256": "b2a8195c6f44c0bf7066c8bd4a3bb1b8cbf5c58f1d6cc8d04c03099ddb16f07b",
+    "base_price_on_page": 49,
+    "byte_identical_after_run": true
+  },
+  "runs": [
+    {
+      "run": 1,
+      "seed": 20261105,
+      "arm_order": [
+        "plain",
+        "companion",
+        "plain-ttl"
+      ],
+      "arms": {
+        "companion": {
+          "arm": "companion",
+          "cache_key": "impact-companion-1794311321-r1",
+          "metrics": {
+            "audit_calls": 0,
+            "audit_different": 0,
+            "bad": 2,
+            "bad_benign": 0,
+            "bad_faq": 2,
+            "bad_per_1000": 35.714285714285715,
+            "bad_price": 0,
+            "burst_correct": 16,
+            "burst_model_calls": 5,
+            "burst_p50_ms": 815.3128,
+            "burst_p95_ms": 817.9809,
+            "burst_requests": 16,
+            "burst_wall_ms": 818.3823,
+            "cache_hit_rate_pct": 37.5,
+            "cache_hits": 21,
+            "calls_saved_vs_no_cache": 19,
+            "correct": 50,
+            "cost_per_1000_usd": 1.3214285714285714,
+            "embedding_calls": 46,
+            "gate_blocked": 1,
+            "gate_calls": 7,
+            "gate_trusted": 0,
+            "guard_bypassed": 4,
+            "lat_hit_n": 21,
+            "lat_hit_p50_ms": 4.0234,
+            "lat_hit_p95_ms": 1132.893,
+            "lat_nonhit_n": 19,
+            "lat_nonhit_p50_ms": 554.9324,
+            "lat_nonhit_p95_ms": 1417.4857,
+            "lat_p50_ms": 471.3229,
+            "lat_p95_ms": 1346.2188,
+            "model_calls": 37,
+            "requests": 56,
+            "serving_calls": 30,
+            "tool_requests": 4,
+            "wrong_match": 2
+          },
+          "scenarios": {
+            "benign question, same meaning": {
+              "total": 3,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 3
+              }
+            },
+            "burst: concurrent identical price asks": {
+              "total": 16,
+              "bad": 0,
+              "cache_hits": 0,
+              "by_verdict": {
+                "correct": 16
+              }
+            },
+            "look-alike: export vs import CSV (second of pair first)": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "look-alike: password vs username (second of pair first)": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "look-alike: two-factor on vs off (second of pair first)": {
+              "total": 2,
+              "bad": 1,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 1,
+                "wrong_match": 1
+              }
+            },
+            "price: new wording after the change": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 1,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "price: same wording as before the change": {
+              "total": 10,
+              "bad": 0,
+              "cache_hits": 7,
+              "by_verdict": {
+                "correct": 10
+              }
+            },
+            "request carries a tool result": {
+              "total": 4,
+              "bad": 0,
+              "cache_hits": 0,
+              "by_verdict": {
+                "tool_fresh": 4
+              }
+            },
+            "same-meaning paraphrase of a FAQ": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "warm (all kinds)": {
+              "total": 13,
+              "bad": 1,
+              "cache_hits": 3,
+              "by_verdict": {
+                "correct": 12,
+                "wrong_match": 1
+              }
+            }
+          },
+          "mock_calls_during_arm": {
+            "chat_calls": 37,
+            "embedding_calls": 46,
+            "unknown_calls": 0,
+            "rejected_calls": 0
+          },
+          "companion_counters_during_arm": {
+            "scheduled": 0,
+            "completed": 0,
+            "same": 0,
+            "different": 0,
+            "errors": 0,
+            "skipped": 0,
+            "gate_verified": 6,
+            "gate_trusted": 0,
+            "gate_blocked": 1,
+            "gate_unverified": 0,
+            "guard_bypassed": 4
+          },
+          "freshness_headers_seen": {
+            "x-freshness-action": {
+              "refreshed": 16,
+              "served": 17
+            },
+            "x-freshness-gate": {
+              "blocked": 1,
+              "verified": 6
+            },
+            "x-freshness-guard": {
+              "bypassed: tool_results": 4
+            },
+            "x-freshness-status": {
+              "confirmed": 17,
+              "stale": 16
+            }
+          },
+          "requests": [
+            {
+              "id": "warm-01",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 464.819,
+              "price_served": "49",
+              "price_fresh": "49",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "warm-02",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 519.215,
+              "price_served": "49",
+              "price_fresh": "49",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "warm-03",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 1046.408,
+              "price_served": "49",
+              "price_fresh": "49",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-gate": "verified",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "warm-04",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 420.439,
+              "price_served": "49",
+              "price_fresh": "49",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "warm-05",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 877.599,
+              "price_served": "49",
+              "price_fresh": "49",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-gate": "verified",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "warm-06",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Can I export my project to CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1346.218
+            },
+            {
+              "id": "warm-07",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Can I import my project from CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1217.32
+            },
+            {
+              "id": "warm-08",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I reset my Acme account password from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1341.335
+            },
+            {
+              "id": "warm-09",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I reset my Acme account username from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1417.485,
+              "freshness": {
+                "x-freshness-gate": "blocked"
+              }
+            },
+            {
+              "id": "warm-10",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I turn on two-factor login?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1275.339
+            },
+            {
+              "id": "warm-11",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I turn off two-factor login?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 6.146
+            },
+            {
+              "id": "warm-12",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "At what temperature does water boil?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 615.537
+            },
+            {
+              "id": "warm-13",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What is the chemical symbol for gold?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 368.618
+            },
+            {
+              "id": "after-01",
+              "phase": "after",
+              "scenario": "price: new wording after the change",
+              "question": "How much is the Acme Pro plan per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 563.95,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "after-02",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 511.984,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "after-03",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 474.433,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "after-04",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 1132.893,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-gate": "verified",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-05",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.69,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-06",
+              "phase": "after",
+              "scenario": "price: new wording after the change",
+              "question": "What's the monthly cost of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.023,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-07",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 471.322,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "after-08",
+              "phase": "after",
+              "scenario": "look-alike: password vs username (second of pair first)",
+              "question": "How do I reset my Acme account username from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 3.234
+            },
+            {
+              "id": "after-09",
+              "phase": "after",
+              "scenario": "look-alike: password vs username (second of pair first)",
+              "question": "How do I reset my Acme account password from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 3.975
+            },
+            {
+              "id": "after-10",
+              "phase": "after",
+              "scenario": "look-alike: export vs import CSV (second of pair first)",
+              "question": "Can I import my project from CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 2.921
+            },
+            {
+              "id": "after-11",
+              "phase": "after",
+              "scenario": "look-alike: export vs import CSV (second of pair first)",
+              "question": "Can I export my project to CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 3.232
+            },
+            {
+              "id": "after-12",
+              "phase": "after",
+              "scenario": "look-alike: two-factor on vs off (second of pair first)",
+              "question": "How do I turn off two-factor login?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.874
+            },
+            {
+              "id": "after-13",
+              "phase": "after",
+              "scenario": "look-alike: two-factor on vs off (second of pair first)",
+              "question": "How do I turn on two-factor login?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 2.261
+            },
+            {
+              "id": "after-14",
+              "phase": "after",
+              "scenario": "same-meaning paraphrase of a FAQ",
+              "question": "How can I reset the password for my Acme account on the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.844
+            },
+            {
+              "id": "after-15",
+              "phase": "after",
+              "scenario": "same-meaning paraphrase of a FAQ",
+              "question": "Is it possible to export a project as CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 1880.212,
+              "freshness": {
+                "x-freshness-gate": "verified"
+              }
+            },
+            {
+              "id": "after-16",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "What temperature does water boil at?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.632
+            },
+            {
+              "id": "after-17",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "What is the boiling point of water?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 606.845
+            },
+            {
+              "id": "after-18",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "Which chemical symbol stands for gold?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 659.603,
+              "freshness": {
+                "x-freshness-gate": "verified"
+              }
+            },
+            {
+              "id": "after-19",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 5.81,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-20",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 526.565,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-gate": "verified",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-21",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 2.691,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-22",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 2.44,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-23",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 2.475,
+              "price_served": "59",
+              "price_fresh": "59",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "after-24",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is the status of my order?",
+              "tool": "{\"status\":\"shipped\"}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 554.932,
+              "freshness": {
+                "x-freshness-guard": "bypassed: tool_results"
+              }
+            },
+            {
+              "id": "after-25",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is the status of my order?",
+              "tool": "{\"status\":\"delivered\"}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 569.411,
+              "freshness": {
+                "x-freshness-guard": "bypassed: tool_results"
+              }
+            },
+            {
+              "id": "after-26",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is my account balance?",
+              "tool": "{\"balance\":120.50}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 505.062,
+              "price_served": "120.50",
+              "freshness": {
+                "x-freshness-guard": "bypassed: tool_results"
+              }
+            },
+            {
+              "id": "after-27",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is my account balance?",
+              "tool": "{\"balance\":95.00}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 417.349,
+              "freshness": {
+                "x-freshness-guard": "bypassed: tool_results"
+              }
+            },
+            {
+              "id": "burst-01",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 817.485,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-02",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 816.508,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-03",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 815.312,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-04",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 814.662,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-05",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 811.595,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-06",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 758.999,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "burst-07",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 630.058,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "burst-08",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 817.532,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-09",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 816.297,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-10",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 817.968,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-11",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 817.541,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-12",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 333.584,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "burst-13",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 815.711,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-14",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 815.19,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            },
+            {
+              "id": "burst-15",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 530.761,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "served",
+                "x-freshness-status": "confirmed"
+              }
+            },
+            {
+              "id": "burst-16",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 817.98,
+              "price_served": "69",
+              "price_fresh": "69",
+              "freshness": {
+                "x-freshness-action": "refreshed",
+                "x-freshness-status": "stale"
+              }
+            }
+          ]
+        },
+        "plain": {
+          "arm": "plain",
+          "cache_key": "impact-plain-1794311321-r1",
+          "metrics": {
+            "audit_calls": 0,
+            "audit_different": 0,
+            "bad": 32,
+            "bad_benign": 0,
+            "bad_faq": 4,
+            "bad_per_1000": 571.4285714285714,
+            "bad_price": 28,
+            "burst_hits": 16,
+            "burst_model_calls": 0,
+            "burst_p50_ms": 33.6725,
+            "burst_p95_ms": 39.9218,
+            "burst_requests": 16,
+            "burst_stale": 16,
+            "burst_wall_ms": 40.152899999999995,
+            "cache_hit_rate_pct": 78.57142857142857,
+            "cache_hits": 44,
+            "calls_saved_vs_no_cache": 44,
+            "correct": 20,
+            "cost_per_1000_usd": 0.42857142857142855,
+            "embedding_calls": 46,
+            "gate_blocked": 0,
+            "gate_calls": 0,
+            "gate_trusted": 0,
+            "guard_bypassed": 0,
+            "lat_hit_n": 28,
+            "lat_hit_p50_ms": 3.6786,
+            "lat_hit_p95_ms": 5.6358,
+            "lat_nonhit_n": 12,
+            "lat_nonhit_p50_ms": 538.3684,
+            "lat_nonhit_p95_ms": 1339.5862,
+            "lat_p50_ms": 4.4088,
+            "lat_p95_ms": 1032.3523,
+            "model_calls": 12,
+            "requests": 56,
+            "serving_calls": 12,
+            "stale": 28,
+            "tool_requests": 4,
+            "tool_reused": 2,
+            "wrong_match": 4
+          },
+          "scenarios": {
+            "benign question, same meaning": {
+              "total": 3,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 3
+              }
+            },
+            "burst: concurrent identical price asks": {
+              "total": 16,
+              "bad": 16,
+              "cache_hits": 16,
+              "by_verdict": {
+                "stale": 16
+              }
+            },
+            "look-alike: export vs import CSV (second of pair first)": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "look-alike: password vs username (second of pair first)": {
+              "total": 2,
+              "bad": 1,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 1,
+                "wrong_match": 1
+              }
+            },
+            "look-alike: two-factor on vs off (second of pair first)": {
+              "total": 2,
+              "bad": 1,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 1,
+                "wrong_match": 1
+              }
+            },
+            "price: new wording after the change": {
+              "total": 2,
+              "bad": 2,
+              "cache_hits": 2,
+              "by_verdict": {
+                "stale": 2
+              }
+            },
+            "price: same wording as before the change": {
+              "total": 10,
+              "bad": 10,
+              "cache_hits": 10,
+              "by_verdict": {
+                "stale": 10
+              }
+            },
+            "request carries a tool result": {
+              "total": 4,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "tool_fresh": 2,
+                "tool_reused": 2
+              }
+            },
+            "same-meaning paraphrase of a FAQ": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "warm (all kinds)": {
+              "total": 13,
+              "bad": 2,
+              "cache_hits": 4,
+              "by_verdict": {
+                "correct": 11,
+                "wrong_match": 2
+              }
+            }
+          },
+          "mock_calls_during_arm": {
+            "chat_calls": 12,
+            "embedding_calls": 46,
+            "unknown_calls": 0,
+            "rejected_calls": 0
+          },
+          "companion_counters_during_arm": {
+            "scheduled": 0,
+            "completed": 0,
+            "same": 0,
+            "different": 0,
+            "errors": 0,
+            "skipped": 0,
+            "gate_verified": 0,
+            "gate_trusted": 0,
+            "gate_blocked": 0,
+            "gate_unverified": 0,
+            "guard_bypassed": 0
+          },
+          "requests": [
+            {
+              "id": "warm-01",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 316.851,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-02",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 538.368,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-03",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 8.225,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-04",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 386.923,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-05",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.816,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-06",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Can I export my project to CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1252.93
+            },
+            {
+              "id": "warm-07",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Can I import my project from CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 754.847
+            },
+            {
+              "id": "warm-08",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I reset my Acme account password from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1339.586
+            },
+            {
+              "id": "warm-09",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I reset my Acme account username from the mobile app?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.467
+            },
+            {
+              "id": "warm-10",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I turn on two-factor login?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1032.352
+            },
+            {
+              "id": "warm-11",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I turn off two-factor login?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.199
+            },
+            {
+              "id": "warm-12",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "At what temperature does water boil?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 591.422
+            },
+            {
+              "id": "warm-13",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What is the chemical symbol for gold?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 464.261
+            },
+            {
+              "id": "after-01",
+              "phase": "after",
+              "scenario": "price: new wording after the change",
+              "question": "How much is the Acme Pro plan per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.461,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-02",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 1.959,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-03",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.751,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-04",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 3.016,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-05",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 2.076,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-06",
+              "phase": "after",
+              "scenario": "price: new wording after the change",
+              "question": "What's the monthly cost of the Acme Pro plan?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.749,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-07",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.635,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-08",
+              "phase": "after",
+              "scenario": "look-alike: password vs username (second of pair first)",
+              "question": "How do I reset my Acme account username from the mobile app?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.072
+            },
+            {
+              "id": "after-09",
+              "phase": "after",
+              "scenario": "look-alike: password vs username (second of pair first)",
+              "question": "How do I reset my Acme account password from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 1.927
+            },
+            {
+              "id": "after-10",
+              "phase": "after",
+              "scenario": "look-alike: export vs import CSV (second of pair first)",
+              "question": "Can I import my project from CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 1.796
+            },
+            {
+              "id": "after-11",
+              "phase": "after",
+              "scenario": "look-alike: export vs import CSV (second of pair first)",
+              "question": "Can I export my project to CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 1.697
+            },
+            {
+              "id": "after-12",
+              "phase": "after",
+              "scenario": "look-alike: two-factor on vs off (second of pair first)",
+              "question": "How do I turn off two-factor login?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.147
+            },
+            {
+              "id": "after-13",
+              "phase": "after",
+              "scenario": "look-alike: two-factor on vs off (second of pair first)",
+              "question": "How do I turn on two-factor login?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 1.722
+            },
+            {
+              "id": "after-14",
+              "phase": "after",
+              "scenario": "same-meaning paraphrase of a FAQ",
+              "question": "How can I reset the password for my Acme account on the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.674
+            },
+            {
+              "id": "after-15",
+              "phase": "after",
+              "scenario": "same-meaning paraphrase of a FAQ",
+              "question": "Is it possible to export a project as CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 2.984
+            },
+            {
+              "id": "after-16",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "What temperature does water boil at?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.678
+            },
+            {
+              "id": "after-17",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "What is the boiling point of water?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 607.842
+            },
+            {
+              "id": "after-18",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "Which chemical symbol stands for gold?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.408
+            },
+            {
+              "id": "after-19",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 1.983,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-20",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 1.917,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-21",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.822,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-22",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.757,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-23",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "direct",
+              "latency_ms": 2.56,
+              "price_served": "49",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-24",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is the status of my order?",
+              "tool": "{\"status\":\"shipped\"}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 360.302
+            },
+            {
+              "id": "after-25",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is the status of my order?",
+              "tool": "{\"status\":\"delivered\"}",
+              "verdict": "tool_reused",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.821
+            },
+            {
+              "id": "after-26",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is my account balance?",
+              "tool": "{\"balance\":120.50}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 532.662,
+              "price_served": "120.50"
+            },
+            {
+              "id": "after-27",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is my account balance?",
+              "tool": "{\"balance\":95.00}",
+              "verdict": "tool_reused",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.955,
+              "price_served": "120.50"
+            },
+            {
+              "id": "burst-01",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 22.705,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-02",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 33.748,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-03",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 27.941,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-04",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 37.1,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-05",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 16.163,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-06",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 39.921,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-07",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 11.437,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-08",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 37.276,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-09",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 30.637,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-10",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 36.325,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-11",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 36.322,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-12",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 16.222,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-13",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 33.672,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-14",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 35.131,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-15",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 37.941,
+              "price_served": "49",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-16",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "stale",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 22.622,
+              "price_served": "49",
+              "price_fresh": "69"
+            }
+          ]
+        },
+        "plain-ttl": {
+          "arm": "plain-ttl",
+          "cache_key": "impact-plain-ttl-1794311321-r1",
+          "metrics": {
+            "audit_calls": 0,
+            "audit_different": 0,
+            "bad": 13,
+            "bad_benign": 0,
+            "bad_faq": 5,
+            "bad_per_1000": 232.14285714285714,
+            "bad_price": 8,
+            "burst_correct": 8,
+            "burst_errors": 8,
+            "burst_model_calls": 8,
+            "burst_p50_ms": 691.0972,
+            "burst_p95_ms": 758.1255,
+            "burst_requests": 16,
+            "burst_wall_ms": 758.4634,
+            "cache_hit_rate_pct": 28.571428571428573,
+            "cache_hits": 16,
+            "calls_saved_vs_no_cache": 24,
+            "correct": 39,
+            "cost_per_1000_usd": 1.1428571428571428,
+            "embedding_calls": 56,
+            "errors": 8,
+            "gate_blocked": 0,
+            "gate_calls": 0,
+            "gate_trusted": 0,
+            "guard_bypassed": 0,
+            "lat_hit_n": 16,
+            "lat_hit_p50_ms": 4.7737,
+            "lat_hit_p95_ms": 11.2659,
+            "lat_nonhit_n": 24,
+            "lat_nonhit_p50_ms": 829.7226,
+            "lat_nonhit_p95_ms": 1911.7281,
+            "lat_p50_ms": 474.6884,
+            "lat_p95_ms": 1712.7932,
+            "model_calls": 32,
+            "requests": 56,
+            "serving_calls": 32,
+            "tool_requests": 4,
+            "tool_reused": 2,
+            "wrong_match": 5
+          },
+          "scenarios": {
+            "benign question, same meaning": {
+              "total": 3,
+              "bad": 0,
+              "cache_hits": 0,
+              "by_verdict": {
+                "correct": 3
+              }
+            },
+            "burst: concurrent identical price asks": {
+              "total": 16,
+              "bad": 8,
+              "cache_hits": 0,
+              "by_verdict": {
+                "correct": 8,
+                "error": 8
+              }
+            },
+            "look-alike: export vs import CSV (second of pair first)": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 0,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "look-alike: password vs username (second of pair first)": {
+              "total": 2,
+              "bad": 1,
+              "cache_hits": 1,
+              "by_verdict": {
+                "correct": 1,
+                "wrong_match": 1
+              }
+            },
+            "look-alike: two-factor on vs off (second of pair first)": {
+              "total": 2,
+              "bad": 1,
+              "cache_hits": 1,
+              "by_verdict": {
+                "correct": 1,
+                "wrong_match": 1
+              }
+            },
+            "price: new wording after the change": {
+              "total": 2,
+              "bad": 0,
+              "cache_hits": 1,
+              "by_verdict": {
+                "correct": 2
+              }
+            },
+            "price: same wording as before the change": {
+              "total": 10,
+              "bad": 0,
+              "cache_hits": 5,
+              "by_verdict": {
+                "correct": 10
+              }
+            },
+            "request carries a tool result": {
+              "total": 4,
+              "bad": 0,
+              "cache_hits": 2,
+              "by_verdict": {
+                "tool_fresh": 2,
+                "tool_reused": 2
+              }
+            },
+            "same-meaning paraphrase of a FAQ": {
+              "total": 2,
+              "bad": 1,
+              "cache_hits": 2,
+              "by_verdict": {
+                "correct": 1,
+                "wrong_match": 1
+              }
+            },
+            "warm (all kinds)": {
+              "total": 13,
+              "bad": 2,
+              "cache_hits": 4,
+              "by_verdict": {
+                "correct": 11,
+                "wrong_match": 2
+              }
+            }
+          },
+          "mock_calls_during_arm": {
+            "chat_calls": 32,
+            "embedding_calls": 56,
+            "unknown_calls": 0,
+            "rejected_calls": 0
+          },
+          "companion_counters_during_arm": {
+            "scheduled": 0,
+            "completed": 0,
+            "same": 0,
+            "different": 0,
+            "errors": 0,
+            "skipped": 0,
+            "gate_verified": 0,
+            "gate_trusted": 0,
+            "gate_blocked": 0,
+            "gate_unverified": 0,
+            "guard_bypassed": 0
+          },
+          "requests": [
+            {
+              "id": "warm-01",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 529.319,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-02",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 444.771,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-03",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.131,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-04",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 495.273,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-05",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.773,
+              "price_served": "49",
+              "price_fresh": "49"
+            },
+            {
+              "id": "warm-06",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Can I export my project to CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 708.458
+            },
+            {
+              "id": "warm-07",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "Can I import my project from CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1313.719
+            },
+            {
+              "id": "warm-08",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I reset my Acme account password from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 985.171
+            },
+            {
+              "id": "warm-09",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I reset my Acme account username from the mobile app?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 11.265
+            },
+            {
+              "id": "warm-10",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I turn on two-factor login?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1230.483
+            },
+            {
+              "id": "warm-11",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "How do I turn off two-factor login?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.461
+            },
+            {
+              "id": "warm-12",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "At what temperature does water boil?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 829.722
+            },
+            {
+              "id": "warm-13",
+              "phase": "warm",
+              "scenario": "warm (all kinds)",
+              "question": "What is the chemical symbol for gold?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 260.216
+            },
+            {
+              "id": "after-01",
+              "phase": "after",
+              "scenario": "price: new wording after the change",
+              "question": "How much is the Acme Pro plan per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 655.865,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-02",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1911.728,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-03",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 406.735,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-04",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.984,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-05",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.171,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-06",
+              "phase": "after",
+              "scenario": "price: new wording after the change",
+              "question": "What's the monthly cost of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.967,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-07",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.096,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-08",
+              "phase": "after",
+              "scenario": "look-alike: password vs username (second of pair first)",
+              "question": "How do I reset my Acme account username from the mobile app?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1548.083
+            },
+            {
+              "id": "after-09",
+              "phase": "after",
+              "scenario": "look-alike: password vs username (second of pair first)",
+              "question": "How do I reset my Acme account password from the mobile app?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.369
+            },
+            {
+              "id": "after-10",
+              "phase": "after",
+              "scenario": "look-alike: export vs import CSV (second of pair first)",
+              "question": "Can I import my project from CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1656.33
+            },
+            {
+              "id": "after-11",
+              "phase": "after",
+              "scenario": "look-alike: export vs import CSV (second of pair first)",
+              "question": "Can I export my project to CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1485.989
+            },
+            {
+              "id": "after-12",
+              "phase": "after",
+              "scenario": "look-alike: two-factor on vs off (second of pair first)",
+              "question": "How do I turn off two-factor login?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1555.825
+            },
+            {
+              "id": "after-13",
+              "phase": "after",
+              "scenario": "look-alike: two-factor on vs off (second of pair first)",
+              "question": "How do I turn on two-factor login?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.051
+            },
+            {
+              "id": "after-14",
+              "phase": "after",
+              "scenario": "same-meaning paraphrase of a FAQ",
+              "question": "How can I reset the password for my Acme account on the mobile app?",
+              "verdict": "wrong_match",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 3.889
+            },
+            {
+              "id": "after-15",
+              "phase": "after",
+              "scenario": "same-meaning paraphrase of a FAQ",
+              "question": "Is it possible to export a project as CSV?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.12
+            },
+            {
+              "id": "after-16",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "What temperature does water boil at?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 968.708
+            },
+            {
+              "id": "after-17",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "What is the boiling point of water?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 2007.191
+            },
+            {
+              "id": "after-18",
+              "phase": "after",
+              "scenario": "benign question, same meaning",
+              "question": "Which chemical symbol stands for gold?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1193.38
+            },
+            {
+              "id": "after-19",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "Acme Pro plan price per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 474.688,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-20",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much is the Acme Pro plan each month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 1712.793,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-21",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.659,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-22",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What is the price of the Acme Pro plan?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.248,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-23",
+              "phase": "after",
+              "scenario": "price: same wording as before the change",
+              "question": "What does the Acme Pro plan cost monthly?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 530.534,
+              "price_served": "59",
+              "price_fresh": "59"
+            },
+            {
+              "id": "after-24",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is the status of my order?",
+              "tool": "{\"status\":\"shipped\"}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 667.055
+            },
+            {
+              "id": "after-25",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is the status of my order?",
+              "tool": "{\"status\":\"delivered\"}",
+              "verdict": "tool_reused",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 4.895
+            },
+            {
+              "id": "after-26",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is my account balance?",
+              "tool": "{\"balance\":120.50}",
+              "verdict": "tool_fresh",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 489.362,
+              "price_served": "120.50"
+            },
+            {
+              "id": "after-27",
+              "phase": "after",
+              "scenario": "request carries a tool result",
+              "question": "What is my account balance?",
+              "tool": "{\"balance\":95.00}",
+              "verdict": "tool_reused",
+              "status": 200,
+              "cache_hit": true,
+              "hit_type": "semantic",
+              "latency_ms": 5.002,
+              "price_served": "120.50"
+            },
+            {
+              "id": "burst-01",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 717.697,
+              "price_served": "69",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-02",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 294.799,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-03",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 294.804,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-04",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 295.275,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-05",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 327.271,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-06",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 512.483,
+              "price_served": "69",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-07",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 294.952,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-08",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 704.142,
+              "price_served": "69",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-09",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 495.801,
+              "price_served": "69",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-10",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 755.372,
+              "price_served": "69",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-11",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 294.924,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-12",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 632.095,
+              "price_served": "69",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-13",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 294.967,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-14",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 758.125,
+              "price_served": "69",
+              "price_fresh": "69"
+            },
+            {
+              "id": "burst-15",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "error",
+              "status": 429,
+              "cache_hit": false,
+              "latency_ms": 295.041,
+              "price_fresh": "69",
+              "error": "HTTP 429: {\"is_bifrost_error\":false,\"status_code\":429,\"error\":{\"type\":\"tokens\",\"code\":\"rate_limit_exceeded\",\"message\":\"Rate limit ..."
+            },
+            {
+              "id": "burst-16",
+              "phase": "burst",
+              "scenario": "burst: concurrent identical price asks",
+              "question": "How much does the Acme Pro plan cost per month?",
+              "verdict": "correct",
+              "status": 200,
+              "cache_hit": false,
+              "latency_ms": 691.097,
+              "price_served": "69",
+              "price_fresh": "69"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "median_of_runs": {
+    "companion": {
+      "audit_calls": 0,
+      "audit_different": 0,
+      "bad": 2,
+      "bad_benign": 0,
+      "bad_faq": 2,
+      "bad_per_1000": 35.714285714285715,
+      "bad_price": 0,
+      "burst_correct": 16,
+      "burst_model_calls": 5,
+      "burst_p50_ms": 815.3128,
+      "burst_p95_ms": 817.9809,
+      "burst_requests": 16,
+      "burst_wall_ms": 818.3823,
+      "cache_hit_rate_pct": 37.5,
+      "cache_hits": 21,
+      "calls_saved_vs_no_cache": 19,
+      "correct": 50,
+      "cost_per_1000_usd": 1.3214285714285714,
+      "embedding_calls": 46,
+      "gate_blocked": 1,
+      "gate_calls": 7,
+      "gate_trusted": 0,
+      "guard_bypassed": 4,
+      "lat_hit_n": 21,
+      "lat_hit_p50_ms": 4.0234,
+      "lat_hit_p95_ms": 1132.893,
+      "lat_nonhit_n": 19,
+      "lat_nonhit_p50_ms": 554.9324,
+      "lat_nonhit_p95_ms": 1417.4857,
+      "lat_p50_ms": 471.3229,
+      "lat_p95_ms": 1346.2188,
+      "model_calls": 37,
+      "requests": 56,
+      "serving_calls": 30,
+      "tool_requests": 4,
+      "wrong_match": 2
+    },
+    "plain": {
+      "audit_calls": 0,
+      "audit_different": 0,
+      "bad": 32,
+      "bad_benign": 0,
+      "bad_faq": 4,
+      "bad_per_1000": 571.4285714285714,
+      "bad_price": 28,
+      "burst_hits": 16,
+      "burst_model_calls": 0,
+      "burst_p50_ms": 33.6725,
+      "burst_p95_ms": 39.9218,
+      "burst_requests": 16,
+      "burst_stale": 16,
+      "burst_wall_ms": 40.152899999999995,
+      "cache_hit_rate_pct": 78.57142857142857,
+      "cache_hits": 44,
+      "calls_saved_vs_no_cache": 44,
+      "correct": 20,
+      "cost_per_1000_usd": 0.42857142857142855,
+      "embedding_calls": 46,
+      "gate_blocked": 0,
+      "gate_calls": 0,
+      "gate_trusted": 0,
+      "guard_bypassed": 0,
+      "lat_hit_n": 28,
+      "lat_hit_p50_ms": 3.6786,
+      "lat_hit_p95_ms": 5.6358,
+      "lat_nonhit_n": 12,
+      "lat_nonhit_p50_ms": 538.3684,
+      "lat_nonhit_p95_ms": 1339.5862,
+      "lat_p50_ms": 4.4088,
+      "lat_p95_ms": 1032.3523,
+      "model_calls": 12,
+      "requests": 56,
+      "serving_calls": 12,
+      "stale": 28,
+      "tool_requests": 4,
+      "tool_reused": 2,
+      "wrong_match": 4
+    },
+    "plain-ttl": {
+      "audit_calls": 0,
+      "audit_different": 0,
+      "bad": 13,
+      "bad_benign": 0,
+      "bad_faq": 5,
+      "bad_per_1000": 232.14285714285714,
+      "bad_price": 8,
+      "burst_correct": 8,
+      "burst_errors": 8,
+      "burst_model_calls": 8,
+      "burst_p50_ms": 691.0972,
+      "burst_p95_ms": 758.1255,
+      "burst_requests": 16,
+      "burst_wall_ms": 758.4634,
+      "cache_hit_rate_pct": 28.571428571428573,
+      "cache_hits": 16,
+      "calls_saved_vs_no_cache": 24,
+      "correct": 39,
+      "cost_per_1000_usd": 1.1428571428571428,
+      "embedding_calls": 56,
+      "errors": 8,
+      "gate_blocked": 0,
+      "gate_calls": 0,
+      "gate_trusted": 0,
+      "guard_bypassed": 0,
+      "lat_hit_n": 16,
+      "lat_hit_p50_ms": 4.7737,
+      "lat_hit_p95_ms": 11.2659,
+      "lat_nonhit_n": 24,
+      "lat_nonhit_p50_ms": 829.7226,
+      "lat_nonhit_p95_ms": 1911.7281,
+      "lat_p50_ms": 474.6884,
+      "lat_p95_ms": 1712.7932,
+      "model_calls": 32,
+      "requests": 56,
+      "serving_calls": 32,
+      "tool_requests": 4,
+      "tool_reused": 2,
+      "wrong_match": 5
+    }
+  },
+  "assumptions": {
+    "usd_per_embedding_call_ASSUMPTION_not_measured": 0,
+    "usd_per_model_call_ASSUMPTION_not_measured": 0.002
+  },
+  "limits": [
+    "Answers come from a real model (groq/openai/gpt-oss-20b) on a free tier; the embeddings are still the local mock (a bag-of-words hash). So which questions the cache treats as \"similar\" is decided by shared words, exactly as in the mock run, and look-alike pairs reach the cache only because the mock embedding scores them high. A real embedding model would score some pairs higher and some lower. Do not read any rate here as a rate for real traffic.",
+    "The workload is small and scripted (see \"Workload\"). The per-1000 rates are the counts of this one story scaled to 1000 requests, not a forecast. With a single run there is no run-to-run spread at all, and a real model adds its own randomness.",
+    "No ground-truth model calls are made. A price answer is right when it states the price that its own request's context gives (the sanity check before the run showed the model doing this); a model that ignored its context would be counted as stale here even on a fresh call. Any other answer is judged by where it came from: a fresh answer is right, and a cached one is right only when the client saw it written for a question that means the same (see MeaningGroup in workload.go). This catches look-alike mix-ups, not every way a real answer can be poor; answer quality itself is not judged. Tool-result requests are reported as reused from the cache or not, not as right or wrong.",
+    "The companion's settings differ from the Docker demo used for the mock run: background audits are off (-audit-rate=0, -audit-near-margin=0) because each one is a paid model call and they only report a wrong match after it was served, and the pre-serve gate compares answers with a model judge (-audit-compare=judge) because real answers never match word for word. So each gate check costs two model calls (a fresh answer and the judge). See \"Settings\".",
+    "FAQ and look-alike requests carry no system message, as in the mock run.",
+    "Model calls are counted from Bifrost's own Prometheus counter bifrost_upstream_requests_total (chat requests that Bifrost sent to a provider with a key; cache hits carry no key and are left out), as a difference before and after each arm, after waiting for background work to finish. Embedding calls are counted by the mock, which serves them. The command checks that the counters are idle before starting.",
+    "Free tiers limit requests and tokens per minute. The client pauses after every non-cached response (-write-gap) to stay under the limit, and waits longer after each page change (-settle); the pauses are the same for every arm and are not part of any latency. A rate-limit refusal would show up as an error.",
+    "The plain-ttl arm expires entries after its TTL, so what it serves depends on how far apart requests are in time. Its TTL and the pauses differ from the mock run (see \"Settings\"), so its numbers are not comparable one for one with the mock run's plain-ttl column.",
+    "The plain arm runs Bifrost with the semantic-cache settings of docker/bifrost-config.real.json, which are the same as in the mock run (see \"Settings\"), not a tuned setup.",
+    "The companion's evidence fetches (an HTTP GET of the demo page) are not model calls and are not counted here.",
+    "Cost figures multiply measured call counts by prices that are assumptions given on the command line. They are an illustration, not a measurement.",
+    "The page is edited in place by this command, which needs exclusive use of it and of the stack. The same file is restored byte for byte at the end of every arm and on exit."
+  ]
+}

@@ -4,7 +4,7 @@
 //
 // Secrets come only from the environment, never from flags:
 //
-//	TAVILY_API_KEY      key for -provider tavily_extract / tavily_search
+//	TAVILY_API_KEY      key for -provider tavily_extract / tavily_search and -discover
 //	BIFROST_ADMIN_AUTH  optional value for the clear endpoint's auth header,
 //	                    e.g. "Bearer <api key>" or "Basic <base64 user:pass>"
 package main
@@ -27,7 +27,6 @@ import (
 	"freshness-companion/internal/agetrack"
 	"freshness-companion/internal/auditlog"
 	"freshness-companion/internal/changes"
-	"freshness-companion/internal/decision"
 	"freshness-companion/internal/decisionlog"
 	"freshness-companion/internal/evidence"
 	"freshness-companion/internal/policy"
@@ -134,7 +133,8 @@ func run(args []string) error {
 	var dropHeaders stringList
 	fs.Var(setHeaders, "refresh-set-header", `header set on the re-request, "Name: value" (repeatable)`)
 	fs.Var(&dropHeaders, "refresh-drop-header", "header removed from the re-request (repeatable)")
-	wf := addWatchFlags(fs) // -check-adaptive, -check-max, -check-growth, -watch, -watch-* (main_watch.go)
+	wf := addWatchFlags(fs)    // -check-adaptive, -check-max, -check-growth, -watch, -watch-* (main_watch.go)
+	df := addDiscoverFlags(fs) // -discover, -discover-* (main_discover.go)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -169,6 +169,10 @@ func run(args []string) error {
 		return err
 	}
 	cache := evidence.NewCache(provider, ws.cacheConfig(evidence.CacheConfig{TTL: *evidenceTTL, ErrorTTL: *evidenceErrTTL, FetchTimeout: *evidenceTO}))
+	ds, err := newDiscoverSetup(df, pol, provider.Name(), *tavilyURL, logger) // nil service with the defaults
+	if err != nil {
+		return err
+	}
 
 	ages, err := agetrack.Open(agetrack.Options{Path: *agesPath, MaxEntries: *agesMax, Logger: logger})
 	if err != nil {
@@ -252,7 +256,7 @@ func run(args []string) error {
 		ExplainRing:         *explainRing,
 		Upstream:            upstream,
 		Policy:              pol,
-		Engine:              &decision.Engine{Evidence: cache},
+		Engine:              ds.engine(cache), // adds discovery when -discover is on
 		Ages:                ages,
 		Decisions:           dlog,
 		Refresh:             strategy,
@@ -278,7 +282,7 @@ func run(args []string) error {
 
 	httpServer := &http.Server{
 		Addr:              *listen,
-		Handler:           ws.wire(srv.Handler(), cache, ages, dlog, clearer, provider.Name(), noticeToken, logger), // adds /freshness/watch in front of the proxy
+		Handler:           ds.wire(ws.wire(srv.Handler(), cache, ages, dlog, clearer, provider.Name(), noticeToken, logger)), // adds /freshness/watch and /freshness/discovered in front of the proxy
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 		// No WriteTimeout: streamed responses can legitimately run long.

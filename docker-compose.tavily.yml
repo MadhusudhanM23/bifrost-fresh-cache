@@ -26,10 +26,19 @@ services:
       - "-check-max=${CHECK_MAX:-60s}"
       - "-watch=${WATCH:-false}"
       - "-watch-max-per-hour=${WATCH_MAX_PER_HOUR:-30}"
+      # Tavily finds the source: OFF by default. DISCOVER=true lets the companion
+      # search for a source page (Tavily Search, 1 credit per search, capped per
+      # hour) when no watched fact covers a price question. Tavily Search receives
+      # only a short query built from the policy's "discover" template and the
+      # allowlisted names in the question. To see it, mount
+      # docker/policy.discover.json (no watched facts); see DOCKER.md.
+      - "-discover=${DISCOVER:-false}"
+      - "-discover-max-per-hour=${DISCOVER_MAX_PER_HOUR:-10}"
       - "-audit-rate=1"
       - "-audit-near-margin=0.05"
       - "-audit-max-per-minute=120"
       - "-verify-below=0.90"
       - "-verified=/app/verified.json"
     volumes:
-      - ./docker/policy.tavily.json:/app/policy.json:ro
+      # TAVILY_POLICY=policy.discover.json (no watched facts) shows discovery; see DOCKER.md.
+      - ./docker/${TAVILY_POLICY:-policy.tavily.json}:/app/policy.json:ro

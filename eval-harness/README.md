@@ -391,6 +391,23 @@ About 5 minutes. Output: `results/impactbench-<time>.json` and `.md`. Useful fla
 nothing), `-render results/<file>.json` (rebuild the Markdown from a results file).
 Unit tests (`go test ./cmd/impactbench`) use in-process fakes and need no stack.
 
+**With a real model.** `results/impactbench-real-groq-20261110-173322.md` is one run
+(not three) of the same workload with answers from `groq/openai/gpt-oss-20b` on Groq's
+free tier; embeddings stayed on the mock. The note at the top of that file lists every
+setting that differs from the mock run and why (audits off, gate compare by a model
+judge, pacing for the free tier, 30 s TTL for the plain-ttl arm, 91 model requests in
+total). Stale and wrong-match counts came out the same as with the mock; the companion
+made 37 calls instead of 32 (judge calls, and 5 calls instead of 1 for the burst), and
+the plain-ttl arm got 8 rate-limit errors when its 16 burst requests all missed at
+once. The flags used for a real model, which leave the mock path unchanged when not
+given: `-model`, `-max-tokens` (reasoning models return nothing without room to
+think), `-tool-call-message` (real providers reject a tool result that answers no tool
+call), `-truth context` (judge a price answer by the price in its own request's
+context and a cached FAQ answer by the question it was first written for, instead of
+an exact compare with a fresh mock call), `-calls-from bifrost-metrics` (count model
+calls from Bifrost's `/metrics`, since a real model has no counter the harness can
+read), `-write-gap` and `-settle` (pace requests under a free tier's limits).
+
 ## Hybrid search spike: is "keywords + meaning" worth it?
 
 `cmd/hybridspike` asks whether look-alike questions ("export CSV" vs "import CSV",

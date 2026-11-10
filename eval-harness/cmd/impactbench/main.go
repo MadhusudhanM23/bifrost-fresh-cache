@@ -81,7 +81,15 @@ type Settings struct {
 	ComposePath     string  `json:"compose_path"`
 	PolicyPath      string  `json:"policy_path"`
 	CacheKeyPattern string  `json:"cache_key_pattern"`
+	// Real-model settings (empty in the mock runs).
+	Truth           string `json:"truth,omitempty"`
+	CallsFrom       string `json:"model_calls_counted_from,omitempty"`
+	MaxTokens       int    `json:"max_tokens,omitempty"`
+	ToolCallMessage bool   `json:"tool_call_message,omitempty"`
 }
+
+// realModel reports whether the report is of a real-model run (-truth context).
+func (s Settings) realModel() bool { return s.Truth == TruthContext }
 
 // Stack records the settings of the system under test, as read from the files
 // that configure it (best effort; what cannot be read is said so).
@@ -155,6 +163,10 @@ func main() {
 		containers  = flag.String("containers", "hackathon-workspace-bifrost-1,hackathon-workspace-freshness-companion-1,hackathon-workspace-mock-openai-1,hackathon-workspace-postgres-1,hackathon-workspace-demoserver-1", "container names to describe")
 		writeGap    = flag.Duration("write-gap", 250*time.Millisecond, "pause (not timed) after every sequential response that was not served from the cache, so Bifrost's asynchronous cache write has landed before the next request")
 		dryRun      = flag.Bool("dry-run", false, "print the workload for -seed and exit (no network, page untouched)")
+		truthMode   = flag.String("truth", TruthMock, "how answers are judged: mock (a fresh call to the mock, exact text) | context (real model: no ground-truth calls; a price answer must state the price in its own request's context, a cached FAQ answer must have been written for a question that means the same)")
+		callsFrom   = flag.String("calls-from", "mock", "where model calls are counted: mock (GET /mock/stats) | bifrost-metrics (Bifrost's /metrics on -plain-url: chat requests sent to a provider; embeddings still from the mock)")
+		maxTokens   = flag.Int("max-tokens", 0, "max_tokens sent with every request (0 = not sent, as in the mock runs; reasoning models need room, e.g. 800)")
+		toolCallMsg = flag.Bool("tool-call-message", false, "put an assistant tool_calls message before each tool result (real providers reject a tool result without one)")
 	)
 	renderFrom := flag.String("render", "", "re-render the Markdown of an existing results .json (next to it) and exit; nothing is measured")
 	flag.Parse()
@@ -180,6 +192,12 @@ func main() {
 	}
 	if *repeat < 1 || *burst < 2 || *settle < time.Second {
 		fatal("need -repeat >= 1, -burst >= 2 and -settle >= 1s")
+	}
+	if *truthMode != TruthMock && *truthMode != TruthContext {
+		fatal("-truth %q: want %s or %s", *truthMode, TruthMock, TruthContext)
+	}
+	if *callsFrom != "mock" && *callsFrom != "bifrost-metrics" {
+		fatal("-calls-from %q: want mock or bifrost-metrics", *callsFrom)
 	}
 
 	arms, err := parseArms(*armsFlag, *plainURL, *compURL, *ttlArm)
@@ -210,6 +228,10 @@ func main() {
 		Client:  &http.Client{Timeout: 60 * time.Second, Transport: &http.Transport{MaxIdleConnsPerHost: 64}},
 		MockURL: strings.TrimRight(*mockURL, "/"), MockKey: *mockKey, CompanionURL: strings.TrimRight(*compURL, "/"),
 		Model: *model, Page: page, Settle: *settle, WriteGap: *writeGap, Cfg: cfg, Log: logf,
+		Truth: *truthMode, BodyOpt: BodyOptions{MaxTokens: *maxTokens, ToolCallMessage: *toolCallMsg},
+	}
+	if *callsFrom == "bifrost-metrics" {
+		runner.MetricsURL = strings.TrimRight(*plainURL, "/") + "/metrics"
 	}
 	if !hasArm(arms, "companion") {
 		// the companion's counters are still read (zero deltas) when it is up, but not required
@@ -224,6 +246,14 @@ func main() {
 		BurstPrice: *burstPrice, Model: *model, ArmsRequested: *armsFlag, TTLArmTTL: ttlArm.String(), CostPerCall: *costCall, CostPerEmbed: *costEmbed,
 		PlainURL: *plainURL, CompanionURL: *compURL, MockURL: *mockURL, PagePath: *pagePath, ConfigPath: *configPath, ComposePath: *composePath,
 		PolicyPath: *policyPath, CacheKeyPattern: "impact-<arm>-<unix-time>-r<run>  (fresh per arm per run, different for every arm)"}
+	if *truthMode == TruthContext {
+		report.Settings.Truth = *truthMode
+		report.Banner = fmt.Sprintf("REAL MODEL (%s) + MOCK EMBEDDINGS: this benchmark shows how often each setup serves a stale or mismatched answer on a small scripted workload, with answers from a real model. Which questions count as similar is still decided by the mock embedding. It is not a measurement of real traffic.", *model)
+	}
+	if *callsFrom != "mock" {
+		report.Settings.CallsFrom = *callsFrom
+	}
+	report.Settings.MaxTokens, report.Settings.ToolCallMessage = *maxTokens, *toolCallMsg
 
 	if err := preflight(ctx, runner, arms); err != nil {
 		restoreOrWarn(page)

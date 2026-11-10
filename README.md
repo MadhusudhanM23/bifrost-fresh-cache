@@ -59,6 +59,24 @@ Same scripted workload, same Bifrost, three setups. `plain` is Bifrost with its 
 
 The honest reading: the companion removes every stale answer and most wrong matches, and it survives a burst with one model call instead of sixteen. It is not free. It makes more model calls and answers more slowly than a plain cache that is happy to be wrong, because every refresh is a real call the plain cache skipped. Against the short-TTL workaround it wins on all three counts: fewer bad answers, a slightly higher hit rate, fewer model calls. The two wrong matches it still lets through are a "two-factor on / two-factor off" pair that the mock embedding scores at similarity 1.0, which no threshold can separate; the background audit flags them afterwards.
 
+### With a real model
+
+The same workload was run once (not three times) with answers from a real model, `groq/openai/gpt-oss-20b` on Groq's free tier. Embeddings stayed on the mock, so the cache's idea of "similar" is unchanged. Full report, with every setting that differs from the mock run and why: [`eval-harness/results/impactbench-real-groq-20261110-173322.md`](eval-harness/results/impactbench-real-groq-20261110-173322.md). 91 model requests in total.
+
+| | plain | **companion** | plain-ttl (30 s) |
+|---|---:|---:|---:|
+| Stale answers served (old price) | 28 | **0** | 0 |
+| Wrong-match answers served | 4 | **2** | 5 |
+| Errors (HTTP 429 from the free tier) | 0 | **0** | 8 |
+| **Bad answers per 1,000 requests** | 571 | **36** | 232 |
+| 16 simultaneous asks at a stale entry: stale answers / model calls | 16 / 0 | **0 / 5** | 0 / 8 (+8 refused) |
+| Answers reused although the request carried live tool data (of 4) | 2 | **0** | 2 |
+| Cache hit rate | 78.6% | 37.5% | 28.6% |
+| Model calls | 12 | 37 | 32 |
+| Latency p50 | 4.4 ms | 471 ms | 475 ms |
+
+What the real model changed: the stale and wrong-match counts came out the same as with the mock (the cache behaves the same because the embedding is the same). The companion cost more here, 37 calls instead of 32, because its gate now uses a second model call as a judge (real answers never match word for word, so exact comparison was turned off) and because the burst took 5 calls rather than 1 (with a real call lasting 0.5-1 s, not every concurrent request joined the shared refresh). Background audits were turned off to save calls, so the two-factor wrong match was not flagged afterwards this time. Non-cached answers now take about half a second, which is the model, not the companion; cache hits still take about 4 ms in every setup. The short-TTL arm's 8 errors are the free tier refusing 16 simultaneous misses (tokens-per-minute limit); on a paid tier it would have had 5 bad answers, not 13. One run, so read these as what happened once.
+
 ## Run it
 
 You need Docker Desktop (or Docker Engine with Compose v2) and Git. No API keys. The default stack uses a local stand-in model so anyone can run it.
@@ -125,7 +143,7 @@ Proven live on 10 Nov 2026: the price question was cached while the page said $4
 
 **Bifrost** is the thing we extend, not just a thing we call. The pgvector store plugs into Bifrost's `VectorStore` interface, registers through its config schema and Helm chart, and is covered by Bifrost's own shared contract tests plus our own. The companion sits in front of a *stock* Bifrost build and drives it through its public API: `x-bf-cache-key` for tenant buckets, `x-bf-cache-no-store` to keep things out, `DELETE /api/cache/clear/{id}` to evict a stale entry. Nothing in the companion depends on a private hook. The connection also runs the other way: in MCP mode (`docker-compose.mcp.yml`) the companion serves a small MCP server and Bifrost registers it as an MCP client, so Bifrost's MCP gateway exposes `freshness-check_freshness`, `freshness-explain_request`, `freshness-list_watched_sources` and `freshness-report_change` to any agent or client that uses it. Off by default; see [DOCKER.md](DOCKER.md#mcp-mode).
 
-**Tavily** is the companion's evidence. When a cached answer is about a watched fact (a price, a policy, an opening time), the companion asks Tavily Extract for the current page, pulls the value with a configured pattern, and compares it with the value in the cached answer. Only the source URL ever goes to Tavily; prompts, answers and credentials never leave the box. If Tavily is unreachable the response says so in a header (`unable_to_verify`) instead of pretending.
+**Tavily** is the companion's evidence. When a cached answer is about a watched fact (a price, a policy, an opening time), the companion asks Tavily Extract for the current page, pulls the value with a configured pattern, and compares it with the value in the cached answer. With discovery off (the default), only configured source URLs go to Tavily. With `-discover`, Tavily Search also receives a short query built from the policy's template and product names found in the question, never the question or the answer. Prompts, answers and credentials never go to Tavily. If Tavily is unreachable the response says so in a header (`unable_to_verify`) instead of pretending.
 
 ## How the pgvector backend works
 
@@ -159,15 +177,16 @@ Think of it as the till receipt stapled to the parcel: it does not change what i
 2. **Verified answers.** A small human-approved table, matched on exact wording, served first and still checked against the live source when the topic is watched.
 3. **Gate.** A semantic hit in the risky band just above the threshold (below 0.90 in the demo) is re-asked *before* it is served; a wrong one is replaced and the right answer cached for that exact question.
 4. **Freshness.** For a time-sensitive hit, read the live source, compare, and on a mismatch clear and re-ask. Outcomes: `confirmed`, `stale`, `unable_to_verify`, `unknown`.
+   - *Opt-in discovery (`-discover`):* when no watched fact covers the hit, Tavily Search looks for a source page with a short query from the policy, and the answer is checked against that page the same way. If it cannot settle the answer, the companion does exactly what it would have done without discovery.
 5. **Wrong from the start.** A fresh answer whose number disagrees with the verified source is reported, removed or re-asked.
 6. **Change notices.** `POST /freshness/changes` marks entries for re-check on their next hit.
 7. **Stampede.** Everyone waiting on the same refresh shares one model call.
 8. **Audit.** A sample of reuses is re-asked afterwards and turned into a wrong-match rate and a suggested threshold.
 9. **Explain.** `GET /freshness/explain/{id}` says in plain words how a request was answered, without the prompt or answer text, and every checked answer carries a receipt header.
 
-Opt-in extras (off by default): **smart checking** re-checks quiet pages less often, the **background watcher** re-checks active pages ahead of time and deletes answers that state an old value, and **MCP mode** offers the checks as tools through Bifrost's MCP gateway. See the sections above.
+Opt-in extras (off by default): **smart checking** re-checks quiet pages less often, the **background watcher** re-checks active pages ahead of time and deletes answers that state an old value, **MCP mode** offers the checks as tools through Bifrost's MCP gateway, and **discovery** lets Tavily Search find the source page when no watched fact covers a question. See the sections above and below.
 
-Every response carries `x-freshness-*` headers with the outcome. Details, flags and the test list are in [freshness-companion/README.md](freshness-companion/README.md). `go test ./...` there runs 265 tests counting subtests (10 Nov 2026).
+Every response carries `x-freshness-*` headers with the outcome. Details, flags and the test list are in [freshness-companion/README.md](freshness-companion/README.md). `go test ./...` there runs 319 tests counting subtests (10 Nov 2026).
 
 ## Checking less often, and checking before you ask
 
@@ -177,6 +196,19 @@ Two opt-in features, both **off by default** so every demo above is unchanged:
 - **Background watcher** (`WATCH=true`): re-checks pages people are actually asking about shortly before their evidence expires, so requests find fresh evidence and do not wait, and deletes the cached answers it knows state the old value once it sees a change. Capped per hour (`WATCH_MAX_PER_HOUR`). Two honest caveats from the same report: at low traffic it can fetch more than on-demand checking, and combined with smart checking it served **more** stale answers in the simulation than smart checking alone (quiet trace 11 vs 5, busy-sale trace 263 vs 180), because keeping evidence warm also keeps old evidence in use until the next scheduled look. It only reached zero stale answers when the page owner also sent change notices (`POST /freshness/changes`). Use it with `CHECK_ADAPTIVE=true`: on its own it re-checks every few seconds and uses up its hourly cap in minutes.
 
 `GET /freshness/watch` shows every source's interval, last values and next check. Details in [freshness-companion/README.md](freshness-companion/README.md#smart-checking-and-the-background-watcher), the docker opt-in in [DOCKER.md](DOCKER.md#opt-in-smart-checking-and-the-background-watcher).
+
+## Tavily finds the source (opt-in)
+
+A watched fact needs someone to write down the page URL and a pattern for every price. Discovery (`-discover`, **off by default**) covers the questions nobody wrote a fact for. For a time-sensitive cache hit with no watched fact, in a category whose policy has a `discover` block:
+
+1. The companion builds a short query from the policy's template and the product names it finds in the question (only names on the policy's allowlist), for example `Acme Pro plan price per month`. A query that looks sensitive (email, card, token...) or is longer than 80 characters is not sent.
+2. One Tavily Search call (1 credit, capped per hour) returns a few results. The companion keeps only https pages on the allowed domains, not on forums or marketplaces, with a good enough score and the product name in the title or snippet, and prefers the product's own site.
+3. Tavily Extract reads that page (as for a watched fact) and the companion looks for exactly one price right after the product name. The cached answer must state exactly one price too. Different: `stale`, and the answer is refreshed. Same price: `confirmed`, but that serves the answer only when the policy limits search to named sites (`include_domains`); for a page from the open web the companion does what it would have done without discovery, so an open-web page can trigger a refresh but never lets an old answer through. Anything unclear (a pricing table with several prices, no price, a fetch error): the companion does exactly what it would have done without discovery.
+4. The page is remembered for 24 hours (and "found nothing" for an hour), so a popular question costs one search, not one per ask.
+
+Think of it as asking a librarian for the right book, once, and then reading the price yourself every time. A page found this way may trigger a refresh, but its text never goes into a prompt: `on_contradicted: correct` is treated as `uncache` for it. Every such answer says so: `x-freshness-discovery`, `x-freshness-discovery-query` (the exact text sent to Tavily), `x-freshness-found-by`, and `discovered=true; found_by=...; query="..."` in the receipt. `GET /freshness/discovered` lists what was learned.
+
+Live check (10 Nov 2026, 5 Tavily credits counted conservatively, [`eval-harness/results/discover-live-20261110.md`](eval-harness/results/discover-live-20261110.md)): Tavily Search did **not** find the GitHub Pages demo page (0 results for the allowed domain), so the policy's fallback `candidate_urls` entry was read instead and labelled `found_by=candidate_url`; with it, $49 was confirmed and a $59 answer was caught as stale and its entry deleted, with zero extra credits on repeat asks. A real-world question (Raspberry Pi 5, raspberrypi.com) found a news page, Tavily could not extract it, and the answer was left unverified rather than confirmed. Discovery is a convenience with a safety net, not a guarantee of finding the right page. Setup: [DOCKER.md](DOCKER.md#opt-in-tavily-finds-the-source).
 
 ## Proof it works end to end
 
@@ -206,11 +238,12 @@ DOCKER.md             the walkthrough judges should follow
 - The companion keeps its state in one process. Two copies would not share it. The store is benchmarked (10,000 rows, 8 clients); the whole gateway plus companion is not load-tested.
 - Smart checking trades freshness for fetches, and the simulator says by how much: with a 5-minute cap, a page that changes every 10 minutes had 24% of its answers served stale (all within the cap). The simulator uses a fake page and Poisson traffic, not real users; the saving on real traffic depends on how often the page actually changes.
 - Latency measured from a Windows host through Docker Desktop is dominated by Docker's port proxy (60 ms vs about 8 ms inside the network). Representative numbers in `eval-harness/` come from a Linux client on the Docker network.
+- Discovery (opt-in) sends a short query to Tavily Search. It never contains the question or the answer, but it does reveal the topic (the product name), and the opt-in `proper_nouns` mode can send a person's name. In the live check search did not find the demo page at all; it is not measured for accuracy and only checks cached hits, not new answers. Categories, query templates and product names still have to be configured; only the per-fact URL and pattern go away.
 - We measured a keyword-plus-meaning hybrid search and chose not to build it; the mock embeddings flatter it and it would cost privacy. See `eval-harness/results/hybridspike-recommendation.md`.
 
 ## Technologies
 
-Go 1.27 · PostgreSQL 16 · pgvector 0.8 (`pgx` driver, binary protocol) · Bifrost (Go AI gateway) · Tavily Extract API · Docker Compose · plain HTML/JS for the dashboard and demo page · PowerShell and Bash for the scripts.
+Go 1.27 · PostgreSQL 16 · pgvector 0.8 (`pgx` driver, binary protocol) · Bifrost (Go AI gateway) · Tavily Extract and Search APIs · Docker Compose · plain HTML/JS for the dashboard and demo page · PowerShell and Bash for the scripts.
 
 ## Team and tools
 

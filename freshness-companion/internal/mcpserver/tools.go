@@ -10,6 +10,7 @@ import (
 
 	"freshness-companion/internal/changes"
 	"freshness-companion/internal/decision"
+	"freshness-companion/internal/discover"
 	"freshness-companion/internal/extract"
 	"freshness-companion/internal/policy"
 )
@@ -106,6 +107,16 @@ type factCheck struct {
 	Provider       string     `json:"provider,omitempty"`
 	CheckedAt      *time.Time `json:"checked_at,omitempty"`
 	EvidenceCached bool       `json:"evidence_cached,omitempty"`
+	// Discovery: set when no watched fact covered the question and the page
+	// was found by discovery. Query is the exact text sent to Tavily Search.
+	Discovered bool    `json:"discovered,omitempty"`
+	FoundBy    string  `json:"found_by,omitempty"`
+	Query      string  `json:"query,omitempty"`
+	Rank       int     `json:"rank,omitempty"`
+	Score      float64 `json:"score,omitempty"`
+
+	current     extract.Value // the page's value, for the min_sources check
+	haveCurrent bool
 }
 
 // Per-fact verdicts, next to the decision package's outcomes.
@@ -123,9 +134,12 @@ type checkResult struct {
 	Category      string      `json:"category,omitempty"`
 	MaxAge        string      `json:"max_age,omitempty"`
 	Facts         []factCheck `json:"facts"`
-	Outcome       string      `json:"outcome"`
-	Action        string      `json:"action"`
-	Summary       string      `json:"summary"`
+	// Discovery is the discovery result when it was tried (no_source,
+	// over_cap, ...; "found" when a page was found and checked).
+	Discovery string `json:"discovery,omitempty"`
+	Outcome   string `json:"outcome"`
+	Action    string `json:"action"`
+	Summary   string `json:"summary"`
 }
 
 func (s *Server) checkFreshness(r *http.Request, args map[string]any) toolResult {
@@ -167,20 +181,56 @@ func (s *Server) checkFreshness(r *http.Request, args map[string]any) toolResult
 	ctx, cancel := context.WithTimeout(r.Context(), checkTimeout)
 	defer cancel()
 	hasAnswer := strings.TrimSpace(answer) != ""
-	worst := decision.Confirmed
-	for _, f := range eff.Facts {
+	facts := eff.Facts
+	var found discover.Found
+	discoveryNote := ""
+	if len(facts) == 0 && s.deps.Discover != nil && eff.Discover.Active() {
+		// Like the proxy: no answer, or an answer that states no single
+		// value, leaves nothing to check, so nothing is searched.
+		if !hasAnswer {
+			out.Discovery = "skipped"
+			discoveryNote = " Discovery was not tried: no answer was given to check, so nothing was searched."
+		} else if _, err := extract.Extract(eff.Discover.ValueRegexp(), answer, eff.Discover.Mode()); err != nil {
+			out.Discovery = string(decision.UnableToVerify)
+			discoveryNote = " Discovery was not tried: the value pattern " + describe(err) + " in the answer, so nothing was searched."
+		} else if fs, fd, err := s.discoverFacts(ctx, eff, question); err != nil {
+			out.Discovery = discover.Reason(err)
+			discoveryNote = " Discovery did not find a page to check: " + oneLine(err.Error(), 300) + "."
+		} else {
+			out.Discovery, facts, found = "found", fs, fd
+		}
+	}
+	page := 0
+	for _, f := range facts {
 		fc := s.checkFact(ctx, f, answer, hasAnswer)
+		if f.Discovered {
+			fc.Discovered, fc.FoundBy, fc.Query = true, found.FoundBy, found.Query
+			fc.Rank, fc.Score = found.Sources[page].Rank, found.Sources[page].Score
+			page++
+		}
 		out.Facts = append(out.Facts, fc)
+	}
+	if page > 0 {
+		s.settleDiscovered(eff, found, out.Facts)
+	}
+	worst := decision.Confirmed
+	for _, fc := range out.Facts {
 		if o := decision.Outcome(fc.Verdict); hasAnswer && severity(o) > severity(worst) {
 			worst = o
 		}
 	}
 
 	switch {
-	case len(eff.Facts) == 0:
+	case len(facts) == 0, worst == decision.Confirmed && page > 0 && !eff.Discover.Trusted():
+		// An open-web page (no include_domains) that agrees is not a trusted
+		// source: the verdict stays the one without discovery, plus a note.
+		if len(facts) > 0 {
+			discoveryNote = " Discovery found a page on the open web that agrees (" + agreements(out.Facts) +
+				"), but the category has no include_domains, so that page is an unverified source and does not confirm the answer."
+		}
 		out.Outcome, out.Action = string(decision.Unknown), ActionNone
 		out.Summary = fmt.Sprintf("The question is time-sensitive (category %s), but no watched fact covers it, so the source cannot be checked. An answer in this category may be reused for %s after it was written; after that it should be refreshed.",
-			joinCats(eff.Categories), out.MaxAge)
+			joinCats(eff.Categories), out.MaxAge) + discoveryNote
 	case !hasAnswer:
 		out.Outcome, out.Action = OutcomeNotCmp, ActionNone
 		out.Summary = fmt.Sprintf("The question is time-sensitive (category %s, answers may be reused for %s). No answer was given to compare. %s",
@@ -202,6 +252,59 @@ func (s *Server) checkFreshness(r *http.Request, args map[string]any) toolResult
 		out.Summary = "The answer is current: " + agreements(out.Facts) + " It may be reused."
 	}
 	return textResult(out.Summary, out)
+}
+
+// discoverFacts asks discovery for pages and builds one fact per page (two
+// with min_sources 2). Only the derived query is sent to Tavily Search.
+func (s *Server) discoverFacts(ctx context.Context, eff policy.Effective, question string) ([]*policy.Fact, discover.Found, error) {
+	d := eff.Discover
+	found, err := s.deps.Discover.Find(ctx, eff.DiscoverCategory, d, question)
+	if err != nil {
+		return nil, found, err
+	}
+	if len(found.Sources) == 0 {
+		return nil, found, discover.ErrNoSource
+	}
+	src, err := discover.EntityPattern(found.Entities, d.ValuePatternSource(), d.Near())
+	if err != nil {
+		return nil, found, err
+	}
+	facts := make([]*policy.Fact, len(found.Sources))
+	for i, page := range found.Sources {
+		facts[i] = policy.NewDiscoveredFact(decision.DiscoveredFactPrefix+found.Query, eff.DiscoverCategory, page.URL, src, d.ValueRegexp(), d.Mode())
+	}
+	return facts, found, nil
+}
+
+// settleDiscovered applies the proxy's min_sources rule to the discovered
+// pages: they must all agree, or every one of them is unable_to_verify. It
+// then records the outcome once for the learned source.
+func (s *Server) settleDiscovered(eff policy.Effective, found discover.Found, facts []factCheck) {
+	var idx []int
+	var pages []decision.PageCheck
+	for i := range facts {
+		if !facts[i].Discovered {
+			continue
+		}
+		fc := &facts[i]
+		idx = append(idx, i)
+		reason := fc.CurrentError
+		if reason == "" {
+			reason = fmt.Sprintf("%s reads %s (%s)", fc.SourceURL, fc.CurrentValue, fc.Verdict)
+		}
+		pages = append(pages, decision.PageCheck{Outcome: decision.Outcome(fc.Verdict), Current: fc.current, HaveCurrent: fc.haveCurrent, Reason: reason})
+	}
+	if why, ok := decision.PagesAgree(pages, eff.Discover.Mode()); !ok {
+		for n, i := range idx {
+			facts[i].Verdict = string(decision.UnableToVerify)
+			facts[i].CurrentError = why
+			if n > 0 {
+				facts[i].CurrentError = "the discovered pages disagree (see " + facts[idx[0]].Name + " above)"
+			}
+		}
+	}
+	first := facts[idx[0]]
+	s.deps.Discover.Record(eff.DiscoverCategory, found.Query, first.Verdict, first.CurrentValue)
 }
 
 func (s *Server) checkFact(ctx context.Context, f *policy.Fact, answer string, hasAnswer bool) factCheck {
@@ -239,7 +342,7 @@ func (s *Server) checkFact(ctx context.Context, f *policy.Fact, answer string, h
 		fc.CurrentError = "the source page states no readable value (source_pattern " + describe(err) + ")"
 		return fc
 	}
-	fc.CurrentValue = current.Raw
+	fc.CurrentValue, fc.current, fc.haveCurrent = current.Raw, current, true
 	switch {
 	case !hasAnswer:
 		fc.Verdict = VerdictNoAnswer
@@ -374,10 +477,13 @@ type sourcesResult struct {
 	Categories       []watchedCategory `json:"categories"`
 	Facts            []watchedFact     `json:"facts"`
 	ChangeNotices    []changes.Notice  `json:"change_notices"`
+	// LearnedSources are the pages discovery found (-discover); empty when
+	// discovery is off.
+	LearnedSources []discover.Learned `json:"learned_sources"`
 }
 
 func (s *Server) listWatchedSources(_ *http.Request, _ map[string]any) toolResult {
-	out := sourcesResult{Categories: []watchedCategory{}, Facts: []watchedFact{}, ChangeNotices: []changes.Notice{}}
+	out := sourcesResult{Categories: []watchedCategory{}, Facts: []watchedFact{}, ChangeNotices: []changes.Notice{}, LearnedSources: []discover.Learned{}}
 	if s.deps.Evidence != nil {
 		out.EvidenceProvider = s.deps.Evidence.ProviderName()
 	}
@@ -400,6 +506,21 @@ func (s *Server) listWatchedSources(_ *http.Request, _ map[string]any) toolResul
 	text := fmt.Sprintf("%d watched fact(s) across %d categor%s.", len(out.Facts), len(out.Categories), plural(len(out.Categories), "y", "ies"))
 	if len(lines) > 0 {
 		text += "\n" + strings.Join(lines, "\n")
+	}
+	if s.deps.Discover != nil {
+		out.LearnedSources = s.deps.Discover.Sources()
+		var learned []string
+		for _, l := range out.LearnedSources {
+			if l.NoSource {
+				learned = append(learned, fmt.Sprintf("- %q (category %s): no usable page (%s)", l.Query, l.Category, l.Reason))
+			} else {
+				learned = append(learned, fmt.Sprintf("- %q (category %s): %s (found by %s, used %d time(s))", l.Query, l.Category, l.URL, l.FoundBy, l.Uses))
+			}
+		}
+		text += fmt.Sprintf("\n%d learned source(s) from discovery.", len(learned))
+		if len(learned) > 0 {
+			text += "\n" + strings.Join(learned, "\n")
+		}
 	}
 	switch n := len(out.ChangeNotices); {
 	case n == 0:

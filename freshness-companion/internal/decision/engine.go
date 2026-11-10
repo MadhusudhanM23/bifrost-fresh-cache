@@ -90,6 +90,10 @@ type EvidenceSource interface {
 // Engine makes decisions. It holds no per-request state.
 type Engine struct {
 	Evidence EvidenceSource
+	// Discover, when set, finds a source page with Tavily Search for a hit
+	// that no watched fact covers (see discover.go). nil keeps the behaviour
+	// without discovery exactly.
+	Discover Discoverer
 }
 
 // Input describes one time-sensitive cache hit.
@@ -105,6 +109,9 @@ type Input struct {
 	// watched fact the evidence decides as usual (the notice already dropped
 	// the cached evidence); without one the entry is treated as stale.
 	Change *ChangeNotice
+	// Question is the last user message. It is used only to derive a
+	// discovery query (allowlisted names) and is never stored or sent.
+	Question string
 }
 
 // Decision is the verdict plus everything the headers and the log show.
@@ -123,9 +130,22 @@ type Decision struct {
 	AgeKnown       bool
 	Age            time.Duration
 
-	fact        *policy.Fact
-	current     extract.Value
-	haveCurrent bool
+	// Discovery. Discovered is true when a page Tavily Search found (or a
+	// candidate URL) decided the outcome. DiscoveryResult is set whenever
+	// discovery was tried: confirmed, stale, unable_to_verify, no_source,
+	// over_cap, no_entities, sensitive, query_too_long, search_failed or
+	// skipped. The query is the only text that was sent to Tavily Search.
+	Discovered      bool
+	DiscoveryResult string
+	DiscoveryQuery  string
+	DiscoveryRank   int
+	DiscoveryScore  float64
+	FoundBy         string
+
+	fact          *policy.Fact
+	current       extract.Value
+	haveCurrent   bool
+	discoveryNote string
 }
 
 // Decide evaluates one cache hit. It never panics on bad input and never
@@ -147,6 +167,13 @@ func (e *Engine) Decide(ctx context.Context, in Input) Decision {
 	}
 
 	if len(p.Facts) == 0 {
+		var note string
+		if in.Change == nil && e.Discover != nil && p.Discover.Active() {
+			if e.tryDiscovery(ctx, in, p, &d, age) {
+				return d
+			}
+			note = d.discoveryNote
+		}
 		switch {
 		case in.Change != nil:
 			d.Outcome, d.Action = Stale, Refresh
@@ -171,6 +198,9 @@ func (e *Engine) Decide(ctx context.Context, in Input) Decision {
 		default:
 			d.Outcome, d.Action = Unknown, ServeWithWarning
 			d.Reason = "entry age unknown (cache id never seen on a miss) and no watched fact applies; served with a warning"
+		}
+		if note != "" {
+			d.Reason += "; " + note
 		}
 		return d
 	}

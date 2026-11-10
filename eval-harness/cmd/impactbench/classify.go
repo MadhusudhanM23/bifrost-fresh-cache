@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -15,7 +16,67 @@ const (
 	VError      = "error"       // not HTTP 200 (or no usable answer)
 	VToolReuse  = "tool_reused" // tool request answered from the cache
 	VToolFresh  = "tool_fresh"  // tool request answered by the model
+	// VUnjudged: -truth context only. A semantic cache hit whose answer text the
+	// client never saw being written (for example an entry the companion's
+	// check stored), so it cannot say which question it was written for.
+	VUnjudged = "unjudged"
 )
+
+// Truth modes (-truth).
+const (
+	TruthMock    = "mock"    // a fresh, uncached call to the mock; exact text compare
+	TruthContext = "context" // real model: price from the request context, FAQ by origin
+)
+
+// ClassifyContext judges one served answer without a ground-truth call, for a
+// real model whose wording changes from call to call:
+//
+//   - a price question is right when the first dollar amount in the answer is
+//     the price the request's own context states, stale when it is another
+//     amount, and a wrong match when it states no amount;
+//   - any other answer that did not come from the cache is a fresh answer to
+//     this request, so it is right;
+//   - a cached FAQ or ordinary answer is right when it was first written for a
+//     question that means the same (MeaningGroup), and a wrong match when it was
+//     written for a different one, such as the other half of a look-alike pair.
+//     origin is the question the answer text was first seen for in this arm; if
+//     the text was never seen, a direct (exact) hit is right and a semantic hit
+//     is unjudged.
+func ClassifyContext(it Item, status int, served string, fromCache bool, hitType, origin string, originKnown bool) string {
+	if status != 200 || strings.TrimSpace(served) == "" {
+		return VError
+	}
+	if it.Kind == KindTool {
+		if fromCache {
+			return VToolReuse
+		}
+		return VToolFresh
+	}
+	if it.Kind == KindPrice {
+		sp, ok := ExtractPrice(served)
+		if !ok {
+			return VWrongMatch
+		}
+		got, err1 := strconv.ParseFloat(sp, 64)
+		if err1 != nil || got != float64(it.Price) {
+			return VStale
+		}
+		return VCorrect
+	}
+	if !fromCache {
+		return VCorrect
+	}
+	if originKnown {
+		if MeaningGroup(origin) == MeaningGroup(it.Question) {
+			return VCorrect
+		}
+		return VWrongMatch
+	}
+	if strings.EqualFold(hitType, "direct") {
+		return VCorrect
+	}
+	return VUnjudged
+}
 
 var priceInText = regexp.MustCompile(`\$\s*([0-9][0-9,]*(?:\.[0-9]+)?)`)
 

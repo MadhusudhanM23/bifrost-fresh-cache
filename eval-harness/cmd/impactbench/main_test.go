@@ -523,3 +523,156 @@ func TestRerenderFromJSONAndLookAlikeNotes(t *testing.T) {
 		t.Fatal("containerMap")
 	}
 }
+
+// ---- real-model options (-truth context, -calls-from bifrost-metrics, body options) ----
+
+func TestBodyWithOptions(t *testing.T) {
+	tool := Item{Kind: KindTool, Question: "Status?", Tool: `{"s":1}`}
+	if !bytes.Equal(tool.Body("m"), tool.BodyWith("m", BodyOptions{})) {
+		t.Fatal("the zero options must give the mock run's body")
+	}
+	if strings.Contains(string(tool.Body("m")), "max_tokens") || strings.Contains(string(tool.Body("m")), "tool_calls") {
+		t.Fatalf("mock body changed: %s", tool.Body("m"))
+	}
+	var got struct {
+		MaxTokens int `json:"max_tokens"`
+		Messages  []struct {
+			Role       string
+			ToolCallID string                `json:"tool_call_id"`
+			ToolCalls  []struct{ ID string } `json:"tool_calls"`
+		}
+	}
+	if err := json.Unmarshal(tool.BodyWith("m", BodyOptions{MaxTokens: 800, ToolCallMessage: true}), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.MaxTokens != 800 || len(got.Messages) != 3 || got.Messages[1].Role != "assistant" || len(got.Messages[1].ToolCalls) != 1 ||
+		got.Messages[1].ToolCalls[0].ID != got.Messages[2].ToolCallID || got.Messages[2].Role != "tool" {
+		t.Fatalf("real-model tool body %+v", got)
+	}
+}
+
+func TestMeaningGroup(t *testing.T) {
+	pw := lookAlikes[0]
+	if MeaningGroup(pw.A) != MeaningGroup(pw.AParaphrase) || MeaningGroup(pw.A) == MeaningGroup(pw.B) {
+		t.Fatal("a FAQ question and its rewording share a group; the look-alike does not")
+	}
+	tf := lookAlikes[2]
+	if MeaningGroup(tf.A) == MeaningGroup(tf.B) || MeaningGroup("") == MeaningGroup(tf.A) {
+		t.Fatal("two-factor on and off are different questions")
+	}
+	if MeaningGroup(benignWarm[0]) != MeaningGroup(benignAfter[1]) || MeaningGroup(benignWarm[1]) != MeaningGroup(benignAfter[2]) ||
+		MeaningGroup(benignWarm[0]) == MeaningGroup(benignWarm[1]) {
+		t.Fatal("benign groups")
+	}
+	if MeaningGroup("something else") == MeaningGroup("another thing") {
+		t.Fatal("unknown questions are their own group")
+	}
+}
+
+func TestClassifyContext(t *testing.T) {
+	price := Item{Kind: KindPrice, Price: 59}
+	pw := lookAlikes[0]
+	faqA := Item{Kind: KindFAQ, Question: pw.A}
+	cases := []struct {
+		name      string
+		it        Item
+		status    int
+		served    string
+		fromCache bool
+		hitType   string
+		origin    string
+		known     bool
+		want      string
+	}{
+		{"price right, any wording", price, 200, "It's **$59 per month**.", true, "semantic", "", false, VCorrect},
+		{"price with cents", price, 200, "The plan costs $59.00 a month.", false, "", "", false, VCorrect},
+		{"old price", price, 200, "The Acme Pro plan costs $49 per month.", true, "direct", "", false, VStale},
+		{"price question, no price", price, 200, "To reset your password, open Settings.", true, "semantic", "", false, VWrongMatch},
+		{"error", price, 429, "", false, "", "", false, VError},
+		{"empty answer", faqA, 200, "  ", false, "", "", false, VError},
+		{"fresh FAQ answer", faqA, 200, "anything", false, "", "", false, VCorrect},
+		{"cached from the same question", faqA, 200, "x", true, "semantic", pw.A, true, VCorrect},
+		{"cached from a rewording", faqA, 200, "x", true, "semantic", pw.AParaphrase, true, VCorrect},
+		{"cached from the look-alike", faqA, 200, "x", true, "semantic", pw.B, true, VWrongMatch},
+		{"unknown origin, direct hit", faqA, 200, "x", true, "direct", "", false, VCorrect},
+		{"unknown origin, semantic hit", faqA, 200, "x", true, "semantic", "", false, VUnjudged},
+		{"tool from cache", Item{Kind: KindTool}, 200, "x", true, "semantic", "", false, VToolReuse},
+	}
+	for _, c := range cases {
+		if got := ClassifyContext(c.it, c.status, c.served, c.fromCache, c.hitType, c.origin, c.known); got != c.want {
+			t.Errorf("%s: got %s, want %s", c.name, got, c.want)
+		}
+	}
+	if IsBad(VUnjudged) {
+		t.Fatal("an unjudged answer is not counted as bad")
+	}
+}
+
+func TestProviderChatCalls(t *testing.T) {
+	metrics := `# HELP bifrost_upstream_requests_total x
+# TYPE bifrost_upstream_requests_total counter
+bifrost_upstream_requests_total{method="chat_completion",model="openai/gpt-oss-20b",provider="groq",selected_key_id="k1",selected_key_name="groq-from-env",team_id=""} 7
+bifrost_upstream_requests_total{method="chat_completion",model="openai/gpt-oss-20b",provider="groq",selected_key_id="",selected_key_name="",team_id=""} 30
+bifrost_upstream_requests_total{method="list_models",model="",provider="groq",selected_key_id="",selected_key_name="groq-from-env"} 1
+bifrost_upstream_requests_total{method="chat_completion",model="gpt-4o-mini",provider="openai",selected_key_id="k2",selected_key_name="mock-openai-local"} 2
+bifrost_success_requests_total{method="chat_completion",provider="groq",selected_key_name="groq-from-env"} 7
+`
+	if got := ProviderChatCalls(metrics); got != 9 {
+		t.Fatalf("got %d, want 9 (7 groq + 2 mock chat calls with a key; cache hits and model listing left out)", got)
+	}
+}
+
+func TestRunArmContextTruthNeedsNoGroundTruthCallsAndCountsFromMetrics(t *testing.T) {
+	f := &fakeStack{cache: map[string]string{}}
+	r, arm, _ := newTestRunner(t, f)
+	metrics := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		fmt.Fprintf(w, "bifrost_upstream_requests_total{method=\"chat_completion\",provider=\"groq\",selected_key_name=\"g\"} %d\n", f.chat)
+	}))
+	t.Cleanup(metrics.Close)
+	r.Truth, r.MetricsURL, r.BodyOpt = TruthContext, metrics.URL, BodyOptions{MaxTokens: 800, ToolCallMessage: true}
+	items := BuildWorkload(1, r.Cfg)
+	ctx := context.Background()
+	truth, err := r.GroundTruth(ctx, items)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.chat != 0 {
+		t.Fatalf("context truth must not call the model, made %d calls", f.chat)
+	}
+	ar, err := r.RunArm(ctx, arm, "key-ctx", items, truth, CostModel{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := ar.Metrics
+	if int(m["model_calls"]) != f.chat || m["model_calls"]+m["cache_hits"] != m["requests"] {
+		t.Fatalf("model_calls %v from metrics, fake model answered %d, hits %v of %v", m["model_calls"], f.chat, m["cache_hits"], m["requests"])
+	}
+	// The fake caches by question and ignores the system message: repeated price
+	// questions get the warm price (stale), the burst is all stale, and cached
+	// FAQ answers were written for the same question (right).
+	if m["stale"] == 0 || m["burst_stale"] != 8 || m["wrong_match"] != 0 || m["errors"] != 0 || m["unjudged"] != 0 {
+		t.Fatalf("unexpected verdicts: %+v", m)
+	}
+}
+
+func TestMarkdownRealModelWording(t *testing.T) {
+	rep := &Report{Tool: "impactbench", Banner: "REAL", Arms: []Arm{{Name: "plain"}},
+		Settings: Settings{Truth: TruthContext, Model: "groq/x", MaxTokens: 800, CallsFrom: "bifrost-metrics", ComposePath: "over.yml"},
+		Stack:    Stack{SemanticCache: map[string]any{"threshold": 0.8}},
+		Workload: WorkloadInfo{PhaseCounts: map[string]int{}}, Median: map[string]Metrics{"plain": {"unjudged": 1}}, Runs: []RunRecord{}}
+	rep.Limits = limits(rep)
+	md := renderMarkdown(rep)
+	for _, want := range []string{"real model (`groq/x`)", "Cached answers not judged", "from over.yml", "max_tokens 800", "embeddings are still the local mock"} {
+		if !strings.Contains(md, want) {
+			t.Errorf("real-model markdown lacks %q", want)
+		}
+	}
+	mock := &Report{Tool: "impactbench", Banner: "MOCK", Arms: []Arm{{Name: "plain"}}, Stack: Stack{SemanticCache: map[string]any{"threshold": 0.8}},
+		Workload: WorkloadInfo{PhaseCounts: map[string]int{}}, Median: map[string]Metrics{"plain": {}}, Runs: []RunRecord{}}
+	mock.Limits = limits(mock)
+	if md := renderMarkdown(mock); strings.Contains(md, "Cached answers not judged") || !strings.Contains(md, "fresh, uncached call to the mock model") {
+		t.Error("mock-run markdown must keep its wording")
+	}
+}

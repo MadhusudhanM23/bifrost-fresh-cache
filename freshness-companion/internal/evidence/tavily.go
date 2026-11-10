@@ -399,3 +399,87 @@ func (t *TavilySearch) Fetch(ctx context.Context, sourceURL string) (Evidence, e
 	}
 	return Evidence{}, fmt.Errorf("tavily search: source URL not among %d results", len(resp.Results))
 }
+
+// SearchRequest is what discovery asks Tavily Search. Query is the short
+// query built from the policy's template and allowlisted names; nothing else
+// about the request (no prompt, no answer) is ever part of it.
+type SearchRequest struct {
+	Query          string
+	MaxResults     int // default 5
+	IncludeDomains []string
+	ExcludeDomains []string
+}
+
+// SearchResult is one Tavily Search result. Rank is its 1-based position.
+type SearchResult struct {
+	URL     string  `json:"url"`
+	Title   string  `json:"title"`
+	Content string  `json:"content"`
+	Score   float64 `json:"score"`
+	Rank    int     `json:"rank"`
+}
+
+// tavilyDiscoverRequest is the POST /search body discovery sends. Every field
+// is listed, so the exact body is fixed: no generated answer and no raw page
+// content are asked for (Extract reads the chosen page afterwards).
+type tavilyDiscoverRequest struct {
+	Query             string   `json:"query"`
+	SearchDepth       string   `json:"search_depth"`
+	MaxResults        int      `json:"max_results"`
+	IncludeDomains    []string `json:"include_domains"`
+	ExcludeDomains    []string `json:"exclude_domains"`
+	IncludeAnswer     bool     `json:"include_answer"`
+	IncludeRawContent bool     `json:"include_raw_content"`
+}
+
+// TavilySearcher runs the discovery search: one basic Tavily Search call
+// (1 credit) per query.
+type TavilySearcher struct {
+	c *tavilyClient
+}
+
+// NewTavilySearcher returns a searcher. It fails when the key is empty.
+func NewTavilySearcher(cfg TavilyConfig) (*TavilySearcher, error) {
+	c, err := newTavilyClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &TavilySearcher{c: c}, nil
+}
+
+// Search sends exactly {"query", "search_depth":"basic", "max_results",
+// "include_domains", "exclude_domains", "include_answer":false,
+// "include_raw_content":false} and returns the results in Tavily's order.
+func (t *TavilySearcher) Search(ctx context.Context, req SearchRequest) ([]SearchResult, error) {
+	if strings.TrimSpace(req.Query) == "" {
+		return nil, errors.New("tavily search: empty query")
+	}
+	n := req.MaxResults
+	if n <= 0 {
+		n = 5
+	}
+	include, exclude := req.IncludeDomains, req.ExcludeDomains
+	if include == nil {
+		include = []string{}
+	}
+	if exclude == nil {
+		exclude = []string{}
+	}
+	payload := tavilyDiscoverRequest{
+		Query: req.Query, SearchDepth: "basic", MaxResults: n,
+		IncludeDomains: include, ExcludeDomains: exclude,
+	}
+	var resp tavilySearchResponse
+	if err := t.c.post(ctx, "search", payload, &resp); err != nil {
+		return nil, err
+	}
+	out := make([]SearchResult, 0, len(resp.Results))
+	for i, r := range resp.Results {
+		score, _ := r.Score.Float64()
+		out = append(out, SearchResult{
+			URL: r.URL, Title: truncateText(r.Title, 300), Content: truncateText(r.Content, 2000),
+			Score: score, Rank: i + 1,
+		})
+	}
+	return out, nil
+}

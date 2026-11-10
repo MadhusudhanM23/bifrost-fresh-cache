@@ -35,6 +35,13 @@ const (
 	HeaderCorrection     = "X-Freshness-Correction"      // reported | uncached | corrected
 	HeaderCorrectedValue = "X-Freshness-Corrected-Value" // value in the answer asked for again with the verified value
 	HeaderCorrectedCheck = "X-Freshness-Corrected-Check" // matches_current | differs_from_current | no_value
+
+	// Discovery (-discover): set whenever discovery was tried.
+	HeaderDiscovery      = "X-Freshness-Discovery"       // confirmed | stale | unable_to_verify | no_source | over_cap | ...
+	HeaderDiscoveryQuery = "X-Freshness-Discovery-Query" // the exact query sent to Tavily Search
+	HeaderDiscoveryRank  = "X-Freshness-Discovery-Rank"  // position of the picked result (1 = first)
+	HeaderDiscoveryScore = "X-Freshness-Discovery-Score" // Tavily's relevance score of the picked result
+	HeaderFoundBy        = "X-Freshness-Found-By"        // tavily_search | candidate_url
 )
 
 // Executed actions, as reported in x-freshness-action and the decision log.
@@ -84,6 +91,15 @@ func annotate(h http.Header, d decision.Decision, action string) {
 	}
 	if action == ActionServedWithWarning {
 		set(HeaderWarning, warningText)
+	}
+	set(HeaderDiscovery, d.DiscoveryResult)
+	set(HeaderDiscoveryQuery, d.DiscoveryQuery)
+	set(HeaderFoundBy, d.FoundBy)
+	if d.DiscoveryRank > 0 {
+		set(HeaderDiscoveryRank, strconv.Itoa(d.DiscoveryRank))
+	}
+	if d.DiscoveryScore > 0 {
+		set(HeaderDiscoveryScore, strconv.FormatFloat(d.DiscoveryScore, 'f', 2, 64))
 	}
 }
 

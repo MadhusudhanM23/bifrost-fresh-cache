@@ -1,0 +1,102 @@
+{
+  "_comment": "Discovery demo (Tavily finds the source): same as policy.tavily.json but with NO watched facts, so a price question about Acme Pro or Acme Team is checked against a page Tavily Search finds. Mount it as /app/policy.json and run the companion with -discover (see DOCKER.md, 'Opt-in: Tavily finds the source'). Tavily Search receives only the query built from the price category's discover template; Tavily Extract receives only the chosen URL.",
+  "version": 1,
+  "guard": {
+    "_comment": "Requests kept out of the cache entirely. tool_results: a request carrying a tool's result is built from live data. side_effect_tools: a cached text answer would skip the action.",
+    "tool_results": "bypass",
+    "side_effect_tools": [
+      "create_*",
+      "send_*",
+      "delete_*",
+      "update_*"
+    ],
+    "sensitive": "bypass"
+  },
+  "defaults": {
+    "max_age": "15m",
+    "on_unverifiable": "bypass",
+    "on_unknown": "auto"
+  },
+  "categories": [
+    {
+      "name": "price",
+      "keywords": [
+        "price",
+        "prices",
+        "pricing",
+        "cost",
+        "costs",
+        "how much",
+        "fee",
+        "fees",
+        "per month",
+        "per year",
+        "subscription",
+        "plan"
+      ],
+      "max_age": "10m",
+      "on_unverifiable": "bypass",
+      "verify_new_answers": true,
+      "on_contradicted": "correct",
+      "discover": {
+        "_comment": "Tavily finds the source. Used only when the companion runs with -discover (DISCOVER=true) and no watched fact covers the question. Tavily Search receives only the query below, with {entities} replaced by the allowlisted names found in the question; the chosen page is then read with Tavily Extract. A discovered page may trigger a refresh but never on_contradicted correct (it is treated as uncache).",
+        "enabled": true,
+        "entities": [
+          "Acme Pro",
+          "Acme Team"
+        ],
+        "query": "{entities} plan price per month",
+        "include_domains": [
+          "madhusudhanm23.github.io"
+        ],
+        "require_domains": true,
+        "compare": "numeric",
+        "near_chars": 40,
+        "min_score": 0.5
+      }
+    },
+    {
+      "name": "policy",
+      "keywords": [
+        "policy",
+        "policies",
+        "refund*",
+        "return policy",
+        "terms",
+        "warranty",
+        "cancellation"
+      ],
+      "max_age": "24h",
+      "on_unverifiable": "serve_with_warning"
+    },
+    {
+      "name": "schedule",
+      "keywords": [
+        "schedule",
+        "opening hours",
+        "open today",
+        "deadline",
+        "timetable",
+        "release date",
+        "when does",
+        "when is"
+      ],
+      "max_age": "1h",
+      "on_unverifiable": "serve_with_warning"
+    },
+    {
+      "name": "availability",
+      "keywords": [
+        "availability",
+        "available",
+        "in stock",
+        "out of stock",
+        "sold out",
+        "backorder"
+      ],
+      "max_age": "5m",
+      "on_unverifiable": "bypass"
+    }
+  ],
+  "facts": []
+}

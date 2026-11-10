@@ -61,6 +61,17 @@ type Record struct {
 	// Evicted lists the cache ids the background watcher deleted because
 	// they stated the old value of a fact that changed (AnswerOf "watcher").
 	Evicted []string `json:"evicted,omitempty"`
+	// Discovery (-discover). Discovered is true when a page Tavily Search
+	// found decided the outcome; Discovery is the discovery result whenever
+	// it was tried (confirmed, stale, unable_to_verify, no_source, over_cap,
+	// ...). DiscoveryQuery is the exact query sent to Tavily Search: built
+	// from the policy template and allowlisted names, never the prompt.
+	Discovered     bool    `json:"discovered,omitempty"`
+	Discovery      string  `json:"discovery,omitempty"`
+	DiscoveryQuery string  `json:"discovery_query,omitempty"`
+	DiscoveryRank  int     `json:"discovery_rank,omitempty"`
+	DiscoveryScore float64 `json:"discovery_score,omitempty"`
+	FoundBy        string  `json:"found_by,omitempty"`
 }
 
 // Log appends records to a JSON Lines file and a bounded in-memory ring.

@@ -195,9 +195,31 @@ func BuildWorkload(seed int64, cfg WorkloadConfig) []Item {
 }
 
 type chatMsg struct {
-	Role       string `json:"role"`
-	Content    string `json:"content"`
-	ToolCallID string `json:"tool_call_id,omitempty"`
+	Role       string     `json:"role"`
+	Content    string     `json:"content"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
+	ToolCalls  []toolCall `json:"tool_calls,omitempty"`
+}
+
+type toolCall struct {
+	ID       string `json:"id"`
+	Type     string `json:"type"`
+	Function struct {
+		Name      string `json:"name"`
+		Arguments string `json:"arguments"`
+	} `json:"function"`
+}
+
+// BodyOptions change the request body for a real model. The zero value gives
+// exactly the body the mock run used.
+type BodyOptions struct {
+	// MaxTokens is sent as max_tokens when > 0. Reasoning models (such as
+	// gpt-oss) need room to think or they return an empty answer.
+	MaxTokens int
+	// ToolCallMessage puts an assistant message with a tool_calls entry before
+	// the role "tool" message. Real providers reject a tool result that does
+	// not answer a tool call; the mock accepts it either way.
+	ToolCallMessage bool
 }
 
 // systemFor is the system message of a price request, in the Context: list
@@ -206,21 +228,57 @@ func systemFor(price int) string {
 	return fmt.Sprintf("You answer questions about Acme.\nContext:\n- The Acme Pro plan costs $%d per month.\nAnswer in one sentence and state the monthly price.", price)
 }
 
-// Body is the JSON request body of the item.
-func (it Item) Body(model string) []byte {
+// Body is the JSON request body of the item, as the mock run sent it.
+func (it Item) Body(model string) []byte { return it.BodyWith(model, BodyOptions{}) }
+
+// BodyWith is the JSON request body of the item with the given options.
+func (it Item) BodyWith(model string, opt BodyOptions) []byte {
 	msgs := []chatMsg{}
 	if it.Price > 0 {
 		msgs = append(msgs, chatMsg{Role: "system", Content: systemFor(it.Price)})
 	}
 	msgs = append(msgs, chatMsg{Role: "user", Content: it.Question})
 	if it.Tool != "" {
+		if opt.ToolCallMessage {
+			tc := toolCall{ID: "call_1", Type: "function"}
+			tc.Function.Name, tc.Function.Arguments = "lookup", "{}"
+			msgs = append(msgs, chatMsg{Role: "assistant", ToolCalls: []toolCall{tc}})
+		}
 		msgs = append(msgs, chatMsg{Role: "tool", ToolCallID: "call_1", Content: it.Tool})
 	}
 	b, _ := json.Marshal(struct {
-		Model    string    `json:"model"`
-		Messages []chatMsg `json:"messages"`
-	}{model, msgs})
+		Model     string    `json:"model"`
+		Messages  []chatMsg `json:"messages"`
+		MaxTokens int       `json:"max_tokens,omitempty"`
+	}{model, msgs, opt.MaxTokens})
 	return b
+}
+
+// MeaningGroup names what a question asks: two questions in the same group
+// want the same answer (a FAQ question and its same-meaning rewording, or two
+// wordings of the same ordinary question). The two questions of a look-alike
+// pair are in different groups. Unknown questions are their own group.
+func MeaningGroup(q string) string {
+	for _, p := range lookAlikes {
+		if q == p.A || (p.AParaphrase != "" && q == p.AParaphrase) {
+			return p.Name + ":A"
+		}
+		if q == p.B {
+			return p.Name + ":B"
+		}
+	}
+	for _, w := range append(append([]string(nil), priceWarm...), priceNew...) {
+		if q == w {
+			return "price"
+		}
+	}
+	switch q {
+	case benignWarm[0], benignAfter[0], benignAfter[1]:
+		return "benign:boiling-water"
+	case benignWarm[1], benignAfter[2]:
+		return "benign:gold-symbol"
+	}
+	return "question:" + q
 }
 
 // PhaseCounts counts items per phase.

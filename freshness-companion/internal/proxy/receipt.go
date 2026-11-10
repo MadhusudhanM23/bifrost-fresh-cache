@@ -48,6 +48,16 @@ type Receipt struct {
 	CheckedAt         *time.Time `json:"checked_at,omitempty"`          // when the evidence was fetched
 	CheckedAgoSeconds *int64     `json:"checked_ago_seconds,omitempty"` // how long before this answer that was
 	Evidence          string     `json:"evidence,omitempty"`            // fetched | reused
+
+	// Discovery (-discover). Discovered is true when a page found by
+	// discovery decided the verdict; Discovery is the discovery result
+	// whenever it was tried. Query is the exact text sent to Tavily Search.
+	Discovered bool   `json:"discovered,omitempty"`
+	Discovery  string `json:"discovery,omitempty"`
+	FoundBy    string `json:"found_by,omitempty"` // tavily_search | candidate_url
+	Query      string `json:"query,omitempty"`
+	Rank       string `json:"rank,omitempty"`
+	Score      string `json:"score,omitempty"`
 }
 
 // receiptFromHeaders builds the receipt from the freshness headers already set
@@ -66,7 +76,16 @@ func receiptFromHeaders(h http.Header, now time.Time) (r Receipt, ok bool) {
 		Provider: h.Get(HeaderProvider),
 		Found:    h.Get(HeaderCurrentValue),
 		Evidence: h.Get(HeaderEvidence),
+
+		Discovery: h.Get(HeaderDiscovery),
+		FoundBy:   h.Get(HeaderFoundBy),
+		Query:     h.Get(HeaderDiscoveryQuery),
+		Rank:      h.Get(HeaderDiscoveryRank),
+		Score:     h.Get(HeaderDiscoveryScore),
 	}
+	// A discovered page decided the verdict when discovery's own result is
+	// the verdict (confirmed or stale); otherwise the request fell back.
+	r.Discovered = r.Discovery != "" && r.Discovery == status && (status == "confirmed" || status == "stale")
 	// A cached answer states Cached-Value; a checked new answer states Answer-Value.
 	r.Stated = h.Get(HeaderCachedValue)
 	if r.Stated == "" {
@@ -121,6 +140,17 @@ func (r Receipt) header() string {
 		pairs = append(pairs, pair{"checked_ago_s", strconv.FormatInt(*r.CheckedAgoSeconds, 10), false})
 	}
 	pairs = append(pairs, pair{"source", r.Source, true}, pair{"provider", r.Provider, true})
+	// Discovery pairs come right after provider, so they survive when the
+	// 1024-character bound drops trailing pairs.
+	if r.Discovered {
+		pairs = append(pairs, pair{"discovered", "true", false})
+	} else if r.Discovery != "" {
+		pairs = append(pairs, pair{"discovery", r.Discovery, false})
+	}
+	if r.Discovery != "" {
+		pairs = append(pairs, pair{"found_by", r.FoundBy, false}, pair{"query", r.Query, true},
+			pair{"rank", r.Rank, false}, pair{"score", r.Score, false})
+	}
 	if r.CheckedAt != nil {
 		pairs = append(pairs, pair{"checked_at", r.CheckedAt.UTC().Format(time.RFC3339), true})
 	}

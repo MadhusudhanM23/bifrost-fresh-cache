@@ -14,6 +14,7 @@
   },
   "categories": [
     {
+      "_comment": "No discover block here: the offline demo never searches. policy.tavily.json and policy.discover.json show the optional 'discover' block (Tavily finds the source), used only with -discover.",
       "name": "price",
       "keywords": ["price", "prices", "pricing", "cost", "costs", "how much", "fee", "fees", "per month", "per year", "subscription", "plan"],
       "max_age": "10m",

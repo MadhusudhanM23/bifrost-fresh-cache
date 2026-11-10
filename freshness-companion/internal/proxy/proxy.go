@@ -347,6 +347,7 @@ func (s *Server) decide(w http.ResponseWriter, r *http.Request, req *Request, qu
 		Age:        age,
 		AgeKnown:   ageKnown,
 		CachedBody: inspectable(cached, s.cfg.MaxResponseBytes),
+		Question:   question, // only for a discovery query; never stored
 	}
 	notice, hasNotice := s.changeFor(eff, age, ageKnown)
 	if hasNotice {
@@ -447,6 +448,11 @@ func (s *Server) doRefresh(ctx context.Context, req *Request, cacheID string, d 
 }
 
 func (s *Server) refresh(w http.ResponseWriter, r *http.Request, req *Request, cacheID string, d decision.Decision, eff policy.Effective, rec *decisionlog.Record, extra func(http.Header)) {
+	if d.Discovered && eff.OnContradicted == policy.ContradictedCorrect {
+		// Trust downgrade: a page that search found may trigger a refresh,
+		// but its text never goes into a prompt. correct becomes uncache.
+		eff.OnContradicted = policy.ContradictedUncache
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), s.cfg.UpstreamTimeout)
 	defer cancel()
 	// Requests that need the same refresh share one. The refresh itself must
@@ -687,6 +693,12 @@ func (s *Server) newRecord(d decision.Decision, cached *Response) decisionlog.Re
 		CachedValue:    d.CachedValue,
 		CurrentValue:   d.CurrentValue,
 		EvidenceCached: d.EvidenceCached,
+		Discovered:     d.Discovered,
+		Discovery:      d.DiscoveryResult,
+		DiscoveryQuery: d.DiscoveryQuery,
+		DiscoveryRank:  d.DiscoveryRank,
+		DiscoveryScore: d.DiscoveryScore,
+		FoundBy:        d.FoundBy,
 	}
 	if !d.CheckedAt.IsZero() {
 		t := d.CheckedAt.UTC()

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -10,6 +11,9 @@ import (
 // limits are the honest caveats printed with every result. Nothing in them is
 // a measured number.
 func limits(r *Report) []string {
+	if r.Settings.realModel() {
+		return realModelLimits(r)
+	}
 	out := []string{
 		"The model and the embeddings are mocks (tools/mock-openai). The embedding is a bag-of-words hash, so which questions count as \"similar\" is decided by shared words, not by meaning. Look-alike pairs reach the cache only because the mock scores them high; a real embedding model would score some pairs higher and some lower. Do not read any rate here as a rate for real traffic.",
 		"The workload is small and scripted (see \"Workload\"). The per-1000 rates are the counts of this one story scaled to 1000 requests, not a forecast. Repeats differ only in the order of independent items, so they show order sensitivity and run-to-run noise, not statistical confidence.",
@@ -27,6 +31,24 @@ func limits(r *Report) []string {
 		"The page is edited in place by this command, which needs exclusive use of it and of the stack. The same file is restored byte for byte at the end of every arm and on exit.",
 	}
 	return out
+}
+
+// realModelLimits are the caveats of a run against a real model (-truth context).
+func realModelLimits(r *Report) []string {
+	return []string{
+		fmt.Sprintf("Answers come from a real model (%s) on a free tier; the embeddings are still the local mock (a bag-of-words hash). So which questions the cache treats as \"similar\" is decided by shared words, exactly as in the mock run, and look-alike pairs reach the cache only because the mock embedding scores them high. A real embedding model would score some pairs higher and some lower. Do not read any rate here as a rate for real traffic.", r.Settings.Model),
+		"The workload is small and scripted (see \"Workload\"). The per-1000 rates are the counts of this one story scaled to 1000 requests, not a forecast. With a single run there is no run-to-run spread at all, and a real model adds its own randomness.",
+		"No ground-truth model calls are made. A price answer is right when it states the price that its own request's context gives (the sanity check before the run showed the model doing this); a model that ignored its context would be counted as stale here even on a fresh call. Any other answer is judged by where it came from: a fresh answer is right, and a cached one is right only when the client saw it written for a question that means the same (see MeaningGroup in workload.go). This catches look-alike mix-ups, not every way a real answer can be poor; answer quality itself is not judged. Tool-result requests are reported as reused from the cache or not, not as right or wrong.",
+		"The companion's settings differ from the Docker demo used for the mock run: background audits are off (-audit-rate=0, -audit-near-margin=0) because each one is a paid model call and they only report a wrong match after it was served, and the pre-serve gate compares answers with a model judge (-audit-compare=judge) because real answers never match word for word. So each gate check costs two model calls (a fresh answer and the judge). See \"Settings\".",
+		"FAQ and look-alike requests carry no system message, as in the mock run.",
+		"Model calls are counted from Bifrost's own Prometheus counter bifrost_upstream_requests_total (chat requests that Bifrost sent to a provider with a key; cache hits carry no key and are left out), as a difference before and after each arm, after waiting for background work to finish. Embedding calls are counted by the mock, which serves them. The command checks that the counters are idle before starting.",
+		"Free tiers limit requests and tokens per minute. The client pauses after every non-cached response (-write-gap) to stay under the limit, and waits longer after each page change (-settle); the pauses are the same for every arm and are not part of any latency. A rate-limit refusal would show up as an error.",
+		"The plain-ttl arm expires entries after its TTL, so what it serves depends on how far apart requests are in time. Its TTL and the pauses differ from the mock run (see \"Settings\"), so its numbers are not comparable one for one with the mock run's plain-ttl column.",
+		"The plain arm runs Bifrost with the semantic-cache settings of docker/bifrost-config.real.json, which are the same as in the mock run (see \"Settings\"), not a tuned setup.",
+		"The companion's evidence fetches (an HTTP GET of the demo page) are not model calls and are not counted here.",
+		"Cost figures multiply measured call counts by prices that are assumptions given on the command line. They are an illustration, not a measurement.",
+		"The page is edited in place by this command, which needs exclusive use of it and of the stack. The same file is restored byte for byte at the end of every arm and on exit.",
+	}
 }
 
 type row struct {
@@ -148,7 +170,11 @@ func renderMarkdown(r *Report) string {
 	w("2. **Change**: the page is set to $%d and the harness waits %s (longer than the companion's evidence cache).\n", r.Settings.ChangedPrice, r.Settings.Settle)
 	w("3. **After the change**: the same and new price wordings (now with the $%d context), look-alike pairs in the opposite order (B then A), same-meaning rewordings, ordinary questions, and %d requests that carry a role \"tool\" message (the same question twice with a different tool result).\n", r.Settings.ChangedPrice, countKind(r.Workload.FirstRun, KindTool))
 	w("4. **Burst**: the page is set to $%d, the harness waits %s, then %d identical price requests are released at the same moment at the now-stale entry.\n\n", r.Settings.BurstPrice, r.Settings.Settle, r.Settings.Burst)
-	w("**Right answer** = what a fresh, uncached call to the mock model returns for that exact request. **Stale** = a price question answered with a different price than the fresh answer states. **Wrong match** = any other answer that differs from the fresh answer. **Error** = not HTTP 200. **Bad answer** = stale, wrong match or error.\n\n")
+	if r.Settings.realModel() {
+		w("Answers come from a real model (`%s`), so the wording changes from call to call and an exact text compare would call almost everything wrong. Answers are judged without extra model calls instead (`-truth context`): **Right answer** = for a price question, an answer that states the price in that request's own context; for any other question, a fresh answer, or a cached answer that was first written for a question that means the same. **Stale** = a price question answered with a different price. **Wrong match** = a price question answered with no price, or a cached answer first written for a question that means something else (for example the other half of a look-alike pair). **Error** = not HTTP 200 or an empty answer. **Bad answer** = stale, wrong match or error.\n\n", r.Settings.Model)
+	} else {
+		w("**Right answer** = what a fresh, uncached call to the mock model returns for that exact request. **Stale** = a price question answered with a different price than the fresh answer states. **Wrong match** = any other answer that differs from the fresh answer. **Error** = not HTTP 200. **Bad answer** = stale, wrong match or error.\n\n")
+	}
 	w("Arms (each uses its own cache key in every run, so no two arms ever share cache entries):\n\n")
 	for _, a := range r.Arms {
 		extra := ""
@@ -165,7 +191,11 @@ func renderMarkdown(r *Report) string {
 	w("\n")
 
 	w("## Headline: median of %d runs\n\n", len(r.Runs))
-	table(w, r.Arms, headlineRows, func(a string) Metrics { return r.Median[a] })
+	head := headlineRows
+	if r.Settings.realModel() {
+		head = append(append([]row(nil), headlineRows[:8]...), append([]row{{"unjudged", "Cached answers not judged (origin unknown)", "int"}}, headlineRows[8:]...)...)
+	}
+	table(w, r.Arms, head, func(a string) Metrics { return r.Median[a] })
 	w("Where the bad answers came from (median of runs):\n\n")
 	table(w, r.Arms, breakdownRows, func(a string) Metrics { return r.Median[a] })
 
@@ -178,7 +208,12 @@ func renderMarkdown(r *Report) string {
 
 	w("### Latency (median of runs)\n\n")
 	table(w, r.Arms, latencyRows, func(a string) Metrics { return r.Median[a] })
-	w("Latency is measured by the client for each request (the pauses between requests are not included). The mock model has no artificial delay, so these are the costs of hops and checks only. A request that the plain arm answers from a stale entry in a few milliseconds is, in the companion arm, either confirmed (a few milliseconds) or refreshed with a model call (about one model call of latency), so the sequential p50 and p95 mix cases that are not comparable one for one; the hit / non-hit rows split them by what served the request.\n\n")
+	if r.Settings.realModel() {
+		w("Latency is measured by the client for each request (the pauses between requests are not included). Non-cached requests include a real model call over the internet (free tier), so they are far slower than on the mock and vary with the provider's load. A request")
+	} else {
+		w("Latency is measured by the client for each request (the pauses between requests are not included). The mock model has no artificial delay, so these are the costs of hops and checks only. A request")
+	}
+	w(" that the plain arm answers from a stale entry in a few milliseconds is, in the companion arm, either confirmed (a few milliseconds) or refreshed with a model call (about one model call of latency), so the sequential p50 and p95 mix cases that are not comparable one for one; the hit / non-hit rows split them by what served the request.\n\n")
 
 	w("## Where each setup helped or did not (all runs added together)\n\n")
 	w("Each cell is `bad answers / requests (served from cache)`. A look-alike row covers both questions of the pair, asked in the opposite order to the warm-up (the second question of the pair first); a bad answer there means one of the two got the other one's answer.\n\n")
@@ -273,7 +308,16 @@ func renderMarkdown(r *Report) string {
 	w("## Settings\n\n")
 	w("| | |\n|---|---|\n")
 	w("| Bifrost semantic cache (plain arm) | %s |\n", mapLine(r.Stack.SemanticCache))
-	w("| Companion flags (from docker-compose.yml) | `%s` |\n", strings.Join(r.Stack.CompanionFlags, " "))
+	composeName := "docker-compose.yml"
+	if r.Settings.realModel() && r.Settings.ComposePath != "" {
+		composeName = filepath.Base(r.Settings.ComposePath)
+	}
+	w("| Companion flags (from %s) | `%s` |\n", composeName, strings.Join(r.Stack.CompanionFlags, " "))
+	if r.Settings.realModel() {
+		w("| Model | `%s`, max_tokens %d, assistant tool-call message before tool results: %v |\n", r.Settings.Model, r.Settings.MaxTokens, r.Settings.ToolCallMessage)
+		w("| Model calls counted from | %s |\n", r.Settings.CallsFrom)
+		w("| Pause after each non-cached response | %s |\n", r.Settings.WriteGap)
+	}
 	if r.Stack.Audits != nil {
 		w("| Companion audit endpoint | enabled=%v, compare=%v |\n", r.Stack.Audits["enabled"], r.Stack.Audits["compare"])
 	}

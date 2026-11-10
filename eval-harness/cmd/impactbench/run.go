@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -84,6 +85,40 @@ type Runner struct {
 	WriteGap     time.Duration // pause after a response not served from the cache, so the cache write has landed
 	Cfg          WorkloadConfig
 	Log          func(format string, args ...any)
+
+	// Real-model options. The zero values give the mock run's behaviour.
+	Truth      string      // TruthMock ("" too) or TruthContext
+	MetricsURL string      // when set, chat calls are counted from Bifrost's Prometheus /metrics instead of the mock
+	BodyOpt    BodyOptions // max_tokens and the tool-call message
+
+	originMu sync.Mutex
+	origins  map[string]string // -truth context: normalized answer text -> question it was first seen for (this arm)
+}
+
+func (r *Runner) body(it Item) []byte { return it.BodyWith(r.Model, r.BodyOpt) }
+
+func (r *Runner) contextTruth() bool { return r.Truth == TruthContext }
+
+// origin returns the question an answer text was first seen for in this arm.
+func (r *Runner) origin(answer string) (string, bool) {
+	r.originMu.Lock()
+	defer r.originMu.Unlock()
+	q, ok := r.origins[normalize(answer)]
+	return q, ok
+}
+
+// remember records the question a fresh (not cached) answer was written for.
+func (r *Runner) remember(answer, question string) {
+	r.originMu.Lock()
+	defer r.originMu.Unlock()
+	if r.origins == nil {
+		r.origins = map[string]string{}
+	}
+	if k := normalize(answer); k != "" {
+		if _, ok := r.origins[k]; !ok {
+			r.origins[k] = question
+		}
+	}
 }
 
 func (r *Runner) logf(format string, args ...any) {
@@ -126,11 +161,59 @@ func (r *Runner) getJSON(ctx context.Context, url string, into any) error {
 	return json.Unmarshal(body, into)
 }
 
-// MockStats reads the mock model's counters.
+// MockStats reads the mock model's counters. With MetricsURL set (a real
+// model), ChatCalls is replaced by Bifrost's count of chat requests it sent to
+// a provider; embedding calls still come from the mock, which serves them.
 func (r *Runner) MockStats(ctx context.Context) (MockStats, error) {
 	var s MockStats
-	err := r.getJSON(ctx, r.MockURL+"/mock/stats", &s)
-	return s, err
+	if err := r.getJSON(ctx, r.MockURL+"/mock/stats", &s); err != nil {
+		return s, err
+	}
+	if r.MetricsURL == "" {
+		return s, nil
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.MetricsURL, nil)
+	if err != nil {
+		return s, err
+	}
+	resp, err := r.Client.Do(req)
+	if err != nil {
+		return s, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	if resp.StatusCode != 200 {
+		return s, fmt.Errorf("GET %s: HTTP %d", r.MetricsURL, resp.StatusCode)
+	}
+	s.ChatCalls = ProviderChatCalls(string(body))
+	return s, nil
+}
+
+// ProviderChatCalls sums Bifrost's bifrost_upstream_requests_total over the
+// chat_completion series that name a provider key. Cache hits are recorded
+// with an empty selected_key_name (no key was used), so they are left out:
+// what remains is the chat requests Bifrost actually sent to a provider.
+func ProviderChatCalls(metrics string) int {
+	total := 0.0
+	for _, line := range strings.Split(metrics, "\n") {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "bifrost_upstream_requests_total{") {
+			continue
+		}
+		end := strings.LastIndex(line, "}")
+		if end < 0 {
+			continue
+		}
+		labels, value := line[:end], strings.TrimSpace(line[end+1:])
+		if !strings.Contains(labels, `method="chat_completion"`) || !strings.Contains(labels, `selected_key_name="`) ||
+			strings.Contains(labels, `selected_key_name=""`) {
+			continue
+		}
+		if f, err := strconv.ParseFloat(strings.Fields(value + " 0")[0], 64); err == nil {
+			total += f
+		}
+	}
+	return int(total + 0.5)
 }
 
 // CompanionStats reads the companion's gate/audit/guard counters. Without a
@@ -182,6 +265,16 @@ func (r *Runner) post(ctx context.Context, url string, headers map[string]string
 func (r *Runner) GroundTruth(ctx context.Context, items []Item) (map[string]string, error) {
 	byBody := map[string]string{}
 	truth := map[string]string{}
+	if r.contextTruth() {
+		// No model calls: a price question's right answer is the price its own
+		// context states; other answers are judged by origin (ClassifyContext).
+		for _, it := range items {
+			if it.Kind == KindPrice {
+				truth[it.ID] = fmt.Sprintf("$%d", it.Price)
+			}
+		}
+		return truth, nil
+	}
 	h := map[string]string{}
 	if r.MockKey != "" {
 		h["Authorization"] = "Bearer " + r.MockKey
@@ -190,7 +283,7 @@ func (r *Runner) GroundTruth(ctx context.Context, items []Item) (map[string]stri
 		if it.Kind == KindTool {
 			continue
 		}
-		body := it.Body(r.Model)
+		body := r.body(it)
 		if ans, ok := byBody[string(body)]; ok {
 			truth[it.ID] = ans
 			continue
@@ -219,7 +312,7 @@ func (r *Runner) send(ctx context.Context, arm Arm, key string, it Item, truth m
 		headers[k] = v
 	}
 	t0 := clock.Now()
-	status, hdr, body, err := r.post(ctx, arm.URL, headers, it.Body(r.Model))
+	status, hdr, body, err := r.post(ctx, arm.URL, headers, r.body(it))
 	lat := clock.Since(t0)
 	out := Outcome{Item: it, Status: status, Latency: lat, Freshness: map[string]string{}}
 	if err != nil {
@@ -240,6 +333,14 @@ func (r *Runner) send(ctx context.Context, arm Arm, key string, it Item, truth m
 	}
 	out.Truth, _ = ExtractPrice(truth[it.ID])
 	out.Served, _ = ExtractPrice(out.Answer)
+	if r.contextTruth() {
+		origin, known := r.origin(out.Answer)
+		out.Verdict = ClassifyContext(it, status, out.Answer, out.CacheHit, out.HitType, origin, known)
+		if status == 200 && !out.CacheHit {
+			r.remember(out.Answer, it.Question)
+		}
+		return out
+	}
 	out.Verdict = Classify(it, status, out.Answer, truth[it.ID], out.CacheHit)
 	return out
 }
@@ -386,6 +487,9 @@ func (r *Runner) RunArm(ctx context.Context, arm Arm, key string, items []Item, 
 		}
 	}
 
+	r.originMu.Lock()
+	r.origins = nil // every arm has its own cache key, so origins are per arm
+	r.originMu.Unlock()
 	if err := r.Page.Set(r.Cfg.BasePrice); err != nil {
 		return nil, err
 	}
@@ -492,6 +596,8 @@ func BuildArmRun(name, key string, warm, after, burst []Outcome, burstWall time.
 			m["errors"]++
 		case VToolReuse:
 			m["tool_reused"]++
+		case VUnjudged:
+			m["unjudged"]++
 		}
 		if o.Item.Kind == KindTool {
 			m["tool_requests"]++
@@ -586,6 +692,9 @@ func BuildArmRun(name, key string, warm, after, burst []Outcome, burstWall time.
 	m["burst_p50_ms"], m["burst_p95_ms"], m["burst_wall_ms"] = sb.P50Ms, sb.P95Ms, burstWall.Seconds()*1000
 	if m["serving_calls"] < 0 {
 		ar.Notes = append(ar.Notes, fmt.Sprintf("serving_calls is %.0f (negative): the counter deltas do not add up, so something else used the model during this arm", m["serving_calls"]))
+	}
+	if m["unjudged"] > 0 {
+		ar.Notes = append(ar.Notes, fmt.Sprintf("%.0f semantic cache hit(s) served an answer the client never saw being written, so they were not judged (counted neither right nor bad)", m["unjudged"]))
 	}
 	if mock.UnknownCalls != 0 || mock.RejectedCalls != 0 {
 		ar.Notes = append(ar.Notes, fmt.Sprintf("the mock counted %d unknown and %d rejected calls during this arm", mock.UnknownCalls, mock.RejectedCalls))

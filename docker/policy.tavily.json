@@ -37,7 +37,23 @@
       "max_age": "10m",
       "on_unverifiable": "bypass",
       "verify_new_answers": true,
-      "on_contradicted": "correct"
+      "on_contradicted": "correct",
+      "discover": {
+        "_comment": "Tavily finds the source. Used only when the companion runs with -discover (DISCOVER=true) and no watched fact covers the question. Tavily Search receives only the query below, with {entities} replaced by the allowlisted names found in the question; the chosen page is then read with Tavily Extract. A discovered page may trigger a refresh but never on_contradicted correct (it is treated as uncache).",
+        "enabled": true,
+        "entities": [
+          "Acme Pro",
+          "Acme Team"
+        ],
+        "query": "{entities} plan price per month",
+        "include_domains": [
+          "madhusudhanm23.github.io"
+        ],
+        "require_domains": true,
+        "compare": "numeric",
+        "near_chars": 40,
+        "min_score": 0.5
+      }
     },
     {
       "name": "policy",

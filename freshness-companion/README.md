@@ -83,12 +83,16 @@ Freshness headers are set only on time-sensitive cache hits. Misses and non-time
 | `x-freshness-answer-source` | the companion answered by itself | `verified` |
 | `x-freshness-receipt` | whenever `x-freshness-status` is set | one line that sums up the check, for example `v=1; verdict=confirmed; action=served; found="59"; checked_ago_s=12; source="http://demoserver:8000/"; provider="direct_fetch (not Tavily)"; checked_at="2026-11-10T09:00:00Z"; evidence=reused; stated="59"; fact="Acme Pro plan price"; answer=cached` (see "Answer receipts") |
 | `x-freshness-evidence` | evidence was obtained | `fetched` (the source was read for this request) or `reused` (evidence kept from an earlier read, at most `-evidence-ttl` old) |
+| `x-freshness-discovery` | discovery was tried (`-discover`) | `confirmed` or `stale` (what the discovered page said; `stale` always refreshes, `confirmed` serves only with `include_domains`, see "Tavily finds the source"), or why it did not decide: `unable_to_verify`, `no_source`, `over_cap`, `no_entities`, `sensitive`, `query_too_long`, `search_failed`, `skipped` |
+| `x-freshness-discovery-query` | a query was built | the exact text sent to Tavily Search |
+| `x-freshness-discovery-rank` / `x-freshness-discovery-score` | a search result was picked | its position (1 = first) and Tavily's relevance score |
+| `x-freshness-found-by` | a page was picked | `tavily_search`, or `candidate_url` when search found nothing usable and the policy's fallback URL was read |
 
 The request id is the one header that is not about freshness: it is added even to responses that carry no other `x-freshness-*` header.
 
 ## Privacy rules
 
-- The evidence provider receives **only the fact's `source_url`**. Tavily Search also receives the URL's host as a domain filter. Prompts, cached answers, the caller's headers and the caller's credentials are never sent. Tavily Extract's optional `query` parameter is deliberately never used, because it would carry user intent.
+- With discovery off (the default), the evidence provider receives **only the fact's `source_url`** (Tavily Search, as a provider, also receives the URL's host as a domain filter). With `-discover`, Tavily Search also receives a short query built from the policy's template and product names found in the question, never the question or the answer, plus the policy's domain lists; Tavily Extract then receives the chosen URL. Prompts, cached answers, system messages, the caller's headers, cache keys and the caller's credentials are never sent. Tavily Extract's optional `query` parameter is deliberately never used, because it would carry user intent. The discovery query does reveal the topic (the product name); see "Tavily finds the source".
 - `TAVILY_API_KEY` is read from the environment and sent only as `Authorization: Bearer …`. It is never placed in a URL or logged, and it is redacted from any error text.
 - The clear-endpoint credential (`BIFROST_ADMIN_AUTH`) is read from the environment and is never logged.
 - Source URLs with embedded credentials are rejected when the policy loads.
@@ -136,6 +140,36 @@ See [`examples/policy.example.json`](examples/policy.example.json). Unknown fiel
   - `compare: "exact"` (the default) compares after trimming, collapsing whitespace and case-folding.
   - `compare: "boolean"` reduces whatever text the pattern captures to `true`/`false` by scanning it (word-boundary, case-insensitive) for a small fixed list of true-signal words (`available`, `supported`, `online`, `enabled`, `active`, `open`, `in stock`, `true`, `yes`, `can`) and false-signal words/phrases (`unavailable`, `not available`, `no longer available`, `unsupported`, `offline`, `disabled`, `inactive`, `closed`, `out of stock`, `sold out`, `false`, `no`, and simple negations like `is not`/`isn't`/`cannot`). False signals are checked first, so a negation of a true word (`not available`, `unavailable`) is never mistaken for the positive word it contains. This is a deterministic word-list normalizer, not an NLP sentiment model — differently-worded yes/no answers ("Yes, live chat is available" vs. "live chat support is currently available") still compare equal, but anything outside the word list is `unable_to_verify`, same as a numeric pattern that matches nothing. See [`examples/policy.boolean-demo.json`](examples/policy.boolean-demo.json) and [`demo-page/availability.html`](demo-page/availability.html).
   - If a pattern captures different values in the same text, the result is "conflicting values", which counts as `unable_to_verify`.
+- **Discovery (optional, per category).** A `discover` block on a category lets Tavily Search find a source page for questions no watched fact covers. It is used only when the companion runs with `-discover`. See "Tavily finds the source" for the rules; the fields are:
+
+```json
+"discover": {
+  "enabled": true,
+  "entities": ["Acme Pro", "Acme Team"],
+  "query": "{entities} plan price per month",
+  "include_domains": ["madhusudhanm23.github.io"],
+  "require_domains": true,
+  "compare": "numeric",
+  "near_chars": 40,
+  "min_score": 0.5
+}
+```
+
+  | Field | Default | Meaning |
+  |---|---|---|
+  | `enabled` | `false` | turn the block on |
+  | `entities` | required unless `query_from` is `proper_nouns` | allowlist of names that may go into a query; only those that appear in the question (whole words, any case) are used |
+  | `query_from` | `entities` | `proper_nouns` (opt-in) uses capitalised word runs from the question instead (at most 2 runs of 3 words, stopwords and words with digits dropped). It can send a person's name. |
+  | `query` | required | template; must contain `{entities}` and no other placeholder |
+  | `include_domains` | none | only results on these hosts (or their subdomains); rechecked locally |
+  | `require_domains` | `false` | with `true` and no `include_domains`, discovery stays off for the category |
+  | `exclude_domains` | none | added to the built-in list: reddit.com, quora.com, youtube.com, facebook.com, x.com, twitter.com, pinterest.com, medium.com, wikipedia.org, amazon.\*, ebay.\* (wildcard entries are applied locally only) |
+  | `compare` | `numeric` | `numeric`, `boolean` or `exact` |
+  | `value_pattern` | numeric: `[$€£]\s*([0-9][0-9,]*(?:\.[0-9]+)?)`; boolean: a stock/available word list; exact: required | one capture group; reads the cached answer, and the page right after an entity name |
+  | `near_chars` | `40` (max 200) | how many characters may sit between the name and the value on the page: same line, no digits |
+  | `min_score` | `0.5` | lowest Tavily relevance score accepted |
+  | `min_sources` | `1` | `2` reads the two best results; if they disagree the answer is `unable_to_verify` |
+  | `candidate_urls` | none | https pages read when search finds nothing usable, labelled `found_by=candidate_url` (never `tavily_search`) |
 
 ### Flags
 
@@ -187,12 +221,19 @@ See [`examples/policy.example.json`](examples/policy.example.json). Unknown fiel
 | `-watch-max-per-hour` | `60` | most watcher fetches per rolling hour; over the cap, checks are skipped and requests fetch as usual |
 | `-watch-idle` | `30m` | a source nobody asked about for this long is not watched (`0` = watch every source that was ever asked about) |
 | `-watch-evict` | `true` | delete cached answers that state the old value when the watcher sees a change (`false` = only record it) |
+| `-discover` | `false` | Tavily finds the source (see that section). Needs `TAVILY_API_KEY` and a Tavily evidence provider; the companion refuses to start without the key or with `-provider direct` |
+| `-discover-max-per-hour` | `20` | most Tavily Search calls for discovery per rolling hour (1 credit each); over the cap the companion behaves as without discovery |
+| `-discover-ttl` | `24h` | reuse a learned source for this long, with no new search |
+| `-discover-miss-ttl` | `1h` | remember "search found no usable page" for this long |
+| `-discover-max-sources` | `50` | most learned sources and remembered misses kept (oldest dropped) |
+| `-discover-timeout` | `8s` | timeout for one search; on timeout the companion behaves as without discovery |
+| `-discover-store` | `data/discovered.json` | file that persists learned sources (`""` = memory only) |
 
 **Environment variables (secrets are never passed as flags):**
 
 | Variable | Use |
 |---|---|
-| `TAVILY_API_KEY` | required for the Tavily providers |
+| `TAVILY_API_KEY` | required for the Tavily providers and for `-discover` |
 | `FRESHNESS_NOTICE_TOKEN` | optional; when set, `POST /freshness/changes` needs `Authorization: Bearer <token>` |
 | `BIFROST_ADMIN_AUTH` | optional full header value for the clear call, for example `Bearer <management API key>` or `Basic <base64 user:password>`, when Bifrost's management API requires auth |
 
@@ -216,11 +257,12 @@ Extra headers can be added on top of the default strategy too, for example `-ref
 - `GET /freshness/verified`: the verified-answer table as counts, ids (hashes) and labels. No questions, no answers.
 - `POST /mcp` (only with `-mcp`): the MCP server, see "MCP mode".
 - `GET /freshness/watch`: the check schedule and the watcher (see "Smart checking and the background watcher"): the rules in force, watcher counters, evidence-cache counters and one row per source URL with its facts, last values, current interval, next check time, streaks and errors. Values only, never a prompt or an answer.
+- `GET /freshness/discovered`: what discovery learned (category, query, url, title, rank, score, found_by, found_at, expires_at, uses, last_outcome, last_value, and remembered misses with their reason and result hosts) and its counters (searches in the last hour and the cap, reused, no_source, over_cap, candidate_used, rejected results per reason). With discovery off it answers `{"enabled": false, ...}`.
 - `POST /freshness/watch/check` with `{"source_url": "..."}` or `{"fact": "..."}`: check one source now. Answers `200` with that source's row plus `"changed": true` when the check found a new value; `401` without the bearer token when `FRESHNESS_NOTICE_TOKEN` is set (same rule as notices); `404` unknown source or fact; `409` when `-watch` is off; `429` when the hourly cap is used up; `502` when the fetch itself failed (the row is included).
 
 Each decision record also has `shared_refresh` (this request waited for a refresh another request ran) and `gate` (what the pre-serve check did) when they apply.
 
-Each decision record has `time`, `cache_id`, `hit_type`, `similarity`, `category`, `fact`, `outcome`, `action`, `reason`, `source_url`, `provider`, `cached_value`, `current_value`, `checked_at`, `evidence_cached`, `age_seconds`, `refresh_strategy`, `refreshed_cache_id`, `refreshed_check`, `error` and `latency_ms`.
+Each decision record has `time`, `cache_id`, `hit_type`, `similarity`, `category`, `fact`, `outcome`, `action`, `reason`, `source_url`, `provider`, `cached_value`, `current_value`, `checked_at`, `evidence_cached`, `age_seconds`, `refresh_strategy`, `refreshed_cache_id`, `refreshed_check`, `error` and `latency_ms`. With `-discover` it also has `discovered`, `discovery`, `discovery_query` (the exact text sent to Tavily Search), `discovery_rank`, `discovery_score` and `found_by` when discovery was tried.
 
 ## Running it
 
@@ -486,6 +528,13 @@ x-freshness-receipt: v=1; verdict=confirmed; action=served; found="59"; checked_
 | `served_check` | after a refresh or correction, how the answer you got compares with the source: `matches_current`, `differs_from_current` or `no_value` | `x-freshness-corrected-check` when the answer was corrected, otherwise `x-freshness-refreshed-check` |
 | `fact` | the watched fact that decided | `x-freshness-fact` |
 | `answer` | `cached` (a hit was checked) or `new` (a fresh answer was checked) | `x-freshness-answer` |
+| `discovered` | `true` when a page found by discovery decided the verdict | `x-freshness-discovery` equals the verdict (`confirmed` or `stale`) |
+| `discovery` | instead of `discovered`, when discovery was tried and did not decide: `confirmed` from an open-web page (the normal rules decided), `unable_to_verify`, `no_source`, `over_cap`, ... | `x-freshness-discovery` |
+| `found_by` | `tavily_search` or `candidate_url` | `x-freshness-found-by` |
+| `query` | the exact text sent to Tavily Search | `x-freshness-discovery-query` |
+| `rank` / `score` | the picked result's position and score | `x-freshness-discovery-rank` / `-score` |
+
+The discovery pairs come right after `provider`, so they survive when the 1024-character bound drops trailing pairs. The format stays `v=1`: the new keys are additions, and a reader that does not know them can skip them.
 
 A pair whose value is empty is left out, so a confirmed hit has no `served_check` and a check whose fetch failed has no `found`, `checked_at` or `evidence`.
 
@@ -562,7 +611,9 @@ curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' -d '{"json
 
 **Through Bifrost.** When Bifrost is configured with the companion as an MCP client named `freshness` (the Docker overlay does this), the tools appear as `freshness-check_freshness`, `freshness-explain_request`, `freshness-list_watched_sources` and `freshness-report_change` on Bifrost's own MCP gateway (`POST /mcp` on Bifrost) and on `POST /v1/mcp/tool/execute`. See [DOCKER.md](../DOCKER.md#mcp-mode) for the exact calls and the side effects of that mode.
 
-**Privacy.** `check_freshness` sends only the policy's `source_url` to the evidence provider, as always; the question and answer stay in the companion and are not logged. `explain_request` returns records that hold no prompt or answer text. Results go back to whoever called the tool, so the companion treats `/mcp` like its other endpoints: keep it on a trusted network, or in front of something that checks callers.
+**With discovery (`-discover`).** When no watched fact covers the question, `check_freshness` asks discovery for a page (same rules, same store, same hourly cap) and checks against it; the fact in the result then has `discovered`, `found_by`, `query`, `rank` and `score`, and the result has `discovery` (`found`, or why not, such as `no_entities`). As in the proxy, an agreeing page from the open web (no `include_domains`) does not confirm: the tool returns the verdict it would give without discovery (`unknown`, action `none`) with a note that an unverified page agreed, while a stale page still gives `stale`. With `min_sources: 2` every discovered page is checked, and pages that disagree make the result `unable_to_verify`. With no answer, or an answer that states no single value, nothing is searched (`discovery` is `skipped` or `unable_to_verify`) and no credit is spent. `list_watched_sources` adds `learned_sources`.
+
+**Privacy.** `check_freshness` sends only the policy's `source_url` to the evidence provider, as always (with `-discover`, plus the derived query to Tavily Search); the question and answer stay in the companion and are not logged. `explain_request` returns records that hold no prompt or answer text. Results go back to whoever called the tool, so the companion treats `/mcp` like its other endpoints: keep it on a trusted network, or in front of something that checks callers.
 
 ## Smart checking and the background watcher
 
@@ -585,6 +636,38 @@ Both are **off by default**. With the defaults the companion behaves exactly as 
 **State is in memory**, per process: intervals and the entry index reset on restart.
 
 **Measuring it without paid APIs.** `go run ./cmd/checksim` drives the real cache, schedule, watcher and decision engine on a virtual clock with a fake page and Poisson requests, deterministic per seed, and prints the table that is in `eval-harness/results/`.
+
+## Tavily finds the source (discovery)
+
+**Off by default** (`-discover`, plus a `discover` block on a category). A watched fact needs a person to write down the page URL and two patterns for every value. Discovery covers the time-sensitive questions nobody wrote a fact for: think of asking a librarian once for the right book, and then reading the price in it yourself every time.
+
+**When it runs.** All must hold: `-discover` is on; the category has `discover.enabled: true`; no watched fact applies; there is no newer change notice (that already makes the entry stale); and the request is a time-sensitive **cache hit**. It never runs for guarded requests, verified answers, streams, misses or new-answer checks (`verify_new_answers`). With an unknown entry age and `on_unknown` set to `bypass` or `serve_with_warning` it is skipped; `auto` counts as "revalidate" when discovery can run. Like a watched fact, a discovered page is checked whatever the entry's age.
+
+**Step by step.**
+
+1. The cached answer is read first with `value_pattern`. If it does not state exactly one value, nothing is searched.
+2. The query: the template with `{entities}` replaced by the allowlisted names found in the question (`"Acme Pro plan price per month"`). It is refused, and nothing is sent, when it or the question holds anything the sensitive-text detectors recognise (all kinds), or when it is longer than 80 characters.
+3. The store, by category and query: a learned page within `-discover-ttl` is reused (no credit); a remembered miss within `-discover-miss-ttl` gives `no_source`; otherwise one Tavily Search call (1 credit), shared by concurrent requests with the same query and counted against `-discover-max-per-hour`. The exact body is `{"query", "search_depth": "basic", "max_results": 5, "include_domains", "exclude_domains", "include_answer": false, "include_raw_content": false}`.
+4. Picking a result, in order: https and a host name (no IP literal, no localhost); score at least `min_score`; host inside `include_domains` when set; host not excluded; every word of the names in the title or snippet. Among those left, a result whose host or path contains a name word (the product's own site) comes first, then Tavily's order. None left: the first `candidate_urls` entry that passes the same URL and domain rules, labelled `candidate_url`; otherwise `no_source` (the hosts of the results are reported, not their text).
+5. The check: the page is read through the evidence cache with Tavily Extract, exactly like a watched fact (same `_fresh` stamp, same `-evidence-ttl`). The page pattern is built from the names: the name, then at most `near_chars` characters on the same line with no digit among them, then `value_pattern`. "Acme Pro plan — $49 per month" gives 49. The answer and the page must each state exactly one value. With `min_sources: 2` both pages are read and must agree, or the answer is `unable_to_verify`. Different value: `stale`, and the answer is refreshed. Same value: `confirmed`, and what happens next depends on where the page came from:
+   - **`include_domains` set** (search limited to sites you named): the answer is served, even past `max_age`.
+   - **No `include_domains`** (the page came from the open web): the companion takes **the same action it would take without discovery** (for example: within `max_age` it is served on policy only; past `max_age` it follows `on_unverifiable`, so it is never served just because an open-web page agreed). The reason only gains a note, and `x-freshness-discovery` says `confirmed`.
+
+   A pricing table with several values next to the name, no value, or a fetch error: the companion does **exactly what it would have done without discovery**, and the reason says why. So an open-web page can only make the companion more careful (a refresh), never less; an agreeing page lets an answer through only from a site you listed in `include_domains`.
+6. **Trust downgrade.** A discovered page may trigger a refresh, but its text never goes into a prompt: for it `on_contradicted: correct` is treated as `uncache`.
+
+**Safety rules for the page address.**
+
+- `-discover` refuses to start with `-provider direct`. Discovered URLs come from search results; the direct provider would fetch them with a plain HTTP GET from the companion's own machine, which could be pointed at internal addresses (a server-side request risk). Use `-provider tavily_extract` or `tavily_search`.
+- Learned sources in the `-discover-store` file are checked again, both when the file is loaded and each time a source is about to be reused: https, a host name (no IP literal, no localhost), inside the category's `include_domains` when set, and not an excluded domain. A source that no longer passes (an edited file, or a changed policy) is dropped, and the question is searched for again.
+
+**What leaves the companion.** Tavily Search receives the query and the policy's domain lists; Tavily Extract receives the chosen URL. Never sent: the prompt, the answer, system messages, the caller's headers, cache keys. The query is stored in the decision log, the explanation, the receipt and the store, so you can see exactly what was sent. It still reveals the topic, and `query_from: "proper_nouns"` can send a person's name, which is why that mode is opt-in.
+
+**Cost.** One search per new query per `-discover-ttl` (and per `-discover-miss-ttl` for a miss), capped per hour, plus the Extract calls a watched fact would cost.
+
+**Live check, 10 Nov 2026** (`../eval-harness/results/discover-live-20261110.md`, 5 Tavily credits counted conservatively): search found **no** result for the demo page on GitHub Pages, so the policy's `candidate_urls` fallback was read (`found_by=candidate_url`): $49 confirmed, a $59 answer stale and uncached, repeat asks free. A Raspberry Pi 5 question searched raspberrypi.com, picked a news post (score 0.89), Tavily could not extract it, and the answer stayed unverified (served on policy only, as without discovery).
+
+Not built in this version: the optional model "judge" for pages the deterministic check cannot read (`-discover-judge-model` in the design). Inconclusive pages simply fall back.
 
 ## Tests
 
@@ -615,7 +698,8 @@ They cover:
   - no prompt or answer text reaches the decision log;
   - the explain endpoint (every path gets an id, scores and verdicts are right, no prompt or answer text, ring eviction, 404s);
   - verified answers (served without the model or cache, exact normalised match, streams, scopes, a price answer the source page contradicts, hot reload, listing without text);
-  - the sensitive-text guard (each detector against true positives and look-alikes, kind narrowing, streams, nothing leaked to stats, headers or explanations) and a 100 KB speed check.
+  - the sensitive-text guard (each detector against true positives and look-alikes, kind narrowing, streams, nothing leaked to stats, headers or explanations) and a 100 KB speed check;
+- discovery, against a fake Tavily serving `/search` and `/extract` that records every request body: the policy block and its validation; the exact Search request shape and key redaction; queries built only from the allowlist (no prompt words, no digits in proper-noun mode, sensitive text and long queries refused, no names means no search); result picking (score, include and exclude domains, names in the snippet, the product's own site first, no IPs or plain http); one value next to the name vs a pricing table; reuse within the TTL, the negative cache, the hourly cap, one shared search for concurrent requests, persistence; confirmed, stale and every fallback in the decision engine (and that a fallback equals the decision without discovery); off by default with no Tavily call; **no Tavily request body ever contains the prompt, the system message, the answer, the cache key or the caller's token**; headers, receipt, explanation, the endpoint and the decision log; guarded and verified requests never search; a stale discovered page never triggers a correction; the MCP tools; the startup checks for `TAVILY_API_KEY` and against `-provider direct`; an open-web `confirmed` keeping the no-discovery action while `include_domains` serves; and learned sources rechecked on load and on reuse.
 
 Tavily API shapes implemented, as documented at [Extract](https://docs.tavily.com/documentation/api-reference/endpoint/extract) and [Search](https://docs.tavily.com/documentation/api-reference/endpoint/search):
 
@@ -623,7 +707,10 @@ Tavily API shapes implemented, as documented at [Extract](https://docs.tavily.co
   - Request: `POST https://api.tavily.com/extract`, `Authorization: Bearer <key>`, body `{"urls": ["<source_url>"], "extract_depth": "basic", "format": "text", "timeout": 10}`.
   - Response: `{"results": [{"url", "raw_content"}], "failed_results": [{"url", "error"}], "response_time", "request_id"}`.
   - Errors: `{"detail": {"error": "..."}}` (400, 401, 429 with `Retry-After`, 432, 433, 500).
-- Search (experimental):
+- Search for discovery (`-discover`):
+  - Request: `POST /search` with exactly `{"query": "<derived query>", "search_depth": "basic", "max_results": 5, "include_domains": [...], "exclude_domains": [...], "include_answer": false, "include_raw_content": false}`.
+  - The companion reads `url`, `title`, `content` and `score` of each result.
+- Search (experimental provider):
   - Request: `POST /search` with `{"query": "<source_url>", "search_depth": "basic", "max_results": 5, "include_domains": ["<host>"], "include_raw_content": "text"}`.
   - The companion uses the `raw_content` of the result whose `url` equals the source URL.
   - The 422 response uses `{"detail": [{"loc", "msg", ...}]}`.
@@ -642,4 +729,5 @@ Tavily API shapes implemented, as documented at [Extract](https://docs.tavily.co
 - **Sensitive-text detection is a safety net.** Pattern-based, so unusual formats, names, addresses and free-text secrets are missed, and some digit strings that happen to pass Luhn are flagged as cards (see the trade-offs above).
 - **Verified answers are a table, not cache entries.** Exact match only, no paraphrases; the freshness check on them works only for facts the policy can read; the table is reloaded by polling, so a change shows up within `-verified-reload`.
 - **Explanations are in memory,** limited to the last `-explain-ring` requests, and are built from response headers, so they say what the caller was told, not more.
+- **Discovery is opt-in and not measured for accuracy.** Search may not find the page at all (it did not find the GitHub Pages demo page in the live check), may pick a page about something else (a same-named company; `include_domains` and `require_domains` contain that), or may find a copy that is out of date. The query reveals the topic; proper-noun mode can send a person's name. Categories, templates and names must still be configured; only the per-fact URL and patterns go away. It checks cached hits only, never new answers. The deterministic pattern reads one value next to a name on one line, so pages that put the price on another line or in a table are `unable_to_verify`. The first discovery for a query adds a search (about 2 s in the live check) to that request.
 - **Endpoints are unauthenticated.** `/freshness/decisions` and `/healthz` share the proxy port. They expose cache ids, source URLs and extracted values, but no prompts. Keep the companion on a trusted network.

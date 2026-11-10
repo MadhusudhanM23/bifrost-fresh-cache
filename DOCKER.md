@@ -347,6 +347,46 @@ watcher re-checks every few seconds and spends its hourly cap within minutes), a
 `POST /freshness/watch/check` spends the same hourly cap, so set `FRESHNESS_NOTICE_TOKEN`
 if anyone else can reach the companion (with the Tavily overlay each check is a Tavily call).
 
+## Opt-in: Tavily finds the source
+
+Off by default. With it on, a price question that **no watched fact covers** is checked
+against a page Tavily Search finds: the companion sends Tavily Search a short query built
+from the policy's `discover` template and the product names it finds in the question
+(`Acme Pro plan price per month`), never the question or the answer, picks one result,
+reads it with Tavily Extract and compares the price. If that cannot settle the answer, the
+companion does exactly what it would have done without discovery. It needs the Tavily
+overlay and `TAVILY_API_KEY` (the companion refuses to start with `DISCOVER=true` and no key).
+
+`docker/policy.discover.json` is `policy.tavily.json` without the watched fact, so the
+Acme Pro question has to be discovered:
+
+```powershell
+$env:DISCOVER = "true"; $env:TAVILY_POLICY = "policy.discover.json"
+docker compose -f docker-compose.yml -f docker-compose.tavily.yml up -d
+powershell -File demo-ask.ps1 -Key disc-1   # miss: nothing is checked, nothing is searched
+powershell -File demo-ask.ps1 -Key disc-1   # hit: one search + one extract, then the verdict
+curl.exe -s http://localhost:8090/freshness/discovered
+```
+
+Variables: `DISCOVER` (default `false`), `DISCOVER_MAX_PER_HOUR` (Tavily Search calls per
+rolling hour, default `10` in the overlay), `TAVILY_POLICY` (default `policy.tavily.json`).
+Each new query costs one Search credit; the found page is then reused for 24 hours and
+"found nothing" is remembered for an hour, so repeat asks cost no extra search.
+
+What to look at: `x-freshness-discovery` (`confirmed`, `stale`, or why it fell back, such
+as `no_source`; `confirmed` serves the answer only when the policy sets `include_domains`,
+otherwise the normal rules decide), `x-freshness-discovery-query` (the exact text Tavily received),
+`x-freshness-found-by`, and the receipt pairs `discovered=true; found_by=...; query="..."`.
+
+Honest note from the live check (10 Nov 2026,
+[`eval-harness/results/discover-live-20261110.md`](eval-harness/results/discover-live-20261110.md)):
+Tavily Search returned **no result** for the GitHub Pages demo page, so with
+`policy.discover.json` as shipped the hit reports `x-freshness-discovery: no_source` and is
+served exactly as without discovery. Adding the page to the policy's
+`"candidate_urls"` (a fallback read only when search finds nothing usable) made the
+check work, labelled `found_by=candidate_url`: $49 confirmed, a $59 answer
+caught as stale.
+
 ## Real model (Groq, OpenRouter or Grok)
 
 1. Put a key in `.env` next to this file (it is git-ignored):

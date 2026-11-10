@@ -77,6 +77,16 @@ type Explanation struct {
 	VerifiedLabel  string `json:"verified_label,omitempty"`
 	VerifiedStatus string `json:"verified_status,omitempty"`
 
+	// Discovery (-discover): whether a page Tavily Search found decided the
+	// verdict, the discovery result, and the exact query sent to Tavily.
+	Discovered     bool   `json:"discovered,omitempty"`
+	Discovery      string `json:"discovery,omitempty"`
+	DiscoveryQuery string `json:"discovery_query,omitempty"`
+	DiscoveryRank  string `json:"discovery_rank,omitempty"`
+	DiscoveryScore string `json:"discovery_score,omitempty"`
+	FoundBy        string `json:"found_by,omitempty"`
+	Source         string `json:"source,omitempty"`
+
 	// Receipt is the structured form of the X-Freshness-Receipt header: the
 	// one-line summary of the freshness check behind the answer. Absent when
 	// no check ran.
@@ -233,8 +243,17 @@ func (s *Server) explain(id string, cw *captureWriter) *Explanation {
 	}
 	e.VerifiedLabel = h.Get(HeaderVerifiedLabel)
 	e.VerifiedStatus = h.Get(HeaderVerified)
+	e.Discovery = h.Get(HeaderDiscovery)
+	e.DiscoveryQuery = h.Get(HeaderDiscoveryQuery)
+	e.DiscoveryRank = h.Get(HeaderDiscoveryRank)
+	e.DiscoveryScore = h.Get(HeaderDiscoveryScore)
+	e.FoundBy = h.Get(HeaderFoundBy)
+	if e.Discovery != "" {
+		e.Source = h.Get(HeaderSource)
+	}
 	if r, ok := receiptFromHeaders(h, e.Time); ok {
 		e.Receipt = &r
+		e.Discovered = r.Discovered
 	}
 	if t, err := time.Parse(time.RFC3339, h.Get(HeaderCheckedAt)); err == nil {
 		e.CheckedAt = &t
@@ -442,10 +461,40 @@ func plainText(e *Explanation) string {
 	if e.SharedRefresh {
 		add("Another request needed the same refresh at the same moment, so they shared one model call.")
 	}
-	if len(out) > 4 {
-		out = out[:4]
+	limit := 4
+	if w := discoveryWords(e); w != "" && len(out) > 0 {
+		out = append(out[:1], append([]string{w}, out[1:]...)...)
+		limit = 5
+	}
+	if len(out) > limit {
+		out = out[:limit]
 	}
 	return strings.Join(out, " ")
+}
+
+// discoveryWords is the sentence about discovery (-discover), "" when it was
+// not tried.
+func discoveryWords(e *Explanation) string {
+	result := func() string {
+		s := "result #" + e.DiscoveryRank
+		if e.DiscoveryScore != "" {
+			s += " (score " + e.DiscoveryScore + ")"
+		}
+		return s
+	}
+	switch {
+	case e.Discovery == "":
+		return ""
+	case e.FoundBy == "candidate_url" && e.Discovered:
+		return fmt.Sprintf("No watched fact covered this; Tavily Search for %q found no usable page, so the policy's candidate URL %s was read instead (search did not find it).", e.DiscoveryQuery, e.Source)
+	case e.Discovered:
+		return fmt.Sprintf("No watched fact covered this; Tavily Search for %q picked %s, %s, and the answer was checked against that page.", e.DiscoveryQuery, result(), e.Source)
+	case e.FoundBy != "":
+		return fmt.Sprintf("No watched fact covered this; Tavily Search for %q found a page, but it could not settle the answer (%s), so the usual rule applied.", e.DiscoveryQuery, e.Discovery)
+	case e.Discovery == "no_source":
+		return fmt.Sprintf("No watched fact covered this; Tavily Search for %q found no usable page, so the usual rule applied.", e.DiscoveryQuery)
+	}
+	return fmt.Sprintf("No watched fact covered this, and no page was searched for (%s), so the usual rule applied.", e.Discovery)
 }
 
 func labelWords(label string) string {

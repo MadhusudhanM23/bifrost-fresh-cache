@@ -41,3 +41,6 @@ e2e/logs/runner-console.txt
 .idea/
 Thumbs.db
 .DS_Store
+
+# ---- private working files ----
+VIDEO_SCRIPT.pdf

@@ -1,0 +1,21 @@
+{
+  "_comment": "Boolean-fact demo policy: proves the companion's fact-checking generalizes beyond numeric prices to a yes/no fact (live chat availability). Uses the built-in categories (no \"categories\" key). Point the fact's source_url at demo-page/availability.html served locally: go run ./cmd/demoserver -dir demo-page -addr 127.0.0.1:8001, then run the companion with -provider direct -policy examples/policy.boolean-demo.json -evidence-ttl 5s. Edit demo-page/availability.html's 'available'/'unavailable' word to flip the demo.",
+  "version": 1,
+  "defaults": {
+    "max_age": "15m",
+    "on_unverifiable": "bypass",
+    "on_unknown": "auto"
+  },
+  "facts": [
+    {
+      "_comment": "source_pattern and answer_pattern are intentionally the same regex: they both just capture the whole 'live chat ...' clause, however it is worded, up to the end of the sentence. The compare=boolean logic (internal/extract) then reduces whatever was captured to true/false by scanning it for a small set of yes/no signal words (available, unavailable, online, offline, not available, ...), rather than requiring an exact wording match the way the numeric/exact comparators do.",
+      "name": "Live chat availability",
+      "category": "availability",
+      "keywords": ["live chat", "chat support"],
+      "source_url": "http://127.0.0.1:8001/availability.html",
+      "source_pattern": "(?i)(live chat[^.!?]*)",
+      "answer_pattern": "(?i)(live chat[^.!?]*)",
+      "compare": "boolean"
+    }
+  ]
+}

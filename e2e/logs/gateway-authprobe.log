@@ -1,0 +1,766 @@
+2026/11/10 10:25:15 maxprocs: Leaving GOMAXPROCS=8: CPU quota undefined
+
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║   ██████╗ ██╗███████╗██████╗  ██████╗ ███████╗████████╗   ║
+║   ██╔══██╗██║██╔════╝██╔══██╗██╔═══██╗██╔════╝╚══██╔══╝   ║
+║   ██████╔╝██║█████╗  ██████╔╝██║   ██║███████╗   ██║      ║
+║   ██╔══██╗██║██╔══╝  ██╔══██╗██║   ██║╚════██║   ██║      ║
+║   ██████╔╝██║██║     ██║  ██║╚██████╔╝███████║   ██║      ║
+║   ╚═════╝ ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝      ║
+║                                                           ║
+║═══════════════════════════════════════════════════════════║
+║                    v0.0.0-e2e-pgvector                    ║
+║═══════════════════════════════════════════════════════════║
+║                 The Fastest LLM Gateway                   ║
+║═══════════════════════════════════════════════════════════║
+║             https://github.com/maximhq/bifrost            ║
+╚═══════════════════════════════════════════════════════════╝
+
+[90m10:25AM[0m [32mINF[0m [1mloading configuration from: C:\Madhusudhan\Geeks\hackathon-workspace\e2e\authprobe\config.json[0m
+[90m10:25AM[0m [32mINF[0m [1mconnecting to postgres database[0m
+[90m10:25AM[0m [32mINF[0m [1mconfigstore: opening migration connection pool (if this step hangs, the database host/port is likely unreachable)[0m
+[90m10:25AM[0m [32mINF[0m [1mconfigstore: migration pool opened; running schema migrations (may block on a cross-node advisory lock if another pod is migrating)[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] attempting to get migration lock 1000001[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration init[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableConfigHash[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableBudget[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableRateLimit[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableProvider[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableKey[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableModel[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableOauthConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableOauthToken[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableMCPClient[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableClientConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableEnvKey[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableVectorStoreConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableLogStoreConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableCustomer[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableTeam[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableVirtualKey[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableGovernanceConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TableModelPricing[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TablePricingOverride[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] init: creating table TablePlugin[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration init[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration many2manyjoin[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] adding join table for governance_virtual_key_keys: many2manyjoin[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration many2manyjoin[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration addcustomproviderconfigjsoncolumn[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration addcustomproviderconfigjsoncolumn[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration addvirtualkeyproviderconfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] addvirtualkeyproviderconfig: creating table TableVirtualKeyProviderConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration addvirtualkeyproviderconfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allowed_origins_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allowed_origins_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allow_direct_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allow_direct_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_enable_litellm_fallbacks_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_enable_litellm_fallbacks_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_profile_config_claims_columns_to_team_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_profile_config_claims_columns_to_team_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_team_source_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_team_source_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_key_name_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_key_name_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_framework_configs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_framework_configs_table: creating table TableFrameworkConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_framework_configs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration cleanup_mcp_client_tools_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration cleanup_mcp_client_tools_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_mcp_configs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_vk_mcp_configs_table: creating table TableVirtualKeyMCPConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_mcp_configs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration update_plugins_table_for_custom_plugins[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration update_plugins_table_for_custom_plugins[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_provider_config_budget_rate_limit[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_provider_config_budget_rate_limit[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_sessions_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_sessions_table: creating table SessionsTable[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_sessions_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_headers_json_column_into_mcp_client[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_headers_json_column_into_mcp_client[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_disable_content_logging_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_disable_content_logging_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vertex_project_number_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vertex_project_number_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vertex_deployments_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vertex_deployments_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_and_fill_provider_column_in_key_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_and_fill_provider_column_in_key_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_tools_to_auto_execute_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_tools_to_auto_execute_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_is_code_mode_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_is_code_mode_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_log_retention_days_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_log_retention_days_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_enabled_column_to_key_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_enabled_column_to_key_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration update_model_pricing_table_to_add_cache_and_batch_pricing[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration update_model_pricing_table_to_add_cache_and_batch_pricing[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_agent_depth_and_mcp_tool_execution_timeout_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_agent_depth_and_mcp_tool_execution_timeout_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_code_mode_binding_level_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_code_mode_binding_level_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration normalize_mcp_client_names[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] normalize_mcp_client_names: processing 0 mcpClients[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration normalize_mcp_client_names[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration move_keys_to_provider_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] move_keys_to_provider_config: creating table TableVirtualKeyProviderConfigKey[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] move_keys_to_provider_config: processing 0 oldAssociations[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] move_keys_to_provider_config: dropping table governance_virtual_key_keys[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration move_keys_to_provider_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_plugin_version_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_plugin_version_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_send_back_raw_request_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_send_back_raw_request_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_config_hash_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_config_hash_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_key_config_hash_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_key_config_hash_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_additional_config_hash_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_additional_config_hash_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_200k_token_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_200k_token_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_image_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_image_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_use_for_batch_api_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_use_for_batch_api_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_header_filter_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_header_filter_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_azure_client_id_and_client_secret_and_tenant_id_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_azure_client_id_and_client_secret_and_tenant_id_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_distributed_locks_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_distributed_locks_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_config_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_model_config_table: creating table TableModelConfig[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_config_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_provider_governance_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_provider_governance_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allowed_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allowed_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_disable_db_pings_in_health_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_disable_db_pings_in_health_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_is_ping_available_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_is_ping_available_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_tool_pricing_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_tool_pricing_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration remove_server_prefix_from_mcp_tools[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] remove_server_prefix_from_mcp_tools: processing 0 mcpClients[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] remove_server_prefix_from_mcp_tools: processing 0 vkMCPConfigs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration remove_server_prefix_from_mcp_tools[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_tool_sync_interval_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_tool_sync_interval_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_config_to_oauth_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_config_to_oauth_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_routing_rules_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_routing_rules_table: creating table TableRoutingRule[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_routing_rules_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_base_model_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_base_model_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_azure_scopes_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_azure_scopes_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_replicate_deployments_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_replicate_deployments_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_key_status_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_key_status_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_provider_status_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_provider_status_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_rate_limit_to_teams_and_customers[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_rate_limit_to_teams_and_customers[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_async_job_result_ttl_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_async_job_result_ttl_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_required_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_required_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_logging_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_logging_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_hide_deleted_virtual_keys_in_filters_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_hide_deleted_virtual_keys_in_filters_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_enforce_scim_auth_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_enforce_scim_auth_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_enforce_auth_on_inference_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_enforce_auth_on_inference_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration reconcile_pricing_overrides_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] reconcile_pricing_overrides_table: auto-migrating TablePricingOverride[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration reconcile_pricing_overrides_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_encryption_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_encryption_columns: processing 9 backfillTables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_encryption_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_output_cost_per_video_per_second_and_output_cost_per_second_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_output_cost_per_video_per_second_and_output_cost_per_second_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_enable_governance_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_enable_governance_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vllm_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vllm_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration widen_encrypted_varchar_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] widen_encrypted_varchar_columns: processing 9 stmts[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration widen_encrypted_varchar_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_bedrock_assume_role_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_bedrock_assume_role_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_store_raw_request_response_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_store_raw_request_response_column: processing 0 providers[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_store_raw_request_response_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_pricing_refactor_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_pricing_refactor_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration rename_truncated_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration rename_truncated_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_image_quality_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_image_quality_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_routing_targets_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_routing_targets_table: creating table TableRoutingTarget[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_routing_targets_table: processing 0 legacyRows[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_routing_targets_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_prompt_repo_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: creating table TableFolder[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: creating table TablePrompt[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: creating table TablePromptVersion[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: creating table TablePromptVersionMessage[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: creating table TablePromptSession[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: creating table TablePromptSessionMessage[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: auto-migrating TablePromptVersion and TablePromptSession[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_prompt_repo_tables: creating table TableModelParameters[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_prompt_repo_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_plugin_order_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_plugin_order_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allow_all_keys_to_provider_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_allow_all_keys_to_provider_config: processing 0 allConfigs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_allow_all_keys_to_provider_config: processing 0 modifiedVKIDs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allow_all_keys_to_provider_config[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_provider_config_blacklisted_models_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_provider_config_blacklisted_models_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration backfill_empty_virtual_key_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] backfill_empty_virtual_key_configs: processing 0 allVKs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] backfill_empty_virtual_key_configs: processing 0 allVKs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] backfill_empty_virtual_key_configs: processing 0 modifiedVKIDs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration backfill_empty_virtual_key_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_disable_auto_tool_inject_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_disable_auto_tool_inject_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_enable_temp_token_auth_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_enable_temp_token_auth_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration backfill_allowed_models_wildcard[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] backfill_allowed_models_wildcard: processing 0 modifiedVKIDs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] backfill_allowed_models_wildcard: processing 0 keys[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration backfill_allowed_models_wildcard[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_allowed_extra_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_allowed_extra_headers_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration make_base_pricing_columns_nullable[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration make_base_pricing_columns_nullable[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allow_on_all_virtual_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allow_on_all_virtual_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_open_ai_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_open_ai_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_key_blacklisted_models_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_key_blacklisted_models_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_chain_rule_column_to_routing_rules[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_chain_rule_column_to_routing_rules: processing 0 rules[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_chain_rule_column_to_routing_rules[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_deployment_columns_and_add_aliases[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] drop_deployment_columns_and_add_aliases: processing 0 affectedKeys[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_deployment_columns_and_add_aliases[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_replicate_key_config_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_replicate_key_config_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_budget_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_budget_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_routing_chain_max_depth_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_routing_chain_max_depth_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_prompt_variables_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_prompt_variables_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_capability_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_capability_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_ollama_sgl_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_ollama_sgl_config_columns: processing 0 providers[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_ollama_sgl_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_multi_budget_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_multi_budget_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_per_user_oauth_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_per_user_oauth_tables: creating table TableOauthUserToken[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_per_user_oauth_tables: creating table TableOauthUserSession[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_per_user_oauth_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_discovered_tools_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_discovered_tools_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_whitelisted_routes_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_whitelisted_routes_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration replace_enable_litellm_with_compat_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[migrator] dropping column enable_litellm_fallbacks from table config_client[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration replace_enable_litellm_with_compat_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_pricing_unique_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_pricing_unique_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration default_compat_should_convert_params_false[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration default_compat_should_convert_params_false[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_priority_tier_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_priority_tier_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_flex_tier_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_flex_tier_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration normalize_otel_trace_type[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration normalize_otel_trace_type[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration migrate_calendar_aligned[0m
+[90m10:25AM[0m [32mINF[0m [1m[Migration] Prefilled calendar_aligned field for existing budgets and rate limits[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration migrate_calendar_aligned[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_team_budgets_to_budgets_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_team_budgets_to_budgets_table: processing 0 teamsToRehash[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_team_budgets_to_budgets_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_ocr_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_ocr_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration convert_mcp_client_tool_sync_interval_minutes_to_seconds[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration convert_mcp_client_tool_sync_interval_minutes_to_seconds[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_external_base_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_external_base_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration split_mcp_external_base_url_into_server_client[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration split_mcp_external_base_url_into_server_client[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration make_oauth_token_expiry_nullable[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration make_oauth_token_expiry_nullable[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allow_per_request_content_storage_override_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allow_per_request_content_storage_override_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_retain_content_in_object_storage_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_retain_content_in_object_storage_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allow_per_request_raw_override_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allow_per_request_raw_override_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_disabled_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_disabled_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration gov_unique_team_names[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] gov_unique_team_names: processing 0 dups[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration gov_unique_team_names[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_allow_direct_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] drop_allow_direct_keys_column: processing 0 clientConfigs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_allow_direct_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_allow_direct_keys_column_ddl[0m
+[90m10:25AM[0m [32mINF[0m [1m[migrator] dropping column allow_direct_keys from table config_client[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_allow_direct_keys_column_ddl[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth_auth_mode_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_oauth_auth_mode_columns: processing 3 dedupeStmts[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_oauth_auth_mode_columns: processing 3 partialUniques[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth_auth_mode_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration replace_oauth_session_token_with_session_id[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration replace_oauth_session_token_with_session_id[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_legacy_oauth_server_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_legacy_oauth_server_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_non_vk_oauth_user_rows[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_non_vk_oauth_user_rows[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_mcp_external_server_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_mcp_external_server_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_team_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_team_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_legacy_calendar_aligned_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_legacy_calendar_aligned_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_access_profile_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_access_profile_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_vk_access_profile_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_vk_access_profile_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_feature_flags_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_feature_flags_table: creating table TableFeatureFlag[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_feature_flags_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_framework_config_hash_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_framework_config_hash_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_parameters_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_parameters_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_client_config_metadata_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_client_config_metadata_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_temp_tokens_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_temp_tokens_table: creating table TempToken[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_temp_tokens_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration backfill_vk_provider_config_blacklisted_models[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] backfill_vk_provider_config_blacklisted_models: processing 0 virtualKeys[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration backfill_vk_provider_config_blacklisted_models[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_created_by_user_id_column_for_virtual_keys[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_created_by_user_id_column_for_virtual_keys[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration re_add_allow_direct_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration re_add_allow_direct_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration refresh_config_hash_after_mcp_external_server_url_removal[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] refresh_config_hash_after_mcp_external_server_url_removal: processing 0 clientConfigs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration refresh_config_hash_after_mcp_external_server_url_removal[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_azure_api_version_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_azure_api_version_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_per_user_header_credentials_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_mcp_per_user_header_credentials_table: creating table TableMCPPerUserHeaderCredential[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_mcp_per_user_header_credentials_table: processing 3 partialUniques[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_mcp_per_user_header_credentials_table: processing 2 statusIndexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_per_user_header_credentials_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_per_user_header_flows_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_mcp_per_user_header_flows_table: creating table TableMCPPerUserHeaderFlow[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_per_user_header_flows_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_tls_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_tls_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_additional_attributes_to_pricing[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_additional_attributes_to_pricing[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_config_scope_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_config_scope_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration migrate_provider_governance_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] migrate_provider_governance_to_model_configs: processing 0 providers[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration migrate_provider_governance_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_budget_model_config_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_budget_model_config_id_column: processing 0 mcs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_budget_model_config_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vertex_aws_workload_identity_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vertex_aws_workload_identity_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_config_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_model_config_calendar_aligned_column: processing 0 rows[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_config_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration migrate_virtual_key_governance_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] migrate_virtual_key_governance_to_model_configs: processing 0 vks[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration migrate_virtual_key_governance_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_customer_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_customer_calendar_aligned_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_customer_budgets_to_budgets_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_customer_budgets_to_budgets_table: processing 0 customersToRehash[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_customer_budgets_to_budgets_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_config_budgets_fk_constraint[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_config_budgets_fk_constraint[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_library_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_mcp_library_table: creating table TableMCPLibrary[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_library_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_library_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_library_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_library_source_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_library_source_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_fast_mode_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_fast_mode_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_customer_name_unique_constraint_dedup[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_customer_name_unique_constraint_dedup: processing 0 customers[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_customer_name_unique_constraint_dedup[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration null_legacy_customer_budget_id_refs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration null_legacy_customer_budget_id_refs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] running migrationAddSkillsRepoTables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] migrationAddSkillsRepoTables finished[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth2_server_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth2_server_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth2_issuance_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth2_issuance_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_dump_errors_in_console_logs_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_dump_errors_in_console_logs_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_bedrock_mantle_key_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_bedrock_mantle_key_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_model_pricing_is_deprecated_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_model_pricing_is_deprecated_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_tool_execution_timeout_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_tool_execution_timeout_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_key_expires_at_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_key_expires_at_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_key_delete_after_expire_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_key_delete_after_expire_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_client_config_delete_expired_virtual_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_client_config_delete_expired_virtual_keys_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_fast_mode_cache_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_fast_mode_cache_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_inference_geo_multiplier_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_inference_geo_multiplier_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_flex_and_cache_creation_272k_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_flex_and_cache_creation_272k_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vertex_force_single_region_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vertex_force_single_region_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_sidekiq_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_sidekiq_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_sidekiq_kind_status_created_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_sidekiq_kind_status_created_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_sidekiq_partitioning_key_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[migrator] adding column partitioning_key to table sidekiq[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_sidekiq_partitioning_key_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration repair_bare_wildcard_allowed_models[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration repair_bare_wildcard_allowed_models[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_bedrock_project_id_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_bedrock_project_id_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_dual_credential_conflict_behavior_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_dual_credential_conflict_behavior_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_webhook_endpoints_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_webhook_endpoints_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_webhook_jobs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_webhook_jobs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_webhook_config_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_webhook_config_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth_config_resource_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth_config_resource_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_use_anthropic_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_use_anthropic_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_bedrock_batch_role_arn_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_bedrock_batch_role_arn_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_budget_override_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_budget_override_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_budget_override_anchor_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_budget_override_anchor_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_live_models_sync_interval_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_live_models_sync_interval_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_pricing_override_user_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_pricing_override_user_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_budget_reset_config_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_budget_reset_config_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_pending_oauth_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_pending_oauth_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration merge_oauth_token_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] merge_oauth_token_tables: creating table TableMCPOauthToken[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration merge_oauth_token_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration create_mcp_oauth_flows_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] create_mcp_oauth_flows_table: creating table TableMCPOauthFlow[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration create_mcp_oauth_flows_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_oauth_config_pkce_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_oauth_config_pkce_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_oauth_config_token_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_oauth_config_token_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_admin_auth_mode_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_admin_auth_mode_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_token_exchange_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_token_exchange_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_needs_session_stickiness_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_needs_session_stickiness_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_bedrock_endpoints_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_bedrock_endpoints_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_cost_per_request_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_cost_per_request_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration backfill_default_complexity_exemplars_v2[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration backfill_default_complexity_exemplars_v2[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_notifications_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_notifications_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_batch_jobs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_batch_jobs_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_image_megapixel_tier_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_image_megapixel_tier_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_input_cost_per_query_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_input_cost_per_query_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_ultrafast_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_ultrafast_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_image_size_quality_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_image_size_quality_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_batch_jobs_attribution_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_batch_jobs_attribution_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_rotation_cooldown_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_rotation_cooldown_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_rotation_cooldown_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_rotation_cooldown_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration drop_legacy_oauth_user_fk_constraints[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration drop_legacy_oauth_user_fk_constraints[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_mcp_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_virtual_mcp_tables: creating table TableVirtualMCP[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] add_virtual_mcp_tables: creating table TableVirtualKeyVirtualMCP[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_mcp_tables[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_video_resolution_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_video_resolution_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_provider_job_kind_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration swap_provider_job_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration swap_provider_job_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_provider_job_kind_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_compat_azure_deepseek_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_compat_azure_deepseek_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration clear_plugin_config_hashes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration clear_plugin_config_hashes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_oauth_token_status_reason_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_oauth_token_status_reason_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_databricks_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_databricks_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_endpoint_slug[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_endpoint_slug[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_allow_all_providers_to_virtual_key[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_allow_all_providers_to_virtual_key[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration backfill_vk_allow_all_providers_hash[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] backfill_vk_allow_all_providers_hash: processing 0 virtualKeys[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration backfill_vk_allow_all_providers_hash[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_prompt_cache_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_prompt_cache_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_hidden_request_types_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_hidden_request_types_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_use_openai_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_use_openai_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_time_of_day_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_time_of_day_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration migrate_vk_standalone_limits_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration migrate_vk_standalone_limits_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration widen_oauth2_client_controlled_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration widen_oauth2_client_controlled_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_key_business_unit_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_key_business_unit_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_discovered_instructions_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_discovered_instructions_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_instruction_cap_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_instruction_cap_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_max_instructions_length_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_max_instructions_length_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_require_public_target_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_require_public_target_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_warp_config_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_warp_config_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_warp_api_key_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_warp_api_key_id_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_warp_history_retention_days_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_warp_history_retention_days_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_warp_log_embedding_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_warp_log_embedding_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_warp_temperature_reasoning_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_warp_temperature_reasoning_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_key_disable_content_logging_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_key_disable_content_logging_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_ttft_timeout_ms_column_to_routing_targets[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_ttft_timeout_ms_column_to_routing_targets[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_web_search_cost_per_request_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_web_search_cost_per_request_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration move_pricing_override_search_context_to_web_search[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration move_pricing_override_search_context_to_web_search[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_warp_additional_models_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_warp_additional_models_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_provider_config_virtual_key_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_provider_config_virtual_key_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_value_hash_and_token_hash_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_value_hash_and_token_hash_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_mcp_configs_mcp_client_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_mcp_configs_mcp_client_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vk_provider_config_provider_and_key_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vk_provider_config_provider_and_key_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_keys_created_at_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_keys_created_at_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_batch_jobs_due_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_batch_jobs_due_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration make_mcp_oauth_flows_state_unique[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration make_mcp_oauth_flows_state_unique[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_ultrafast_above_272k_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_ultrafast_above_272k_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_priority_above_272k_cache_creation_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_priority_above_272k_cache_creation_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_code_mode_limits_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_code_mode_limits_client_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_compat_force_reasoning_only_models_to_responses_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_compat_force_reasoning_only_models_to_responses_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration backfill_compat_force_reasoning_only_models_to_responses[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration backfill_compat_force_reasoning_only_models_to_responses[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_ignore_provider_cost_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_ignore_provider_cost_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_100k_token_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_100k_token_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_decisions_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_decisions_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_injected_tools_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_injected_tools_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_compat_convert_decision_to_responses_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_compat_convert_decision_to_responses_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_cloudflare_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_cloudflare_key_config_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration move_config_json_vk_limits_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration move_config_json_vk_limits_to_model_configs[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_oauth_private_allowlist_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_oauth_private_allowlist_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_provider_objects_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_provider_objects_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_batch_jobs_file_id_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_batch_jobs_file_id_indexes[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_provider_objects_object_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_provider_objects_object_id_index[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_client_config_enforce_vk_object_ownership_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_client_config_enforce_vk_object_ownership_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_openapi_spec_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_openapi_spec_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_openapi_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_openapi_config_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_client_config_extra_fields_placement_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_client_config_extra_fields_placement_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_virtual_key_metadata_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_virtual_key_metadata_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_a2a_private_allowlist_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_a2a_private_allowlist_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_vertex_use_session_routing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_vertex_use_session_routing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_client_config_skip_access_profile_user_virtual_key_lifecycle_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_client_config_skip_access_profile_user_virtual_key_lifecycle_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_rss_feeds_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_rss_feeds_table[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_rss_feeds_icon_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_rss_feeds_icon_url_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_passthrough_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_passthrough_json_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_warp_topic_discovery_min_requests_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_warp_topic_discovery_min_requests_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_azure_use_speech_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_azure_use_speech_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_azure_use_voice_live_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_azure_use_voice_live_endpoints_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_sagemaker_key_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_sagemaker_key_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration widen_oauth2_client_id_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration widen_oauth2_client_id_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth2_refresh_token_client_display_name_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth2_refresh_token_client_display_name_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_max_protocol_version_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_max_protocol_version_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_discovered_resources_prompts_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_discovered_resources_prompts_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_expose_lists_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_expose_lists_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_oauth_issuer_binding_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_oauth_issuer_binding_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_mcp_client_discovered_tool_details_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_mcp_client_discovered_tool_details_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_video_token_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_video_token_pricing_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_voice_live_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_voice_live_pricing_columns[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] starting migration add_anthropic_workload_identity_column[0m
+[90m10:25AM[0m [32mINF[0m [1m[configstore] finished migration add_anthropic_workload_identity_column[0m
+[90m10:25AM[0m [32mINF[0m [1mconfigstore: schema migrations complete; closing migration pool[0m
+[90m10:25AM[0m [32mINF[0m [1mconfigstore: opening runtime connection pool[0m
+[90m10:25AM[0m [32mINF[0m [1mpostgres pool tuned: max_open_conns=50 max_idle_conns=5 conn_max_idle_time=5m0s conn_max_lifetime=unlimited (this is one pool; logstore and configstore each open their own)[0m
+[90m10:25AM[0m [32mINF[0m [1mconfigstore: runtime connection pool ready[0m
+[90m10:25AM[0m [32mINF[0m [1mconfigstore: encrypting plaintext rows if encryption is enabled[0m
+[90m10:25AM[0m [32mINF[0m [1mconfigstore: postgres config store ready[0m
+[90m10:25AM[0m [32mINF[0m [1mconfig store initialized[0m
+[90m10:25AM[0m [32mINF[0m [1mconnecting to vectorstore[0m
+[90m10:25AM[0m [32mINF[0m [1mPer-user OAuth sweep worker started (flow=1m0s, orphan=24h0m0s, retention=720h0m0s)[0m
+[90m10:25AM[0m [32mINF[0m [1mPer-user headers sweep worker started (orphan=24h0m0s, retention=720h0m0s, expired_flow=15m0s)[0m
+[90m10:25AM[0m [32mINF[0m [1mpricing sync interval set to 24h0m0s (scheduler checks every 5m0s)[0m
+[90m10:25AM[0m [32mINF[0m [1minitializing model catalog...[0m
+[90m10:25AM[0m [32mINF[0m [1msuccessfully synced 14058 model parameters records[0m
+[90m10:25AM[0m [32mINF[0m [1mMCP library sync completed: 126 entries synced from https://getbifrost.ai/mcp-library[0m
+[90m10:25AM[0m [32mINF[0m [1minitializing MCP catalog...[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] GetVirtualKeys loaded 1 keys across 1 pages in 8.4576ms[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] loadFromDatabase GetVirtualKeys loaded 1 keys in 8.4576ms[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] loadFromDatabase rebuildInMemoryStructures took 0s[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] loadFromDatabase total took 19.2492ms[0m
+[90m10:25AM[0m [32mINF[0m [1mgovernance store initialized successfully[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] NewLocalGovernanceStore took 19.2492ms[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] governance_startup_reset lock acquisition took 2.6402ms (acquired=true)[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] PerformStartupResets in-memory reset of 0 rate limits took 0s[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] PerformStartupResets in-memory reset of 0 budgets took 0s[0m
+[90m10:25AM[0m [32mINF[0m [1m[startup-timing] PerformStartupResets took 0s[0m
+[90m10:25AM[0m [32mINF[0m [1m[CODE MODE] Starlark code mode initialized with binding level: server, timeout: 30s[0m
+[90m10:25AM[0m [32mINF[0m [1m[Bifrost MCP] tool manager initialized with tool execution timeout: 30s, max agent depth: 10, and code mode binding level: server[0m
+[90m10:25AM[0m [32mINF[0m [1m[Bifrost MCP] MCP Manager initialized[0m
+[90m10:25AM[0m [32mINF[0m [1mMCP integration initialized successfully[0m
+[90m10:25AM[0m [32mINF[0m [1mbifrost client initialized[0m
+[90m10:25AM[0m [32mINF[0m [1mlisting all models and adding to model catalog[0m
+[90m10:25AM[0m [32mINF[0m [1mmodels added to catalog[0m
+[90m10:25AM[0m [33mWRN[0m [1mbatch accounting sweeper not wired: logging plugin not found (err=plugin logging not found)[0m
+[90m10:25AM[0m [32mINF[0m [1mtemp-token sweep worker started (interval=5m0s)[0m
+[90m10:25AM[0m [33mWRN[0m [1m================================================================[0m
+[90m10:25AM[0m [33mWRN[0m [1mNo admin account is configured for this Bifrost instance yet.[0m
+[90m10:25AM[0m [33mWRN[0m [1mUntil one is created, the dashboard/API is reachable without a[0m
+[90m10:25AM[0m [33mWRN[0m [1mpassword from anyone who can route to this port. To finish setup,[0m
+[90m10:25AM[0m [33mWRN[0m [1mpass the configured setup token as auth_config.setup_token in the[0m
+[90m10:25AM[0m [33mWRN[0m [1mPUT /api/config call that creates the admin account.[0m
+[90m10:25AM[0m [33mWRN[0m [1m================================================================[0m
+[90m10:25AM[0m [33mWRN[0m [1m================================================================[0m
+[90m10:25AM[0m [33mWRN[0m [1mNo admin account is configured for this Bifrost instance yet.[0m
+[90m10:25AM[0m [33mWRN[0m [1mThe /api surface is locked until dashboard auth is enabled. Open[0m
+[90m10:25AM[0m [33mWRN[0m [1mthe dashboard and enter the setup token, or send it in the[0m
+[90m10:25AM[0m [33mWRN[0m [1mX-Bifrost-Setup-Token header.[0m
+[90m10:25AM[0m [33mWRN[0m [1m================================================================[0m
+[90m10:25AM[0m [32mINF[0m [1magent gateway initialized: 0 registered agent(s), push notifications disabled (external client URL not configured)[0m
+[90m10:25AM[0m [32mINF[0m [1mrequest body buffer pool limit: 4194304 bytes (buffers above this are released after each request)[0m
+[90m10:25AM[0m [32mINF[0m [1mToken refresh worker started[0m
+[90m10:25AM[0m [32mINF[0m [1mbackground live model refresh every 1h0m0s (jittered +/-10%)[0m
+[90m10:25AM[0m [32mINF[0m [1mTime spent in Bifrost server bootstrap 19601 ms[0m
+[90m10:25AM[0m [32mINF[0m [1mplugin status: model-catalog-resolver - active[0m
+[90m10:25AM[0m [32mINF[0m [1mplugin status: telemetry - active[0m
+[90m10:25AM[0m [32mINF[0m [1mplugin status: prompts - active[0m
+[90m10:25AM[0m [32mINF[0m [1mplugin status: governance - active[0m
+[90m10:25AM[0m [32mINF[0m [1mplugin status: routing - active[0m
+[90m10:25AM[0m [32mINF[0m [1mplugin status: semantic_cache - active[0m
+[90m10:25AM[0m [32mINF[0m [1mplugin status: compat - active[0m
+[90m10:25AM[0m [32mINF[0m [1msuccessfully started bifrost, serving UI on http://127.0.0.1:18091/[0m
+[90m10:25AM[0m [32mINF[0m [1mskills orphan cleanup completed during startup: deleted_db_blobs=0 deleted_storage_objects=0[0m
+[90m10:25AM[0m [33mWRN[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60596 [36mhttp.request_duration_ms=[0m29 [36mhttp.status_code=[0m401 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m5ff658bf-dc3a-40bc-80eb-46c358dd0b2e [36mtrace_id=[0m3a297cb581164be785681fbf19690a6f
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60596 [36mhttp.request_duration_ms=[0m200 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m649ff706-2cc9-4475-bd06-c6f9cefe7a06 [36mtrace_id=[0mfc576a979ec240e4a37552c391aba416
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60596 [36mhttp.request_duration_ms=[0m2 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m960caaac-8bf7-476b-b7d0-65ab54c4e754 [36mtrace_id=[0m47c3d57893c64c6d9c50d978a81e17a6
+[90m10:25AM[0m [33mWRN[0m [1mrequest completed[0m [36mhttp.method=[0mDELETE [36mhttp.remote_addr=[0m127.0.0.1:60596 [36mhttp.request_duration_ms=[0m0 [36mhttp.status_code=[0m401 [36mhttp.target=[0m/api/cache/clear/c16f3db0-6e39-5c44-9a93-68d318e62bd2 [36mhttp.user_agent=[0mGo-http-client/1.1
+[90m10:25AM[0m [33mWRN[0m [1mrequest completed[0m [36mhttp.method=[0mDELETE [36mhttp.remote_addr=[0m127.0.0.1:60596 [36mhttp.request_duration_ms=[0m0 [36mhttp.status_code=[0m403 [36mhttp.target=[0m/api/cache/clear/c16f3db0-6e39-5c44-9a93-68d318e62bd2 [36mhttp.user_agent=[0mGo-http-client/1.1
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mDELETE [36mhttp.remote_addr=[0m127.0.0.1:60596 [36mhttp.request_duration_ms=[0m4 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/api/cache/clear/c16f3db0-6e39-5c44-9a93-68d318e62bd2 [36mhttp.user_agent=[0mGo-http-client/1.1
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mDELETE [36mhttp.remote_addr=[0m127.0.0.1:60596 [36mhttp.request_duration_ms=[0m1 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/api/cache/clear-by-key/authprobe [36mhttp.user_agent=[0mGo-http-client/1.1

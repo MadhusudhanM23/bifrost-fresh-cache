@@ -1,0 +1,1118 @@
+{
+  "tool": "cachequality",
+  "meaningful_for_quality": false,
+  "banner": "MOCK EMBEDDINGS - NOT A SEMANTIC MODEL - NOT MEANINGFUL FOR QUALITY",
+  "not_meaningful_because": "the endpoint is the local mock OpenAI server (it answers GET /mock/stats); its embeddings are feature hashing of words, not a semantic model",
+  "command": [
+    "C:\\Users\\PC1\\AppData\\Local\\Temp\\go-build2607960353\\b001\\exe\\cachequality.exe",
+    "-label",
+    "mock-openai",
+    "-base-url",
+    "http://127.0.0.1:18089/v1",
+    "-model",
+    "mock-embedding",
+    "-api-key-env",
+    "MOCK_OPENAI_KEY",
+    "-dimensions",
+    "1536"
+  ],
+  "started_at": "2026-11-02T12:21:14Z",
+  "finished_at": "2026-11-02T12:21:15Z",
+  "embedder": "openai-compatible model=mock-embedding base_url=http://127.0.0.1:18089/v1 dimensions=1536",
+  "text_format": "chat",
+  "dataset": "datasets\\paraphrases.json",
+  "pairs": 84,
+  "positives": 42,
+  "negatives": 42,
+  "dimension": 1536,
+  "store": "pgvector, namespace eval_quality_d1536 (created for this run and dropped after it)",
+  "store_server": {
+    "other_sessions_at_start": "1 other client sessions, 0 of them active",
+    "pgvector_version": "0.8.7",
+    "server_version": "16.15 (Debian 16.15-1.pgdg12+2)",
+    "settings": {
+      "effective_cache_size": "4GB",
+      "fsync": "on",
+      "full_page_writes": "on",
+      "hnsw.ef_search": "40",
+      "hnsw.iterative_scan": "off",
+      "hnsw.max_scan_tuples": "20000",
+      "hnsw.scan_mem_multiplier": "1",
+      "jit": "on",
+      "maintenance_work_mem": "64MB",
+      "max_connections": "100",
+      "max_parallel_workers_per_gather": "2",
+      "plan_cache_mode": "auto",
+      "random_page_cost": "4",
+      "shared_buffers": "128MB",
+      "synchronous_commit": "on",
+      "wal_level": "replica",
+      "wal_sync_method": "fdatasync",
+      "work_mem": "4MB"
+    },
+    "version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit"
+  },
+  "thresholds": [
+    {
+      "threshold": 0.7,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 17,
+        "false_misses": 42,
+        "true_misses": 25,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 17,
+        "false_misses": 42,
+        "true_misses": 25,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.72,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 14,
+        "false_misses": 42,
+        "true_misses": 28,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 14,
+        "false_misses": 42,
+        "true_misses": 28,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.74,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 14,
+        "false_misses": 42,
+        "true_misses": 28,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 14,
+        "false_misses": 42,
+        "true_misses": 28,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.76,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 10,
+        "false_misses": 42,
+        "true_misses": 32,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 10,
+        "false_misses": 42,
+        "true_misses": 32,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.78,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 8,
+        "false_misses": 42,
+        "true_misses": 34,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 8,
+        "false_misses": 42,
+        "true_misses": 34,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.8,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 8,
+        "false_misses": 42,
+        "true_misses": 34,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 8,
+        "false_misses": 42,
+        "true_misses": 34,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.82,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 4,
+        "false_misses": 42,
+        "true_misses": 38,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 4,
+        "false_misses": 42,
+        "true_misses": 38,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.84,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 3,
+        "false_misses": 42,
+        "true_misses": 39,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 3,
+        "false_misses": 42,
+        "true_misses": 39,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.86,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.88,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.9,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.92,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.94,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.96,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    },
+    {
+      "threshold": 0.98,
+      "cosine": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "store": {
+        "true_hits": 0,
+        "false_hits": 1,
+        "false_misses": 42,
+        "true_misses": 41,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      },
+      "disagreements": 0
+    }
+  ],
+  "best_f1_thresholds": [
+    0.7,
+    0.72,
+    0.74,
+    0.76,
+    0.78,
+    0.8,
+    0.82,
+    0.84,
+    0.86,
+    0.88,
+    0.9,
+    0.92,
+    0.94,
+    0.96,
+    0.98
+  ],
+  "best_f1": 0,
+  "store_decisions": 1260,
+  "store_decisions_agreeing_with_cosine": 1260,
+  "max_abs_store_score_minus_cosine": 1.0914761683356033e-7,
+  "disagreements": null,
+  "similarity_by_label": {
+    "hit": {
+      "count": 42,
+      "min": -0.035355339059327376,
+      "p25": 0.04865042554105199,
+      "median": 0.24499797877501264,
+      "p75": 0.3150630189063022,
+      "max": 0.5645484402214311
+    },
+    "miss": {
+      "count": 42,
+      "min": 0,
+      "p25": 0.5495062597853971,
+      "median": 0.657535505639407,
+      "p75": 0.7529932885360188,
+      "max": 1
+    }
+  },
+  "pair_results": [
+    {
+      "id": "pos-01",
+      "category": "refunds",
+      "label": "hit",
+      "a": "How do I get a refund for an order that arrived late?",
+      "b": "My package showed up days late. Can I get my money back?",
+      "cosine": 0.30049929057013924
+    },
+    {
+      "id": "pos-02",
+      "category": "account",
+      "label": "hit",
+      "a": "How do I reset my password?",
+      "b": "I forgot my password and can't log in, how do I set a new one?",
+      "cosine": 0.47513109673319887
+    },
+    {
+      "id": "pos-03",
+      "category": "account",
+      "label": "hit",
+      "a": "How can I change the email address on my account?",
+      "b": "I want to update the email I use to sign in.",
+      "cosine": 0.22223915924615764
+    },
+    {
+      "id": "pos-04",
+      "category": "pricing",
+      "label": "hit",
+      "a": "How much does the Pro plan cost per month?",
+      "b": "What's the monthly price of the Pro tier?",
+      "cosine": 0.3117407395122594
+    },
+    {
+      "id": "pos-05",
+      "category": "orders",
+      "label": "hit",
+      "a": "Where is my order?",
+      "b": "Can you tell me the current status of my shipment?",
+      "cosine": 0
+    },
+    {
+      "id": "pos-06",
+      "category": "orders",
+      "label": "hit",
+      "a": "Can I change the delivery address after placing an order?",
+      "b": "I typed the wrong shipping address on my order, can it still be updated?",
+      "cosine": 0.35506624898232836
+    },
+    {
+      "id": "pos-07",
+      "category": "subscription",
+      "label": "hit",
+      "a": "How do I cancel my subscription?",
+      "b": "I'd like to stop my plan from renewing. How do I do that?",
+      "cosine": 0
+    },
+    {
+      "id": "pos-08",
+      "category": "billing",
+      "label": "hit",
+      "a": "Can I pay with PayPal?",
+      "b": "Do you accept PayPal as a payment method?",
+      "cosine": 0.5204800389058843
+    },
+    {
+      "id": "pos-09",
+      "category": "billing",
+      "label": "hit",
+      "a": "Where can I download my invoices?",
+      "b": "How do I get copies of my past bills for our accounting team?",
+      "cosine": 0.02635231368265215
+    },
+    {
+      "id": "pos-10",
+      "category": "security",
+      "label": "hit",
+      "a": "How do I turn on two-factor authentication?",
+      "b": "How can I enable 2FA on my account?",
+      "cosine": 0
+    },
+    {
+      "id": "pos-11",
+      "category": "api",
+      "label": "hit",
+      "a": "What is the rate limit for the API?",
+      "b": "How many API requests am I allowed to make per minute?",
+      "cosine": 0.2025478734167333
+    },
+    {
+      "id": "pos-12",
+      "category": "api",
+      "label": "hit",
+      "a": "How do I generate a new API key?",
+      "b": "Where can I create an API token for my integration?",
+      "cosine": 0.2718636239135184
+    },
+    {
+      "id": "pos-13",
+      "category": "shipping",
+      "label": "hit",
+      "a": "Do you ship internationally?",
+      "b": "Can I order from outside the United States and have it delivered abroad?",
+      "cosine": 0
+    },
+    {
+      "id": "pos-14",
+      "category": "returns",
+      "label": "hit",
+      "a": "What is your return policy?",
+      "b": "How many days do I have to send an item back?",
+      "cosine": -0.035355339059327376
+    },
+    {
+      "id": "pos-15",
+      "category": "account",
+      "label": "hit",
+      "a": "How do I delete my account permanently?",
+      "b": "I want my account and all of my data removed for good.",
+      "cosine": 0.28867513459481287
+    },
+    {
+      "id": "pos-16",
+      "category": "product",
+      "label": "hit",
+      "a": "Does the app work offline?",
+      "b": "Can I use the application without an internet connection?",
+      "cosine": 0.04865042554105199
+    },
+    {
+      "id": "pos-17",
+      "category": "integrations",
+      "label": "hit",
+      "a": "Do you integrate with Slack?",
+      "b": "Can we get your product's notifications in our Slack workspace?",
+      "cosine": 0.22591299788996203
+    },
+    {
+      "id": "pos-18",
+      "category": "troubleshooting",
+      "label": "hit",
+      "a": "The app keeps crashing when I open it.",
+      "b": "Every time I launch the app it closes immediately.",
+      "cosine": 0.1735852146410985
+    },
+    {
+      "id": "pos-19",
+      "category": "billing",
+      "label": "hit",
+      "a": "Why was I charged twice this month?",
+      "b": "I see two identical charges on my card for the same subscription.",
+      "cosine": 0.18866665225463128
+    },
+    {
+      "id": "pos-20",
+      "category": "pricing",
+      "label": "hit",
+      "a": "Is there a discount for annual billing?",
+      "b": "Do I save money if I pay yearly instead of monthly?",
+      "cosine": 0
+    },
+    {
+      "id": "pos-21",
+      "category": "subscription",
+      "label": "hit",
+      "a": "How do I upgrade from the Basic plan to Pro?",
+      "b": "I want to move my account up to the Pro plan from Basic.",
+      "cosine": 0.5645484402214311
+    },
+    {
+      "id": "pos-22",
+      "category": "team",
+      "label": "hit",
+      "a": "How do I invite a teammate to my workspace?",
+      "b": "What's the way to add a colleague to our team account?",
+      "cosine": 0.07271792483455794
+    },
+    {
+      "id": "pos-23",
+      "category": "shipping",
+      "label": "hit",
+      "a": "How long does standard shipping take?",
+      "b": "What's the usual delivery time for regular shipping?",
+      "cosine": 0.2658047665355975
+    },
+    {
+      "id": "pos-24",
+      "category": "data",
+      "label": "hit",
+      "a": "Can I export my data to CSV?",
+      "b": "Is there a way to download all my records as a spreadsheet file?",
+      "cosine": 0.027472112789737806
+    },
+    {
+      "id": "pos-25",
+      "category": "security",
+      "label": "hit",
+      "a": "Is my data encrypted?",
+      "b": "Do you encrypt customer information at rest and in transit?",
+      "cosine": 0.11769797726729993
+    },
+    {
+      "id": "pos-26",
+      "category": "product",
+      "label": "hit",
+      "a": "Is there a dark mode?",
+      "b": "Can I switch the interface to a dark theme?",
+      "cosine": 0.31622776601683794
+    },
+    {
+      "id": "pos-27",
+      "category": "api",
+      "label": "hit",
+      "a": "Do you have a Python SDK?",
+      "b": "Is there an official Python client library for your API?",
+      "cosine": 0.3150630189063022
+    },
+    {
+      "id": "pos-28",
+      "category": "account",
+      "label": "hit",
+      "a": "I didn't receive the verification email.",
+      "b": "The confirmation email never arrived in my inbox.",
+      "cosine": 0.3114205483953508
+    },
+    {
+      "id": "pos-29",
+      "category": "orders",
+      "label": "hit",
+      "a": "Can I cancel an order that hasn't shipped yet?",
+      "b": "My order is still processing. Is it possible to cancel it before it ships?",
+      "cosine": 0.4161234866448654
+    },
+    {
+      "id": "pos-30",
+      "category": "billing",
+      "label": "hit",
+      "a": "How do I update my credit card details?",
+      "b": "My card expired, where do I enter a new one for billing?",
+      "cosine": 0.19795764159656268
+    },
+    {
+      "id": "pos-31",
+      "category": "returns",
+      "label": "hit",
+      "a": "Do I have to pay for return shipping?",
+      "b": "Is sending an item back free, or do I cover the postage?",
+      "cosine": 0.05007830858361344
+    },
+    {
+      "id": "pos-32",
+      "category": "pricing",
+      "label": "hit",
+      "a": "Do you offer a free trial?",
+      "b": "Can I try the product for free before buying?",
+      "cosine": 0.2487341690815455
+    },
+    {
+      "id": "pos-33",
+      "category": "account",
+      "label": "hit",
+      "a": "How do I change my username?",
+      "b": "Can I rename my account's username to something else?",
+      "cosine": 0.42735216172364227
+    },
+    {
+      "id": "pos-34",
+      "category": "support",
+      "label": "hit",
+      "a": "How can I contact customer support?",
+      "b": "What's the best way to reach a person on your support team?",
+      "cosine": 0.24499797877501264
+    },
+    {
+      "id": "pos-35",
+      "category": "integrations",
+      "label": "hit",
+      "a": "How do I connect my Google Calendar?",
+      "b": "Can I sync events from Google Calendar with the app?",
+      "cosine": 0.5542869676919993
+    },
+    {
+      "id": "pos-36",
+      "category": "api",
+      "label": "hit",
+      "a": "What does HTTP error 429 mean when calling your API?",
+      "b": "I keep getting 'too many requests' errors from the API. What's going on?",
+      "cosine": 0.2504177112353167
+    },
+    {
+      "id": "pos-37",
+      "category": "subscription",
+      "label": "hit",
+      "a": "What happens to my data if I cancel?",
+      "b": "If I end my subscription, will my files be deleted?",
+      "cosine": 0.02831827358942995
+    },
+    {
+      "id": "pos-38",
+      "category": "shipping",
+      "label": "hit",
+      "a": "Can I pick up my order in store?",
+      "b": "Is in-store collection available instead of home delivery?",
+      "cosine": 0.21563459333224222
+    },
+    {
+      "id": "pos-39",
+      "category": "pricing",
+      "label": "hit",
+      "a": "How many users can the Team plan have?",
+      "b": "What's the seat limit on the Team plan?",
+      "cosine": 0.48484848484848486
+    },
+    {
+      "id": "pos-40",
+      "category": "security",
+      "label": "hit",
+      "a": "How do I log out of all devices?",
+      "b": "Can I sign out of every session at once from my account settings?",
+      "cosine": 0
+    },
+    {
+      "id": "pos-41",
+      "category": "billing",
+      "label": "hit",
+      "a": "Do you charge VAT on subscriptions?",
+      "b": "Will tax be added on top of my subscription price?",
+      "cosine": 0.27229057431858544
+    },
+    {
+      "id": "pos-42",
+      "category": "troubleshooting",
+      "label": "hit",
+      "a": "The dashboard is loading very slowly.",
+      "b": "Your dashboard takes forever to load for me.",
+      "cosine": 0.4285372672044641
+    },
+    {
+      "id": "neg-01",
+      "category": "refunds",
+      "label": "miss",
+      "a": "Can I get a refund for a late order?",
+      "b": "How do I cancel a late order?",
+      "cosine": 0.5610836076867821
+    },
+    {
+      "id": "neg-02",
+      "category": "pricing",
+      "label": "miss",
+      "a": "What is the price of the Pro plan?",
+      "b": "What is the price of the Team plan?",
+      "cosine": 0.7060180864974624,
+      "store_score_at_lowest_threshold": 0.7060180481661542
+    },
+    {
+      "id": "neg-03",
+      "category": "account",
+      "label": "miss",
+      "a": "How do I reset my password?",
+      "b": "How do I reset my two-factor authentication?",
+      "cosine": 0.29607826273189597
+    },
+    {
+      "id": "neg-04",
+      "category": "account",
+      "label": "miss",
+      "a": "How do I delete my account?",
+      "b": "How do I temporarily deactivate my account?",
+      "cosine": 0.4485426135725302
+    },
+    {
+      "id": "neg-05",
+      "category": "subscription",
+      "label": "miss",
+      "a": "How do I upgrade my plan?",
+      "b": "How do I downgrade my plan?",
+      "cosine": 0.6007514091861106
+    },
+    {
+      "id": "neg-06",
+      "category": "billing",
+      "label": "miss",
+      "a": "Is monthly billing available for the Pro plan?",
+      "b": "Is annual billing available for the Pro plan?",
+      "cosine": 0.7692772189617516,
+      "store_score_at_lowest_threshold": 0.7692772379302159
+    },
+    {
+      "id": "neg-07",
+      "category": "data",
+      "label": "miss",
+      "a": "How do I export my contacts to a CSV file?",
+      "b": "How do I import my contacts from a CSV file?",
+      "cosine": 0.8108108108108109,
+      "store_score_at_lowest_threshold": 0.8108108285311115
+    },
+    {
+      "id": "neg-08",
+      "category": "team",
+      "label": "miss",
+      "a": "How do I add a member to my team?",
+      "b": "How do I remove a member from my team?",
+      "cosine": 0.6667948594698256
+    },
+    {
+      "id": "neg-09",
+      "category": "shipping",
+      "label": "miss",
+      "a": "Do you ship to Canada?",
+      "b": "Do you ship from Canada?",
+      "cosine": 1,
+      "store_score_at_lowest_threshold": 1
+    },
+    {
+      "id": "neg-10",
+      "category": "subscription",
+      "label": "miss",
+      "a": "How do I cancel my subscription?",
+      "b": "How do I pause my subscription?",
+      "cosine": 0.6416236526819377
+    },
+    {
+      "id": "neg-11",
+      "category": "refunds",
+      "label": "miss",
+      "a": "How long does a refund take?",
+      "b": "How long does shipping take?",
+      "cosine": 0.6210590034081188
+    },
+    {
+      "id": "neg-12",
+      "category": "security",
+      "label": "miss",
+      "a": "How do I enable two-factor authentication?",
+      "b": "How do I disable two-factor authentication?",
+      "cosine": 0.8352152663013304,
+      "store_score_at_lowest_threshold": 0.8352152109146118
+    },
+    {
+      "id": "neg-13",
+      "category": "api",
+      "label": "miss",
+      "a": "How do I rotate my API key?",
+      "b": "How do I revoke my API key?",
+      "cosine": 0.5833333333333334
+    },
+    {
+      "id": "neg-14",
+      "category": "billing",
+      "label": "miss",
+      "a": "Where can I find last month's invoice?",
+      "b": "When will next month's invoice be issued?",
+      "cosine": 0.5657789512801619
+    },
+    {
+      "id": "neg-15",
+      "category": "orders",
+      "label": "miss",
+      "a": "Where is my order?",
+      "b": "Where is your warehouse located?",
+      "cosine": 0
+    },
+    {
+      "id": "neg-16",
+      "category": "account",
+      "label": "miss",
+      "a": "How do I change my shipping address?",
+      "b": "How do I change my billing address?",
+      "cosine": 0.7077760731311631,
+      "store_score_at_lowest_threshold": 0.7077760907344848
+    },
+    {
+      "id": "neg-17",
+      "category": "pricing",
+      "label": "miss",
+      "a": "Does the Pro plan include a free trial?",
+      "b": "Does the Team plan include a free trial?",
+      "cosine": 0.8101914936669333,
+      "store_score_at_lowest_threshold": 0.8101914766487923
+    },
+    {
+      "id": "neg-18",
+      "category": "api",
+      "label": "miss",
+      "a": "How do I install the Python SDK?",
+      "b": "How do I install the Node.js SDK?",
+      "cosine": 0.6013377943029548
+    },
+    {
+      "id": "neg-19",
+      "category": "api",
+      "label": "miss",
+      "a": "What does API error 401 mean?",
+      "b": "What does API error 429 mean?",
+      "cosine": 0.7503664793768668,
+      "store_score_at_lowest_threshold": 0.7503664493560791
+    },
+    {
+      "id": "neg-20",
+      "category": "returns",
+      "label": "miss",
+      "a": "Can I return an item after 30 days?",
+      "b": "Can I exchange an item after 30 days?",
+      "cosine": 0.657535505639407
+    },
+    {
+      "id": "neg-21",
+      "category": "account",
+      "label": "miss",
+      "a": "How do I change my email address?",
+      "b": "How do I change my email notification settings?",
+      "cosine": 0.5059924592267421
+    },
+    {
+      "id": "neg-22",
+      "category": "billing",
+      "label": "miss",
+      "a": "Do you store my credit card number?",
+      "b": "Why was my credit card charged?",
+      "cosine": 0.5495062597853971
+    },
+    {
+      "id": "neg-23",
+      "category": "product",
+      "label": "miss",
+      "a": "How do I turn on dark mode in the mobile app?",
+      "b": "How do I turn on dark mode in the desktop app?",
+      "cosine": 0.7529932885360188,
+      "store_score_at_lowest_threshold": 0.7529933452606201
+    },
+    {
+      "id": "neg-24",
+      "category": "billing",
+      "label": "miss",
+      "a": "How do I add a new payment method?",
+      "b": "How do I remove a payment method?",
+      "cosine": 0.6375355777548621
+    },
+    {
+      "id": "neg-25",
+      "category": "billing",
+      "label": "miss",
+      "a": "Can I get my invoices in euros?",
+      "b": "Can I pay my invoices in euros?",
+      "cosine": 0.75,
+      "store_score_at_lowest_threshold": 0.7500000223517428
+    },
+    {
+      "id": "neg-26",
+      "category": "product",
+      "label": "miss",
+      "a": "What's the maximum file upload size?",
+      "b": "What's the maximum storage per account?",
+      "cosine": 0.2531848381461773
+    },
+    {
+      "id": "neg-27",
+      "category": "product",
+      "label": "miss",
+      "a": "How do I share a dashboard with someone outside my company?",
+      "b": "How do I share a dashboard with someone inside my company?",
+      "cosine": 0.8581163303210331,
+      "store_score_at_lowest_threshold": 0.8581164394686499
+    },
+    {
+      "id": "neg-28",
+      "category": "orders",
+      "label": "miss",
+      "a": "Why was my order cancelled?",
+      "b": "Why was my order delayed?",
+      "cosine": 0.4767312946227962
+    },
+    {
+      "id": "neg-29",
+      "category": "subscription",
+      "label": "miss",
+      "a": "Can I change my plan in the middle of a billing cycle?",
+      "b": "Can I get a refund in the middle of a billing cycle?",
+      "cosine": 0.5980568197828595
+    },
+    {
+      "id": "neg-30",
+      "category": "pricing",
+      "label": "miss",
+      "a": "Do you offer student discounts?",
+      "b": "Do you offer nonprofit discounts?",
+      "cosine": 0.6473388749701496
+    },
+    {
+      "id": "neg-31",
+      "category": "integrations",
+      "label": "miss",
+      "a": "How do I connect Slack to my workspace?",
+      "b": "How do I disconnect Slack from my workspace?",
+      "cosine": 0.8123623944599232,
+      "store_score_at_lowest_threshold": 0.8123624324798584
+    },
+    {
+      "id": "neg-32",
+      "category": "api",
+      "label": "miss",
+      "a": "What is the API rate limit on the free plan?",
+      "b": "What is the API rate limit on the enterprise plan?",
+      "cosine": 0.746003846592251,
+      "store_score_at_lowest_threshold": 0.7460038288236809
+    },
+    {
+      "id": "neg-33",
+      "category": "api",
+      "label": "miss",
+      "a": "Is there a limit on API keys per account?",
+      "b": "Is there a limit on API requests per account?",
+      "cosine": 0.7676494735787385,
+      "store_score_at_lowest_threshold": 0.7676495313644409
+    },
+    {
+      "id": "neg-34",
+      "category": "data",
+      "label": "miss",
+      "a": "How do I recover a deleted file?",
+      "b": "How do I permanently delete a file?",
+      "cosine": 0.4131671220064233
+    },
+    {
+      "id": "neg-35",
+      "category": "returns",
+      "label": "miss",
+      "a": "Can I track my return?",
+      "b": "Can I track my order?",
+      "cosine": 0.48666426339228763
+    },
+    {
+      "id": "neg-36",
+      "category": "account",
+      "label": "miss",
+      "a": "How do I verify my email address?",
+      "b": "How do I verify my phone number?",
+      "cosine": 0.361092690364237
+    },
+    {
+      "id": "neg-37",
+      "category": "troubleshooting",
+      "label": "miss",
+      "a": "The app crashes on my Android phone.",
+      "b": "The app crashes on my iPhone.",
+      "cosine": 0.6744532734334624
+    },
+    {
+      "id": "neg-38",
+      "category": "product",
+      "label": "miss",
+      "a": "How do I turn on notifications for new messages?",
+      "b": "How do I mute notifications for new messages?",
+      "cosine": 0.8181818181818182,
+      "store_score_at_lowest_threshold": 0.8181818723678589
+    },
+    {
+      "id": "neg-39",
+      "category": "refunds",
+      "label": "miss",
+      "a": "Can I get a refund to a different card?",
+      "b": "Can I get a refund as store credit?",
+      "cosine": 0.45962735987049386
+    },
+    {
+      "id": "neg-40",
+      "category": "account",
+      "label": "miss",
+      "a": "How do I log in with my Google account?",
+      "b": "How do I unlink my Google account?",
+      "cosine": 0.7127864449672373,
+      "store_score_at_lowest_threshold": 0.7127864744428879
+    },
+    {
+      "id": "neg-41",
+      "category": "pricing",
+      "label": "miss",
+      "a": "Is the Team plan billed per user?",
+      "b": "Is the Team plan billed per workspace?",
+      "cosine": 0.8469895538599199,
+      "store_score_at_lowest_threshold": 0.8469896568950912
+    },
+    {
+      "id": "neg-42",
+      "category": "data",
+      "label": "miss",
+      "a": "How long do you keep my data after I cancel?",
+      "b": "How long do you keep backups of my data?",
+      "cosine": 0.6957252427829381
+    }
+  ]
+}

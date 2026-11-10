@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acme support (demo)</title>
+  <meta name="description" content="Demo support-availability page for the Bifrost freshness companion hackathon project. Acme is a fictional company.">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --fg: #1b1b1f;
+      --muted: #45464f;
+      --card: #f3f5f9;
+      --border: #c4c9d4;
+      --accent: #0b57d0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #131418;
+        --fg: #f1f2f6;
+        --muted: #c5c8d2;
+        --card: #1d2027;
+        --border: #3b404b;
+        --accent: #8ab4f8;
+      }
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 1.125rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 2.5rem 1rem 3rem;
+    }
+    h1 {
+      font-size: 2rem;
+      line-height: 1.2;
+      margin: 0 0 1.5rem;
+    }
+    .status {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 0.375rem solid var(--accent);
+      border-radius: 0.75rem;
+      padding: 1.25rem 1.5rem;
+    }
+    .status h2 {
+      font-size: 1.25rem;
+      margin: 0;
+    }
+    .state {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0.5rem 0 0;
+    }
+    .note {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Acme support</h1>
+    <section class="status" aria-labelledby="chat-status-heading">
+      <h2 id="chat-status-heading">Chat support status</h2>
+      <!-- The companion's source_pattern reads the sentence below (captured
+           from the word chat onward, to the end of the clause). To demo a
+           status flip, change only the word "available" to "unavailable"
+           (or back). Keep the sentence on one line with no tags inside it,
+           so the direct provider sees the same text in text and raw mode. -->
+      <p id="chat-status" class="state" data-fact="live-chat-availability">Live chat support is currently available.</p>
+    </section>
+    <p class="note">Last updated <time datetime="2026-11-03">3 November 2026</time>.</p>
+    <p class="note">This is a demo page for a hackathon project. Acme is fictional and nothing here is a real offer.</p>
+  </main>
+</body>
+</html>

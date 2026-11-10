@@ -1,0 +1,14 @@
+# Real-model mode. Add it on top of the normal stack:
+#   docker compose -f docker-compose.yml -f docker-compose.real.yml up -d
+# Answers then come from a real model (Grok via xAI, or Groq), using the key
+# in .env. Embeddings stay on the local mock: neither provider offers one.
+# Keys are read from .env and never written into any file here.
+services:
+  bifrost:
+    volumes:
+      - ./docker/bifrost-config.real.json:/app-data/config.json:ro
+    environment:
+      # GROK_API_KEY is accepted as another name for the xAI key.
+      XAI_API_KEY: "${XAI_API_KEY:-${GROK_API_KEY:-}}"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"

@@ -1,0 +1,24 @@
+// Out-of-tree Go workspace for building bifrost-http from the local fork
+// (branch feat/pgvector-vectorstore) without touching the bifrost repo.
+// Use it with GOWORK=<this file>. Do NOT run `go work sync` with it: that
+// rewrites the go.mod files of the bifrost modules.
+go 1.27.3
+
+use (
+	../../bifrost/cli
+	../../bifrost/core
+	../../bifrost/framework
+	../../bifrost/transports
+	../../bifrost/plugins/compat
+	../../bifrost/plugins/governance
+	../../bifrost/plugins/jsonparser
+	../../bifrost/plugins/logging
+	../../bifrost/plugins/maxim
+	../../bifrost/plugins/mocker
+	../../bifrost/plugins/modelcatalogresolver
+	../../bifrost/plugins/otel
+	../../bifrost/plugins/prompts
+	../../bifrost/plugins/routing
+	../../bifrost/plugins/semanticcache
+	../../bifrost/plugins/telemetry
+)

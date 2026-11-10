@@ -1,0 +1,61 @@
+2026/11/10 10:24:51 maxprocs: Leaving GOMAXPROCS=8: CPU quota undefined
+
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║   ██████╗ ██╗███████╗██████╗  ██████╗ ███████╗████████╗   ║
+║   ██╔══██╗██║██╔════╝██╔══██╗██╔═══██╗██╔════╝╚══██╔══╝   ║
+║   ██████╔╝██║█████╗  ██████╔╝██║   ██║███████╗   ██║      ║
+║   ██╔══██╗██║██╔══╝  ██╔══██╗██║   ██║╚════██║   ██║      ║
+║   ██████╔╝██║██║     ██║  ██║╚██████╔╝███████║   ██║      ║
+║   ╚═════╝ ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝      ║
+║                                                           ║
+║═══════════════════════════════════════════════════════════║
+║                    v0.0.0-e2e-pgvector                    ║
+║═══════════════════════════════════════════════════════════║
+║                 The Fastest LLM Gateway                   ║
+║═══════════════════════════════════════════════════════════║
+║             https://github.com/maximhq/bifrost            ║
+╚═══════════════════════════════════════════════════════════╝
+
+[90m10:24AM[0m [32mINF[0m [1mloading configuration from: C:\Madhusudhan\Geeks\hackathon-workspace\e2e\config.json[0m
+[90m10:24AM[0m [32mINF[0m [1mconnecting to vectorstore[0m
+[90m10:24AM[0m [33mWRN[0m [1mconfig store is nil, skipping token refresh worker[0m
+[90m10:24AM[0m [33mWRN[0m [1mper-user OAuth sweep worker not started: provider or config store is nil[0m
+[90m10:24AM[0m [33mWRN[0m [1mper-user headers credential sweep worker not started: provider or config store is nil[0m
+[90m10:24AM[0m [32mINF[0m [1mpricing sync interval set to 24h0m0s (scheduler checks every 5m0s)[0m
+[90m10:24AM[0m [32mINF[0m [1minitializing model catalog...[0m
+[90m10:24AM[0m [32mINF[0m [1minitializing MCP catalog...[0m
+[90m10:24AM[0m [33mWRN[0m [1mgovernance plugin requires config store to persist data, running in memory only mode[0m
+[90m10:24AM[0m [31mERR[0m [1mfailed to initialize governance plugin: failed to initialize governance store: failed to load governance data from config memory: governance config is nil[0m
+[90m10:24AM[0m [32mINF[0m [1mbifrost client initialized[0m
+[90m10:24AM[0m [32mINF[0m [1mlisting all models and adding to model catalog[0m
+[90m10:24AM[0m [32mINF[0m [1mmodels added to catalog[0m
+[90m10:24AM[0m [33mWRN[0m [1mbatch accounting sweeper not wired: logging plugin not found (err=plugin logging not found)[0m
+[90m10:24AM[0m [31mERR[0m [1mauth middleware requires config store, skipping auth middleware initialization[0m
+[90m10:24AM[0m [32mINF[0m [1mrequest body buffer pool limit: 4194304 bytes (buffers above this are released after each request)[0m
+[90m10:24AM[0m [32mINF[0m [1mbackground live model refresh every 1h0m0s (jittered +/-10%)[0m
+[90m10:24AM[0m [32mINF[0m [1mTime spent in Bifrost server bootstrap 4903 ms[0m
+[90m10:24AM[0m [32mINF[0m [1mplugin status: semantic_cache - active[0m
+[90m10:24AM[0m [32mINF[0m [1mplugin status: compat - active[0m
+[90m10:24AM[0m [32mINF[0m [1mplugin status: model-catalog-resolver - active[0m
+[90m10:24AM[0m [32mINF[0m [1mplugin status: telemetry - active[0m
+[90m10:24AM[0m [32mINF[0m [1mplugin status: governance - error[0m
+[90m10:24AM[0m [32mINF[0m [1msuccessfully started bifrost, serving UI on http://127.0.0.1:18090/[0m
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m237 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0md9ae5615-a918-4335-9282-cf05951e7397 [36mtrace_id=[0m1b655c4628a84f96aae44e371b29a5eb
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m2 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0md8d94db9-eef5-403e-bc66-1025f5a77e3b [36mtrace_id=[0ma392efac95df42d5a679f8c3d0a9464d
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m3 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m06ffa168-a507-4cf9-aa0e-30976633f418 [36mtrace_id=[0m27cfae7cc61b43de80a0aaf0fe5e93e5
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m103 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m2b80cbaf-4149-4c56-8b70-dea1f21725fc [36mtrace_id=[0mf80e6e02e05c43d587a8a5e9504d59f8
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m102 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0mdd6863b8-5b1d-4cb7-bfed-3b607bc92632 [36mtrace_id=[0ma1393d5e4ce345479fee4b27d2aefa4f
+[90m10:24AM[0m [33mWRN[0m [1mrequest completed[0m [36mhttp.method=[0mDELETE [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m0 [36mhttp.status_code=[0m403 [36mhttp.target=[0m/api/cache/clear/e9480d9f-3b85-504b-b6b4-976fbb46514d [36mhttp.user_agent=[0mGo-http-client/1.1
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mDELETE [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m3 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/api/cache/clear/e9480d9f-3b85-504b-b6b4-976fbb46514d [36mhttp.user_agent=[0mGo-http-client/1.1
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m103 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m63a5cfcc-a7bb-48b7-a193-d6acd2627313 [36mtrace_id=[0m05397e3999ed475c836a7109be85cabe
+[90m10:24AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mDELETE [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m4 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/api/cache/clear-by-key/other [36mhttp.user_agent=[0mGo-http-client/1.1
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m1 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0mc58e7730-0596-426e-a327-ce5ee2e3e832 [36mtrace_id=[0mb45e3e9755db465cae723f6f4074863e
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m1 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m1814de0e-ea19-49a6-8a98-f4516d4b4611 [36mtrace_id=[0m18e0e49bb1c84d34b6e802d745e276d3
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m104 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m612923d9-0e94-4b5d-8ace-fc976ca90644 [36mtrace_id=[0meb2682ec065b420795d01b7a1410ae1f
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m2 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m6074045c-7c69-41f4-93da-88ee0ed5947b [36mtrace_id=[0m165de32412ce4c4891fd53c093881ba8
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m101 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0mea660a07-959b-435e-81a4-dcf7dc08018f [36mtrace_id=[0m40cc26b9af0a4a798f746af024c5368a
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m1 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m38212ab9-a90e-412e-9568-56a717b13152 [36mtrace_id=[0mece45283d4e14a02847a2f0b463c5e26
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m0 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m328469f6-1478-48c9-9b6a-d54be589dbb9 [36mtrace_id=[0m74c972e6654048e6a188cc128f19127a
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m104 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m729b72bd-e825-4dfd-837e-6e1991be5484 [36mtrace_id=[0m15d4749ef40f44b693965a06a69f073a
+[90m10:25AM[0m [32mINF[0m [1mrequest completed[0m [36mhttp.method=[0mPOST [36mhttp.remote_addr=[0m127.0.0.1:60349 [36mhttp.request_duration_ms=[0m104 [36mhttp.status_code=[0m200 [36mhttp.target=[0m/v1/chat/completions [36mhttp.user_agent=[0mGo-http-client/1.1 [36mrequest_id=[0m2af900ea-9a59-4164-bd85-d38bce7320ea [36mtrace_id=[0m47c30dd4f3dd467c852b210994150216

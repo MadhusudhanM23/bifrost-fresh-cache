@@ -1,0 +1,4 @@
+[submodule "bifrost"]
+	path = bifrost
+	url = https://github.com/MadhusudhanM23/bifrost.git
+	branch = feat/pgvector-vectorstore

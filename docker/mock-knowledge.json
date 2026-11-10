@@ -1,0 +1,66 @@
+{
+  "_comment": "Knowledge file for mock-openai (-knowledge / MOCK_OPENAI_KNOWLEDGE), for the dashboard's wrong-match demo. It makes the mock answer like a real model: questions that mean the same thing get the identical answer, and look-alike questions that mean different things (turn two-factor login on vs off, reset a password vs a username, export vs import CSV) get clearly different answers. The mock embedding scores those look-alikes as near-identical, so a semantic cache can serve one question's answer for the other: that is the wrong match the demo shows. A rule matches when the last user message contains every 'all' word, at least one 'any' word (if given) and no 'none' word, as whole lowercase tokens with stopwords such as on/off included. Rules are tried in order and the first match wins. Requests with context lines in the system prompt never use these rules, and an unmatched question still gets 'Mock answer to: <question>'. TestDemoKnowledgeFile in tools/mock-openai/mock_test.go pins these answers.",
+  "rules": [
+    {
+      "_comment": "'on' is also an everyday preposition ('login on my phone'), so this rule steps aside whenever an off-word is present and two-factor-off answers instead.",
+      "name": "two-factor-on",
+      "all": ["two", "factor"],
+      "any": ["on", "enable", "activate"],
+      "none": ["off", "disable", "deactivate"],
+      "answer": "To turn on two-factor login, open Settings > Security > Two-factor login and tap Enable, then scan the QR code with an authenticator app."
+    },
+    {
+      "name": "two-factor-off",
+      "all": ["two", "factor"],
+      "any": ["off", "disable", "deactivate"],
+      "answer": "To turn off two-factor login, open Settings > Security > Two-factor login and tap Disable. You must confirm with a current code, and your account becomes less secure."
+    },
+    {
+      "_comment": "Steps aside when the question mentions a username: 'reset my username' must get the change-username answer, not this one.",
+      "name": "reset-password",
+      "all": ["password"],
+      "any": ["reset", "forgot", "forgotten"],
+      "none": ["username", "usernames"],
+      "answer": "To reset your Acme password, open Settings > Security > Reset password and follow the link we email you."
+    },
+    {
+      "name": "change-username",
+      "any": ["username", "usernames"],
+      "answer": "Acme usernames cannot be changed in the mobile app. Contact support to request a new username."
+    },
+    {
+      "name": "export-csv",
+      "all": ["export", "csv"],
+      "none": ["import"],
+      "answer": "Yes. Open the project, choose Export > CSV, and Acme emails you a download link within a few minutes."
+    },
+    {
+      "name": "import-csv",
+      "all": ["import", "csv"],
+      "none": ["export"],
+      "answer": "Yes. Open the project, choose Import > CSV, then map each column to a field before the import starts."
+    },
+    {
+      "name": "boiling-water",
+      "all": ["water"],
+      "any": ["boiling", "boil", "boils"],
+      "answer": "Water boils at 100 degrees Celsius (212 degrees Fahrenheit) at sea level."
+    },
+    {
+      "name": "moby-dick",
+      "all": ["moby", "dick"],
+      "answer": "Herman Melville wrote Moby-Dick, first published in 1851."
+    },
+    {
+      "name": "gold-symbol",
+      "all": ["gold", "symbol"],
+      "answer": "The chemical symbol for gold is Au."
+    },
+    {
+      "name": "tallest-mountain",
+      "all": ["mountain"],
+      "any": ["tallest", "highest"],
+      "answer": "Mount Everest is the tallest mountain on Earth, at 8,849 metres above sea level."
+    }
+  ]
+}

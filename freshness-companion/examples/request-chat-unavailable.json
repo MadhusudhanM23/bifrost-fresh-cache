@@ -1,0 +1,7 @@
+{
+  "model": "openai/gpt-4o-mini",
+  "messages": [
+    {"role": "system", "content": "You answer questions about Acme support. Current status: live chat support is currently unavailable. Answer in one sentence and say clearly whether live chat is available."},
+    {"role": "user", "content": "Is live chat support currently available?"}
+  ]
+}

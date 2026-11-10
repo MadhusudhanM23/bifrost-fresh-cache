@@ -1,0 +1,61 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "client": {
+    "drop_excess_requests": false,
+    "enable_logging": false
+  },
+  "config_store": {
+    "enabled": false
+  },
+  "logs_store": {
+    "enabled": false
+  },
+  "providers": {
+    "openai": {
+      "keys": [
+        {
+          "name": "mock-openai-local",
+          "value": "sk-mock-local",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "http://127.0.0.1:18080",
+        "default_request_timeout_in_seconds": 30,
+        "max_retries": 0
+      }
+    }
+  },
+  "vector_store": {
+    "enabled": true,
+    "type": "pgvector",
+    "config": {
+      "host": "127.0.0.1",
+      "port": "5433",
+      "user": "bifrost",
+      "password": "bifrost_password",
+      "database": "bifrost",
+      "ssl_mode": "disable",
+      "schema": "public",
+      "max_conns": "5"
+    }
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "semantic_cache",
+      "config": {
+        "provider": "openai",
+        "embedding_model": "mock-embedding",
+        "dimension": 256,
+        "threshold": 0.8,
+        "ttl": "30m",
+        "conversation_history_threshold": 3,
+        "cache_by_model": true,
+        "cache_by_provider": true,
+        "exclude_system_prompt": false
+      }
+    }
+  ]
+}

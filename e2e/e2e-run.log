@@ -1,0 +1,653 @@
+Bifrost semantic cache + pgvector end-to-end run
+started:  2026-11-10T10:24:50+05:30
+file:     C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\bifrost-http.exe (180250112 bytes, modified 2026-11-10T10:21:41+05:30)
+file:     C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\mock-openai.exe (10411520 bytes, modified 2026-11-10T10:20:37+05:30)
+file:     config.json (1318 bytes, modified 2026-11-02T16:51:20+05:30)
+source:   ..\bifrost\framework\vectorstore\pgvector.go sha256 93895c0083adfb9828891bd1e70780112cccea16265d23f3e30ed73e753279e4 (modified 2026-11-06T10:24:27+05:30; the binary must be newer than this to contain it)
+source:   ..\bifrost\framework\vectorstore\store.go sha256 0cdf763f4658a9b392dcdbf808a64454a43715192dfdcc3ecf1ac5051d0b9fb4 (modified 2026-11-03T16:49:23+05:30; the binary must be newer than this to contain it)
+gateway:  http://127.0.0.1:18090   mock: http://127.0.0.1:18080   postgres: docker container bifrost-pgvector-test, db bifrost
+
+==============================================================================
+[0] setup: config, pgvector container, fresh namespace table, start mock + gateway  (required)
+==============================================================================
+  config.json: vector_store.type=pgvector namespace=BifrostSemanticCachePlugin dimension=256 threshold=0.8 embedding_model=mock-embedding openai.base_url=http://127.0.0.1:18080
+  [ok]   pgvector extension present in container bifrost-pgvector-test, db bifrost (version "0.8.7")
+  [ok]   port 127.0.0.1:18080 is free
+  [ok]   port 127.0.0.1:18090 is free
+  psql> DROP TABLE IF EXISTS "public"."BifrostSemanticCachePlugin"
+        DROP TABLE
+  started mock-openai pid=13448: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\mock-openai.exe -host 127.0.0.1 -port 18080 -dim 256 -api-key sk-mock-local -chat-latency 100ms
+  started bifrost-http (run 1) pid=23868: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\bifrost-http.exe -app-dir C:\Madhusudhan\Geeks\hackathon-workspace\e2e -port 18090 -host 127.0.0.1 -log-level info -log-style pretty
+  gateway log: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\logs\gateway-run1.log
+  gateway healthy after 5.3s
+  psql> \d "public"."BifrostSemanticCachePlugin"
+                  Table "public.BifrostSemanticCachePlugin"
+          Column   |    Type     | Collation | Nullable |   Default   
+        -----------+-------------+-----------+----------+-------------
+         id        | text        |           | not null | 
+         embedding | vector(256) |           |          | 
+         metadata  | jsonb       |           | not null | '{}'::jsonb
+        Indexes:
+            "BifrostSemanticCachePlugin_pkey" PRIMARY KEY, btree (id)
+            "BifrostSemanticCachePlugin_emb_hnsw" hnsw (embedding vector_cosine_ops)
+            "BifrostSemanticCachePlugin_meta_gin" gin (metadata jsonb_path_ops)
+  [ok]   table "public"."BifrostSemanticCachePlugin" created by the gateway, comment "bifrost_vectorstore"
+  [ok]   embedding column is vector(256) (want vector(256))
+  [ok]   HNSW (vector_cosine_ops) index present for dimension 256
+  [ok]   GIN (jsonb_path_ops) metadata index present
+  [ok]   gateway log: [90m10:24AM[0m [32mINF[0m [1mplugin status: semantic_cache - active[0m
+  gateway log: [90m10:24AM[0m [32mINF[0m [1mconnecting to vectorstore[0m
+  gateway log: [90m10:24AM[0m [31mERR[0m [1mfailed to initialize governance plugin: failed to initialize governance store: failed to load governance data from config memory: governance config is nil[0m
+  gateway log: [90m10:24AM[0m [31mERR[0m [1mauth middleware requires config store, skipping auth middleware initialization[0m
+  mock start:  chat_calls=0 (stream=0) embedding_calls=0
+  [ok]   mock counters start at zero
+  [ok]   namespace table starts with 0 rows
+  ---> [0] PASS: PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2), pgvector 0.8.7; table BifrostSemanticCachePlugin vector(256), indexes hnsw=1 gin=1
+
+==============================================================================
+[a] first request (x-bf-cache-key: demo) -> miss, one upstream call, row written to Postgres  (required)
+==============================================================================
+  mock before: chat_calls=0 (stream=0) embedding_calls=0
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What is the capital city of France?"
+  <- 200 in 238 ms  id=chatcmpl-mock-000001  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+  mock after:  chat_calls=1 (stream=0) embedding_calls=1
+  [ok]   HTTP 200 (got 200)
+  [ok]   x-bifrost-cache-hit: false (got "false")
+  [ok]   x-bifrost-cache-id is the id the entry is written under (e9480d9f-3b85-504b-b6b4-976fbb46514d)
+  [ok]   mock chat_calls == 1 (got 1)
+  [ok]   one embedding call for the semantic lookup (got 1)
+  [ok]   embedding provider/model headers: openai/mock-embedding
+  exact text the gateway sent to /v1/embeddings: "user: what is the capital city of france?"
+  [ok]   namespace table has 1 row(s) after the async write (got 1)
+  [ok]   a row with id = x-bifrost-cache-id exists
+  psql> SELECT id, metadata->>'cache_key' AS cache_key, metadata->>'provider' AS provider, metadata->>'model' AS model, coalesce(metadata->>'params_hash', '(none)') AS params_hash, CASE WHEN embedding IS NULL THEN 'NULL' ELSE 'vector(' || vector_dims(embedding) || ')' END AS embedding, (metadata->>'expires_at')::bigint - extract(epoch from now())::bigint AS expires_in_s, jsonb_array_length(coalesce(metadata->'stream_chunks', '[]'::jsonb)) AS stream_chunks, coalesce(substring(metadata->>'response' from 'chatcmpl-mock-[0-9]+'), substring((metadata->'stream_chunks')::text from 'chatcmpl-mock-[0-9]+')) AS cached_response_id FROM "public"."BifrostSemanticCachePlugin" ORDER BY metadata->>'cache_key', id
+                          id                  | cache_key | provider |   model   |   params_hash    |  embedding  | expires_in_s | stream_chunks |  cached_response_id  
+        --------------------------------------+-----------+----------+-----------+------------------+-------------+--------------+---------------+----------------------
+         e9480d9f-3b85-504b-b6b4-976fbb46514d | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1799 |             0 | chatcmpl-mock-000001
+        (1 row)
+  [ok]   the row stores completion chatcmpl-mock-000001 (got "chatcmpl-mock-000001")
+  [ok]   the row stores a 256-dim embedding (got "256")
+  ---> [a] PASS: hit=false cache-id=e9480d9f-3b85-504b-b6b4-976fbb46514d chat_calls=1 embedding_calls=1 rows=1
+
+==============================================================================
+[b] identical request -> hit, hit-type direct, no upstream call  (required)
+==============================================================================
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What is the capital city of France?"
+  <- 200 in 2 ms  id=chatcmpl-mock-000001  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 1
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  mock after:  chat_calls=1 (stream=0) embedding_calls=1
+  [ok]   x-bifrost-cache-hit: true (got "true")
+  [ok]   x-bifrost-cache-hit-type: direct (got "direct")
+  [ok]   x-bifrost-cache-id is the entry from (a)
+  [ok]   chat_calls unchanged (1)
+  [ok]   no embedding call: the direct lookup runs before the semantic one
+  [ok]   served the cached completion chatcmpl-mock-000001
+  ---> [b] PASS: hit=true type=direct latency=1ms chat_calls=1
+
+==============================================================================
+[c] paraphrase sharing most words -> hit, hit-type semantic, similarity >= threshold  (required)
+==============================================================================
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "Tell me the capital city of France."
+  <- 200 in 3 ms  id=chatcmpl-mock-000001  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: semantic
+     x-bifrost-cache-similarity: 0.878310110518638
+     x-bifrost-cache-threshold: 0.8
+     x-bifrost-cache-hit-latency-ms: 2
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  mock after:  chat_calls=1 (stream=0) embedding_calls=2
+  [ok]   x-bifrost-cache-hit: true (got "true")
+  [ok]   x-bifrost-cache-hit-type: semantic (got "semantic")
+  [ok]   served the entry from (a)
+  [ok]   x-bifrost-cache-similarity 0.878310110518638 >= threshold 0.8 (and < 1: a real near-match)
+  [ok]   x-bifrost-cache-threshold 0.8 equals the configured threshold
+  [ok]   chat_calls unchanged (1)
+  [ok]   one embedding call (direct miss, then semantic search)
+  stored text "user: what is the capital city of france?" vs query text "user: tell me the capital city of france."
+  [ok]   pgvector's similarity 0.878310111 equals the mock's float64 cosine 0.878310066 within 1e-5
+  [ok]   a semantic hit writes nothing (rows stay 1)
+  ---> [c] PASS: hit=true type=semantic similarity=0.878310110518638 threshold=0.8 (mock cosine 0.878310) chat_calls=1
+
+==============================================================================
+[d] unrelated request -> miss, upstream call  (required)
+==============================================================================
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "How do I bake sourdough bread at home?"
+  <- 200 in 104 ms  id=chatcmpl-mock-000002  content="Mock answer to: How do I bake sourdough bread at home?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: 67a95f1b-cf71-5f64-a3f3-e9cd6bf20f2e
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 9
+  mock after:  chat_calls=2 (stream=0) embedding_calls=3
+  [ok]   x-bifrost-cache-hit: false (got "false")
+  [ok]   chat_calls incremented 1 -> 2
+  [ok]   its similarity to the cached entry is -0.0321 (mock cosine), below 0.8
+  [ok]   the new response was written (rows 1 -> 2)
+  ---> [d] PASS: hit=false chat_calls 1->2 similarity-to-(a)=-0.0321 rows=2
+
+==============================================================================
+[e] same question as (a) with x-bf-cache-key: other -> no hit (keys isolate entries)  (required)
+==============================================================================
+  -> POST /v1/chat/completions  x-bf-cache-key=other  "What is the capital city of France?"
+  <- 200 in 103 ms  id=chatcmpl-mock-000003  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: 613f9443-82ef-52bb-b380-37b556caf96e
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+  mock after:  chat_calls=3 (stream=0) embedding_calls=4
+  [ok]   x-bifrost-cache-hit: false (got "false")
+  [ok]   a different cache id (613f9443-82ef-52bb-b380-37b556caf96e): the key is part of the direct id
+  [ok]   chat_calls incremented 2 -> 3
+  [ok]   an entry was written under key "other" (rows 2 -> 3)
+  psql> SELECT id, metadata->>'cache_key' AS cache_key, metadata->>'provider' AS provider, metadata->>'model' AS model, coalesce(metadata->>'params_hash', '(none)') AS params_hash, CASE WHEN embedding IS NULL THEN 'NULL' ELSE 'vector(' || vector_dims(embedding) || ')' END AS embedding, (metadata->>'expires_at')::bigint - extract(epoch from now())::bigint AS expires_in_s, jsonb_array_length(coalesce(metadata->'stream_chunks', '[]'::jsonb)) AS stream_chunks, coalesce(substring(metadata->>'response' from 'chatcmpl-mock-[0-9]+'), substring((metadata->'stream_chunks')::text from 'chatcmpl-mock-[0-9]+')) AS cached_response_id FROM "public"."BifrostSemanticCachePlugin" ORDER BY metadata->>'cache_key', id
+                          id                  | cache_key | provider |   model   |   params_hash    |  embedding  | expires_in_s | stream_chunks |  cached_response_id  
+        --------------------------------------+-----------+----------+-----------+------------------+-------------+--------------+---------------+----------------------
+         67a95f1b-cf71-5f64-a3f3-e9cd6bf20f2e | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1799 |             0 | chatcmpl-mock-000002
+         e9480d9f-3b85-504b-b6b4-976fbb46514d | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1798 |             0 | chatcmpl-mock-000001
+         613f9443-82ef-52bb-b380-37b556caf96e | other     | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1800 |             0 | chatcmpl-mock-000003
+        (3 rows)
+  ---> [e] PASS: hit=false cache-id=613f9443-82ef-52bb-b380-37b556caf96e chat_calls 2->3
+
+==============================================================================
+[f] DELETE /api/cache/clear/{cacheId} for the entry from (a) -> the same request misses  (required)
+==============================================================================
+  In this setup config_store is disabled, so the server installs no auth middleware: /api routes get
+  AuthBypassedMiddleware, which checks no credential and only refuses browser requests whose Origin header
+  is foreign (not localhost, not same-origin, not in client.allowed_origins). See x5 for a config-store setup.
+  -> DELETE http://127.0.0.1:18090/api/cache/clear/e9480d9f-3b85-504b-b6b4-976fbb46514d  [Origin: https://evil.example.com]
+  <- 403 {"is_bifrost_error":false,"status_code":403,"error":{"message":"Cross-origin requests to the management API from \"https://evil.example.com\" are refused while dashboard auth is disabled; enable dashboard authentication, or list the origin explicitly in client_config.allowed_origins (localhost origins are always allowed)."},"extra_fields":{"routing_info":{}}}
+  [ok]   a request with a foreign Origin is refused with 403 (got 403)
+  [ok]   the entry is still there after the refused call
+  -> DELETE http://127.0.0.1:18090/api/cache/clear/e9480d9f-3b85-504b-b6b4-976fbb46514d  [no extra headers]
+  <- 200 {"message":"Cache cleared successfully"}
+  [ok]   no credential needed: 200 Cache cleared successfully (got 200)
+  [ok]   row e9480d9f-3b85-504b-b6b4-976fbb46514d deleted from Postgres
+  psql> SELECT id, metadata->>'cache_key' AS cache_key, metadata->>'provider' AS provider, metadata->>'model' AS model, coalesce(metadata->>'params_hash', '(none)') AS params_hash, CASE WHEN embedding IS NULL THEN 'NULL' ELSE 'vector(' || vector_dims(embedding) || ')' END AS embedding, (metadata->>'expires_at')::bigint - extract(epoch from now())::bigint AS expires_in_s, jsonb_array_length(coalesce(metadata->'stream_chunks', '[]'::jsonb)) AS stream_chunks, coalesce(substring(metadata->>'response' from 'chatcmpl-mock-[0-9]+'), substring((metadata->'stream_chunks')::text from 'chatcmpl-mock-[0-9]+')) AS cached_response_id FROM "public"."BifrostSemanticCachePlugin" ORDER BY metadata->>'cache_key', id
+                          id                  | cache_key | provider |   model   |   params_hash    |  embedding  | expires_in_s | stream_chunks |  cached_response_id  
+        --------------------------------------+-----------+----------+-----------+------------------+-------------+--------------+---------------+----------------------
+         67a95f1b-cf71-5f64-a3f3-e9cd6bf20f2e | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1798 |             0 | chatcmpl-mock-000002
+         613f9443-82ef-52bb-b380-37b556caf96e | other     | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1799 |             0 | chatcmpl-mock-000003
+        (2 rows)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What is the capital city of France?"
+  <- 200 in 103 ms  id=chatcmpl-mock-000004  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+  mock after:  chat_calls=4 (stream=0) embedding_calls=5
+  [ok]   the same request now misses (x-bifrost-cache-hit: false)
+  [ok]   chat_calls incremented 3 -> 4
+  [ok]   written back under the same deterministic direct id e9480d9f-3b85-504b-b6b4-976fbb46514d
+  [ok]   a fresh completion chatcmpl-mock-000004 (the deleted entry held chatcmpl-mock-000001)
+  [ok]   row e9480d9f-3b85-504b-b6b4-976fbb46514d exists again
+  [ok]   the row now stores the fresh completion chatcmpl-mock-000004 (got "chatcmpl-mock-000004")
+  -> DELETE http://127.0.0.1:18090/api/cache/clear-by-key/other  [no extra headers]
+  <- 200 {"message":"Cache cleared successfully"}
+  [ok]   DELETE /api/cache/clear-by-key/other -> 200, rows left under that key: 0
+  psql> SELECT id, metadata->>'cache_key' AS cache_key, metadata->>'provider' AS provider, metadata->>'model' AS model, coalesce(metadata->>'params_hash', '(none)') AS params_hash, CASE WHEN embedding IS NULL THEN 'NULL' ELSE 'vector(' || vector_dims(embedding) || ')' END AS embedding, (metadata->>'expires_at')::bigint - extract(epoch from now())::bigint AS expires_in_s, jsonb_array_length(coalesce(metadata->'stream_chunks', '[]'::jsonb)) AS stream_chunks, coalesce(substring(metadata->>'response' from 'chatcmpl-mock-[0-9]+'), substring((metadata->'stream_chunks')::text from 'chatcmpl-mock-[0-9]+')) AS cached_response_id FROM "public"."BifrostSemanticCachePlugin" ORDER BY metadata->>'cache_key', id
+                          id                  | cache_key | provider |   model   |   params_hash    |  embedding  | expires_in_s | stream_chunks |  cached_response_id  
+        --------------------------------------+-----------+----------+-----------+------------------+-------------+--------------+---------------+----------------------
+         67a95f1b-cf71-5f64-a3f3-e9cd6bf20f2e | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1798 |             0 | chatcmpl-mock-000002
+         e9480d9f-3b85-504b-b6b4-976fbb46514d | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1799 |             0 | chatcmpl-mock-000004
+        (2 rows)
+  ---> [f] PASS: auth: none (no config store => AuthBypassedMiddleware; foreign Origin -> 403); clear -> 200; re-request miss, same id, new completion chatcmpl-mock-000004; clear-by-key -> 200
+
+==============================================================================
+[g] ways to bypass or refresh one cached entry, and what each writes back  (required)
+==============================================================================
+
+  g1) DELETE /api/cache/clear/{id} then re-request (performed in f)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What is the capital city of France?"
+  <- 200 in 1 ms  id=chatcmpl-mock-000004  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 1
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   g1: the next identical request is a direct hit serving the refreshed completion chatcmpl-mock-000004 (not the original chatcmpl-mock-000001)
+
+  g2) x-bf-cache-type: semantic + x-bf-cache-threshold: 1.5 (the gateway clamps it to 1.0)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  x-bf-cache-threshold=1.5  x-bf-cache-type=semantic  "What is the capital city of France?"
+  <- 200 in 2 ms  id=chatcmpl-mock-000004  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: semantic
+     x-bifrost-cache-similarity: 1
+     x-bifrost-cache-threshold: 1
+     x-bifrost-cache-hit-latency-ms: 1
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   g2a: an IDENTICAL prompt is still served (semantic hit, similarity 1, threshold 1): its embedding is identical, cosine distance 0 <= 1 - 1.0, so this does not bypass
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  x-bf-cache-threshold=1.5  x-bf-cache-type=semantic  "Tell me the capital city of France."
+  <- 200 in 105 ms  id=chatcmpl-mock-000005  content="Mock answer to: Tell me the capital city of France."
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: 612923d9-0e94-4b5d-8ace-fc976ca90644
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+  [ok]   g2b: a paraphrase misses (similarity 0.8783 < 1.0) and goes upstream
+  [ok]   g2b: written under a NEW id 612923d9-0e94-4b5d-8ace-fc976ca90644 (the request id: semantic-only requests skip the direct id)
+  [ok]   g2b: a second row was added next to e9480d9f-3b85-504b-b6b4-976fbb46514d (rows 2 -> 3); nothing was replaced
+  psql> SELECT id, metadata->>'cache_key' AS cache_key, metadata->>'provider' AS provider, metadata->>'model' AS model, coalesce(metadata->>'params_hash', '(none)') AS params_hash, CASE WHEN embedding IS NULL THEN 'NULL' ELSE 'vector(' || vector_dims(embedding) || ')' END AS embedding, (metadata->>'expires_at')::bigint - extract(epoch from now())::bigint AS expires_in_s, jsonb_array_length(coalesce(metadata->'stream_chunks', '[]'::jsonb)) AS stream_chunks, coalesce(substring(metadata->>'response' from 'chatcmpl-mock-[0-9]+'), substring((metadata->'stream_chunks')::text from 'chatcmpl-mock-[0-9]+')) AS cached_response_id FROM "public"."BifrostSemanticCachePlugin" WHERE metadata->>'cache_key' = 'demo' ORDER BY metadata->>'cache_key', id
+                          id                  | cache_key | provider |   model   |   params_hash    |  embedding  | expires_in_s | stream_chunks |  cached_response_id  
+        --------------------------------------+-----------+----------+-----------+------------------+-------------+--------------+---------------+----------------------
+         612923d9-0e94-4b5d-8ace-fc976ca90644 | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1799 |             0 | chatcmpl-mock-000005
+         67a95f1b-cf71-5f64-a3f3-e9cd6bf20f2e | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1797 |             0 | chatcmpl-mock-000002
+         e9480d9f-3b85-504b-b6b4-976fbb46514d | demo      | openai   | mock-chat | ccb9da55fe35fa4a | vector(256) |         1798 |             0 | chatcmpl-mock-000004
+        (3 rows)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "Tell me the capital city of France."
+  <- 200 in 3 ms  id=chatcmpl-mock-000005  content="Mock answer to: Tell me the capital city of France."
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: 612923d9-0e94-4b5d-8ace-fc976ca90644
+     x-bifrost-cache-hit-type: semantic
+     x-bifrost-cache-similarity: 1
+     x-bifrost-cache-threshold: 0.8
+     x-bifrost-cache-hit-latency-ms: 2
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   g2c: a later normal paraphrase request is now served from the g2b row (similarity 1), not from e9480d9f-3b85-504b-b6b4-976fbb46514d
+
+  g3) omit x-bf-cache-key (no default_cache_key is configured)
+  -> POST /v1/chat/completions    "What is the capital city of France?"
+  <- 200 in 102 ms  id=chatcmpl-mock-000006  content="Mock answer to: What is the capital city of France?"
+     (no x-bifrost-cache-* headers)
+  [ok]   g3: no x-bifrost-cache-* headers at all (no lookup ran)
+  [ok]   g3: went upstream (chat_calls 5 -> 6), no embedding call
+  [ok]   g3: nothing written (rows 3 -> 3)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What is the capital city of France?"
+  <- 200 in 2 ms  id=chatcmpl-mock-000004  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 1
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   g3: the cached entry is untouched: the next keyed request still serves chatcmpl-mock-000004
+
+  g4) x-bf-cache-no-store: true
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  x-bf-cache-no-store=true  "What is the capital city of France?"
+  <- 200 in 1 ms  id=chatcmpl-mock-000004  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 0
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   g4a: no-store still SERVES a cached hit (it only skips writes)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  x-bf-cache-no-store=true  "Which planet is closest to the sun?"
+  <- 200 in 105 ms  id=chatcmpl-mock-000007  content="Mock answer to: Which planet is closest to the sun?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: d31223ec-4219-5cac-a68e-3a0e7d40ba3d
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+  [ok]   g4b: a no-store miss goes upstream and writes nothing (rows 3 -> 3; cache id d31223ec-4219-5cac-a68e-3a0e7d40ba3d never appears)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "Which planet is closest to the sun?"
+  <- 200 in 104 ms  id=chatcmpl-mock-000008  content="Mock answer to: Which planet is closest to the sun?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: d31223ec-4219-5cac-a68e-3a0e7d40ba3d
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+  [ok]   g4c: the same prompt without no-store misses again (nothing had been stored)
+  [ok]   g4c: and is written this time (rows 3 -> 4)
+  ---> [g] PASS: refresh = clear-by-id + re-request (same id, new completion); bypass without read or write = omit x-bf-cache-key; semantic+threshold>1 still hits identical prompts and adds a second row on a paraphrase miss; no-store still serves hits
+
+==============================================================================
+[h] restart the gateway -> cached entries are still served from Postgres  (required)
+==============================================================================
+  stopping gateway pid 23868 (process kill, no graceful shutdown)
+  [ok]   gateway port 127.0.0.1:18090 closed
+  [ok]   rows in Postgres while the gateway is down: 4
+  started bifrost-http (run 2) pid=23516: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\bifrost-http.exe -app-dir C:\Madhusudhan\Geeks\hackathon-workspace\e2e -port 18090 -host 127.0.0.1 -log-level info -log-style pretty
+  gateway log: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\logs\gateway-run2.log
+  gateway healthy after 4.3s
+  gateway log: [90m10:25AM[0m [32mINF[0m [1mconnecting to vectorstore[0m
+  gateway log: [90m10:25AM[0m [32mINF[0m [1mplugin status: semantic_cache - active[0m
+  [ok]   semantic_cache active after restart: CreateNamespace accepted the existing table (dimension and ownership comment match)
+  [ok]   rows unchanged by the restart (4)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What is the capital city of France?"
+  <- 200 in 50 ms  id=chatcmpl-mock-000004  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 4
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   identical request: direct hit on e9480d9f-3b85-504b-b6b4-976fbb46514d serving chatcmpl-mock-000004
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "Please tell me the capital city of France."
+  <- 200 in 19 ms  id=chatcmpl-mock-000005  content="Mock answer to: Tell me the capital city of France."
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: 612923d9-0e94-4b5d-8ace-fc976ca90644
+     x-bifrost-cache-hit-type: semantic
+     x-bifrost-cache-similarity: 0.8764167093162752
+     x-bifrost-cache-threshold: 0.8
+     x-bifrost-cache-hit-latency-ms: 18
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 9
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   new paraphrase "Please tell me the capital city of France.": semantic hit (similarity 0.8764167093162752, entry 612923d9-0e94-4b5d-8ace-fc976ca90644) from the pgvector cosine search (query plan: see x6)
+  mock after:  chat_calls=8 (stream=0) embedding_calls=11
+  [ok]   no upstream chat calls after the restart (chat_calls 8)
+  ---> [h] PASS: restart ok; direct hit chatcmpl-mock-000004; semantic hit similarity=0.8764167093162752; chat_calls unchanged=8
+
+==============================================================================
+[i] where cache metadata appears in the HTTP JSON body (besides the headers)  (required)
+==============================================================================
+  miss (a) -> body.extra_fields.cache_debug = {
+        "cache_hit": false,
+        "cache_id": "e9480d9f-3b85-504b-b6b4-976fbb46514d",
+        "input_tokens": 8,
+        "model_used": "mock-embedding",
+        "provider_used": "openai"
+      }
+  [ok]   miss (a): present at extra_fields.cache_debug
+  [ok]   miss (a): cache_debug.cache_hit (false) == x-bifrost-cache-hit (false)
+  [ok]   miss (a): cache_debug.cache_id == x-bifrost-cache-id
+  direct hit (b) -> body.extra_fields.cache_debug = {
+        "cache_hit": true,
+        "cache_hit_latency": 1,
+        "cache_id": "e9480d9f-3b85-504b-b6b4-976fbb46514d",
+        "hit_type": "direct",
+        "requested_model": "mock-chat",
+        "requested_provider": "openai"
+      }
+  [ok]   direct hit (b): present at extra_fields.cache_debug
+  [ok]   direct hit (b): cache_debug.cache_hit (true) == x-bifrost-cache-hit (true)
+  [ok]   direct hit (b): cache_debug.cache_id == x-bifrost-cache-id
+  [ok]   direct hit (b): cache_debug.hit_type == x-bifrost-cache-hit-type (direct)
+  semantic hit (c) -> body.extra_fields.cache_debug = {
+        "cache_hit": true,
+        "cache_hit_latency": 2,
+        "cache_id": "e9480d9f-3b85-504b-b6b4-976fbb46514d",
+        "hit_type": "semantic",
+        "input_tokens": 8,
+        "model_used": "mock-embedding",
+        "provider_used": "openai",
+        "requested_model": "mock-chat",
+        "requested_provider": "openai",
+        "similarity": 0.878310110518638,
+        "threshold": 0.8
+      }
+  [ok]   semantic hit (c): present at extra_fields.cache_debug
+  [ok]   semantic hit (c): cache_debug.cache_hit (true) == x-bifrost-cache-hit (true)
+  [ok]   semantic hit (c): cache_debug.cache_id == x-bifrost-cache-id
+  [ok]   semantic hit (c): cache_debug.hit_type == x-bifrost-cache-hit-type (semantic)
+  [ok]   semantic hit (c): cache_debug.similarity (0.878310110518638) == x-bifrost-cache-similarity (0.878310110518638)
+  ---> [i] PASS: JSON body: extra_fields.cache_debug on the native /v1 route (cache_hit, cache_id, hit_type, requested_provider/model, provider_used, model_used, input_tokens, threshold, similarity, cache_hit_latency); streams: last chunk only
+
+==============================================================================
+[x1] x-bf-cache-type: direct stores a metadata-only row (NULL embedding, pgvector RequiresVectors() == false)  (extra)
+==============================================================================
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  x-bf-cache-type=direct  "List three uses of PostgreSQL."
+  <- 200 in 172 ms  id=chatcmpl-mock-000009  content="Mock answer to: List three uses of PostgreSQL."
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: 931375ff-4981-5211-9956-fafa02b82806
+  [ok]   miss, one upstream call, no embedding call
+  [ok]   row 931375ff-4981-5211-9956-fafa02b82806 written
+  [ok]   row 931375ff-4981-5211-9956-fafa02b82806 has embedding NULL
+  [ok]   row keeps params_hash (a real direct entry, not a placeholder)
+  psql> SELECT id, metadata->>'cache_key' AS cache_key, metadata->>'provider' AS provider, metadata->>'model' AS model, coalesce(metadata->>'params_hash', '(none)') AS params_hash, CASE WHEN embedding IS NULL THEN 'NULL' ELSE 'vector(' || vector_dims(embedding) || ')' END AS embedding, (metadata->>'expires_at')::bigint - extract(epoch from now())::bigint AS expires_in_s, jsonb_array_length(coalesce(metadata->'stream_chunks', '[]'::jsonb)) AS stream_chunks, coalesce(substring(metadata->>'response' from 'chatcmpl-mock-[0-9]+'), substring((metadata->'stream_chunks')::text from 'chatcmpl-mock-[0-9]+')) AS cached_response_id FROM "public"."BifrostSemanticCachePlugin" WHERE id = '931375ff-4981-5211-9956-fafa02b82806' ORDER BY metadata->>'cache_key', id
+                          id                  | cache_key | provider |   model   |   params_hash    | embedding | expires_in_s | stream_chunks |  cached_response_id  
+        --------------------------------------+-----------+----------+-----------+------------------+-----------+--------------+---------------+----------------------
+         931375ff-4981-5211-9956-fafa02b82806 | demo      | openai   | mock-chat | ccb9da55fe35fa4a | NULL      |         1799 |             0 | chatcmpl-mock-000009
+        (1 row)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "List three uses of PostgreSQL."
+  <- 200 in 2 ms  id=chatcmpl-mock-000009  content="Mock answer to: List three uses of PostgreSQL."
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: 931375ff-4981-5211-9956-fafa02b82806
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 1
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   a default request for the same prompt is a direct hit on it
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "List three common uses of PostgreSQL."
+  <- 200 in 104 ms  id=chatcmpl-mock-000010  content="Mock answer to: List three common uses of PostgreSQL."
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: 92bce416-2e84-554b-ab8a-2d58205937d0
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 7
+  [ok]   a paraphrase (mock cosine 0.8876, above the 0.8 threshold) misses: GetNearest only considers rows with an embedding
+  ---> [x1] PASS: NULL-embedding row 931375ff-4981-5211-9956-fafa02b82806; direct hit ok; paraphrase with cosine 0.8876 misses
+
+==============================================================================
+[x2] x-bf-cache-ttl: 2s -> entry expires; the expired row is deleted and rewritten  (extra)
+==============================================================================
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  x-bf-cache-ttl=2s  "What time zone is Tokyo in?"
+  <- 200 in 114 ms  id=chatcmpl-mock-000011  content="Mock answer to: What time zone is Tokyo in?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: c5dad885-5e6a-5766-b165-7905d170789a
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 7
+  [ok]   miss, row c5dad885-5e6a-5766-b165-7905d170789a written
+  [ok]   expires_at is about 2 s ahead (expires_in = 1 s)
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What time zone is Tokyo in?"
+  <- 200 in 2 ms  id=chatcmpl-mock-000011  content="Mock answer to: What time zone is Tokyo in?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: c5dad885-5e6a-5766-b165-7905d170789a
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 1
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   hit before expiry
+  waiting 3.5 s for the entry to expire
+  -> POST /v1/chat/completions  x-bf-cache-key=demo  "What time zone is Tokyo in?"
+  <- 200 in 105 ms  id=chatcmpl-mock-000012  content="Mock answer to: What time zone is Tokyo in?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: c5dad885-5e6a-5766-b165-7905d170789a
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 7
+  [ok]   after expiry: miss and one upstream call
+  [ok]   row c5dad885-5e6a-5766-b165-7905d170789a rewritten with the default TTL after the async delete of the expired one (exists=true, expires_in=1798 s)
+  ---> [x2] PASS: expires_at stored as a JSON number, read back as float64 by the plugin; expired -> miss -> rewritten (expires_in 1798 s)
+
+==============================================================================
+[x3] streaming: chunks stored as a JSONB string array and replayed on a hit  (extra)
+==============================================================================
+  -> POST /v1/chat/completions (stream)  x-bf-cache-key=demo  "Explain what pgvector does."
+  <- 200 in 120 ms  id=chatcmpl-mock-000013  content="Mock answer to: Explain what pgvector does."
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: b34e04cf-3a0a-5c46-864e-fa9bdfe2691a
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 5
+  [ok]   stream content "Mock answer to: Explain what pgvector does."
+  [ok]   miss; one upstream streaming call
+  [ok]   row b34e04cf-3a0a-5c46-864e-fa9bdfe2691a written after the final chunk
+  [ok]   row stores 9 stream chunks (response field present: f)
+  psql> SELECT id, metadata->>'cache_key' AS cache_key, metadata->>'provider' AS provider, metadata->>'model' AS model, coalesce(metadata->>'params_hash', '(none)') AS params_hash, CASE WHEN embedding IS NULL THEN 'NULL' ELSE 'vector(' || vector_dims(embedding) || ')' END AS embedding, (metadata->>'expires_at')::bigint - extract(epoch from now())::bigint AS expires_in_s, jsonb_array_length(coalesce(metadata->'stream_chunks', '[]'::jsonb)) AS stream_chunks, coalesce(substring(metadata->>'response' from 'chatcmpl-mock-[0-9]+'), substring((metadata->'stream_chunks')::text from 'chatcmpl-mock-[0-9]+')) AS cached_response_id FROM "public"."BifrostSemanticCachePlugin" WHERE id = 'b34e04cf-3a0a-5c46-864e-fa9bdfe2691a' ORDER BY metadata->>'cache_key', id
+                          id                  | cache_key | provider |   model   |   params_hash    |  embedding  | expires_in_s | stream_chunks |  cached_response_id  
+        --------------------------------------+-----------+----------+-----------+------------------+-------------+--------------+---------------+----------------------
+         b34e04cf-3a0a-5c46-864e-fa9bdfe2691a | demo      | openai   | mock-chat | 1f853c0c27acadff | vector(256) |         1799 |             9 | chatcmpl-mock-000013
+        (1 row)
+  -> POST /v1/chat/completions (stream)  x-bf-cache-key=demo  "Explain what pgvector does."
+  <- 200 in 2 ms  id=chatcmpl-mock-000013  content="Mock answer to: Explain what pgvector does."
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: b34e04cf-3a0a-5c46-864e-fa9bdfe2691a
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 1
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   second identical stream: direct hit from headers, no upstream call
+  [ok]   replayed content and id identical (chatcmpl-mock-000013)
+  [ok]   the final chunk carries extra_fields.cache_debug with cache_hit true
+  ---> [x3] PASS: 9 chunks stored; replay identical; cache_debug on the final chunk
+
+==============================================================================
+[x4] OpenAI SDK route /openai/v1/chat/completions: cache headers and body  (extra)
+==============================================================================
+  -> POST /openai/v1/chat/completions  x-bf-cache-key=demo  "What is the capital city of France?"
+  <- 200 in 8 ms  id=chatcmpl-mock-000004  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: e9480d9f-3b85-504b-b6b4-976fbb46514d
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 0
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   HTTP 200 (got 200)
+  [ok]   x-bifrost-cache-* headers present (hit=true type=direct)
+  body has extra_fields: true; top-level keys: choices, created, extra_fields, id, model, object, system_fingerprint, usage
+  ---> [x4] PASS: hit=true type=direct id=e9480d9f-3b85-504b-b6b4-976fbb46514d; body extra_fields present=true
+
+==============================================================================
+[x6] query plan of the semantic lookup; forced HNSW index scan returns the same row  (extra)
+==============================================================================
+  [ok]   query vector = stored embedding of e9480d9f-3b85-504b-b6b4-976fbb46514d, params_hash ccb9da55fe35fa4a
+  default plan with 8 rows in the table (vector literal elided):
+        Limit (actual time=0.191..0.192 rows=1 loops=1)
+          ->  Sort (actual time=0.190..0.191 rows=1 loops=1)
+                Sort Key: ((embedding <=> '[...]'::vector))
+                Sort Method: quicksort  Memory: 25kB
+                ->  Seq Scan on "BifrostSemanticCachePlugin" (actual time=0.081..0.169 rows=2 loops=1)
+                      Filter: ((embedding IS NOT NULL) AND (metadata @> '{"cache_key": "demo"}'::jsonb) AND (metadata @> '{"params_hash": "ccb9da55fe35fa4a"}'::jsonb) AND (metadata @> '{"from_bifrost_semantic_cache_plugin": true}'::jsonb) AND (metadata @> '{"provider": "openai"}'::jsonb) AND (metadata @> '{"model": "mock-chat"}'::jsonb) AND ((embedding <=> '[...]'::vector) <= '0.19999999999999996'::double precision))
+                      Rows Removed by Filter: 6
+  plan with enable_seqscan=off, enable_bitmapscan=off:
+        Limit (actual time=0.101..0.101 rows=1 loops=1)
+          ->  Index Scan using "BifrostSemanticCachePlugin_emb_hnsw" on "BifrostSemanticCachePlugin" (actual time=0.100..0.100 rows=1 loops=1)
+                Order By: (embedding <=> '[...]'::vector)
+                Filter: ((embedding IS NOT NULL) AND (metadata @> '{"cache_key": "demo"}'::jsonb) AND (metadata @> '{"params_hash": "ccb9da55fe35fa4a"}'::jsonb) AND (metadata @> '{"from_bifrost_semantic_cache_plugin": true}'::jsonb) AND (metadata @> '{"provider": "openai"}'::jsonb) AND (metadata @> '{"model": "mock-chat"}'::jsonb) AND ((embedding <=> '[...]'::vector) <= '0.19999999999999996'::double precision))
+  [ok]   the HNSW index can serve the query (Index Scan using ..._emb_hnsw)
+  [ok]   both plans return the same nearest row (e9480d9f-3b85-504b-b6b4-976fbb46514d / e9480d9f-3b85-504b-b6b4-976fbb46514d)
+  ---> [x6] PASS: default plan at 8 rows: seq scan=true, hnsw index=false; forced HNSW plan returns the same row e9480d9f-3b85-504b-b6b4-976fbb46514d
+
+==============================================================================
+[x5] auth on /api/cache/* when a config store IS enabled (OSS setup-token lock)  (extra)
+==============================================================================
+  [ok]   read authprobe\config.json
+  [ok]   probe config: scratch config-store db "bifrost_e2e_configstore", namespace "bifrost_e2e_authprobe", setup token set, virtual key "sk-bf-e2e-probe-local"
+  [ok]   port 127.0.0.1:18091 is free
+  psql> DROP DATABASE IF EXISTS "bifrost_e2e_configstore" WITH (FORCE)
+        NOTICE:  database "bifrost_e2e_configstore" does not exist, skipping
+        DROP DATABASE
+  psql> CREATE DATABASE "bifrost_e2e_configstore"
+        CREATE DATABASE
+  psql> DROP TABLE IF EXISTS "public"."bifrost_e2e_authprobe"
+        DROP TABLE
+        NOTICE:  table "bifrost_e2e_authprobe" does not exist, skipping
+  [ok]   start auth-probe gateway: <nil>
+  started auth-probe gateway pid=25404 (config store: postgres db bifrost_e2e_configstore; setup_token set) log: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\logs\gateway-authprobe.log
+  [ok]   auth-probe gateway healthy
+  gateway log: [90m10:25AM[0m [33mWRN[0m [1mNo admin account is configured for this Bifrost instance yet.[0m
+  gateway log: [90m10:25AM[0m [33mWRN[0m [1mpass the configured setup token as auth_config.setup_token in the[0m
+  gateway log: [90m10:25AM[0m [33mWRN[0m [1mPUT /api/config call that creates the admin account.[0m
+  gateway log: [90m10:25AM[0m [33mWRN[0m [1mNo admin account is configured for this Bifrost instance yet.[0m
+  gateway log: [90m10:25AM[0m [33mWRN[0m [1mThe /api surface is locked until dashboard auth is enabled. Open[0m
+  gateway log: [90m10:25AM[0m [33mWRN[0m [1mthe dashboard and enter the setup token, or send it in the[0m
+  gateway log: [90m10:25AM[0m [33mWRN[0m [1mX-Bifrost-Setup-Token header.[0m
+  gateway log: [90m10:25AM[0m [32mINF[0m [1mplugin status: semantic_cache - active[0m
+  -> POST /v1/chat/completions  x-bf-cache-key=authprobe  "What is the capital city of France?"
+  <- 401 in 29 ms  id=  content=""
+     (no x-bifrost-cache-* headers)
+     body: {"type":"virtual_key_required","is_bifrost_error":false,"status_code":401,"error":{"message":"virtual key is required. Provide a virtual key via the x-bf-vk header."},"extra_fields":{"routing_info":{},"provider":"openai","original_model_requested":"mock-chat","resolved_model_used":"mock-chat","request_type":"chat_completion"}}
+
+  [ok]   inference without x-bf-vk -> 401 virtual_key_required, no cache lookup (got 401)
+  -> POST /v1/chat/completions  x-bf-cache-key=authprobe  x-bf-vk=sk-bf-e2e-probe-local  "What is the capital city of France?"
+  <- 200 in 200 ms  id=chatcmpl-mock-000014  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: false
+     x-bifrost-cache-id: c16f3db0-6e39-5c44-9a93-68d318e62bd2
+     x-bifrost-cache-provider-used: openai
+     x-bifrost-cache-model-used: mock-embedding
+     x-bifrost-cache-input-tokens: 8
+  [ok]   inference with x-bf-vk -> 200, cache miss, cache id c16f3db0-6e39-5c44-9a93-68d318e62bd2 (HTTP 200)
+  [ok]   entry written to "public"."bifrost_e2e_authprobe"
+  -> POST /v1/chat/completions  x-bf-cache-key=authprobe  x-bf-vk=sk-bf-e2e-probe-local  "What is the capital city of France?"
+  <- 200 in 3 ms  id=chatcmpl-mock-000014  content="Mock answer to: What is the capital city of France?"
+     x-bifrost-cache-hit: true
+     x-bifrost-cache-id: c16f3db0-6e39-5c44-9a93-68d318e62bd2
+     x-bifrost-cache-hit-type: direct
+     x-bifrost-cache-hit-latency-ms: 2
+     x-bifrost-cache-requested-provider: openai
+     x-bifrost-cache-requested-model: mock-chat
+  [ok]   same request with the same virtual key -> direct hit
+  -> DELETE http://127.0.0.1:18091/api/cache/clear/c16f3db0-6e39-5c44-9a93-68d318e62bd2  [no extra headers]
+  <- 401 {"is_bifrost_error":false,"status_code":401,"error":{"message":"dashboard auth is not configured; send the setup token in the X-Bifrost-Setup-Token header"},"extra_fields":{"routing_info":{}}}
+  [ok]   no credential -> 401 (got 401)
+  -> DELETE http://127.0.0.1:18091/api/cache/clear/c16f3db0-6e39-5c44-9a93-68d318e62bd2  [X-Bifrost-Setup-Token: wrong-token]
+  <- 403 {"is_bifrost_error":false,"status_code":403,"error":{"message":"invalid setup token"},"extra_fields":{"routing_info":{}}}
+  [ok]   wrong X-Bifrost-Setup-Token -> 403 (got 403)
+  [ok]   entry still present after the refused calls
+  -> DELETE http://127.0.0.1:18091/api/cache/clear/c16f3db0-6e39-5c44-9a93-68d318e62bd2  [X-Bifrost-Setup-Token: e2e-setup-token-local]
+  <- 200 {"message":"Cache cleared successfully"}
+  [ok]   correct X-Bifrost-Setup-Token -> 200 (got 200)
+  [ok]   entry deleted
+  -> DELETE http://127.0.0.1:18091/api/cache/clear-by-key/authprobe  [X-Bifrost-Setup-Token: e2e-setup-token-local]
+  <- 200 {"message":"Cache cleared successfully"}
+  [ok]   clear-by-key with the setup token -> 200 (got 200)
+  ---> [x5] PASS: config store on: inference without x-bf-vk -> 401; /api/cache/clear without credential -> 401, wrong setup token -> 403, X-Bifrost-Setup-Token -> 200 (until dashboard auth is enabled; then Basic/Bearer session auth applies)
+  cleanup psql> DROP TABLE IF EXISTS "public"."bifrost_e2e_authprobe" -> DROP TABLE 
+  cleanup psql> DROP DATABASE IF EXISTS "bifrost_e2e_configstore" WITH (FORCE) -> DROP DATABASE 
+
+stopped processes: mock-openai pid 13448 on 127.0.0.1:18080, bifrost-http run 1 pid 23868 on 127.0.0.1:18090, bifrost-http run 2 pid 23516 on 127.0.0.1:18090, bifrost-http auth probe pid 25404 on 127.0.0.1:18091
+port 127.0.0.1:18090 still listening: false
+port 127.0.0.1:18080 still listening: false
+port 127.0.0.1:18091 still listening: false
+
+==============================================================================
+SUMMARY  (2026-11-10T10:25:37+05:30, 47.3s)
+==============================================================================
+STEP   RESULT KIND      TITLE / KEY OBSERVATIONS
+0      PASS   required  setup: config, pgvector container, fresh namespace table, start mock + gateway
+                        PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2), pgvector 0.8.7; table BifrostSemanticCachePlugin vector(256), indexes hnsw=1 gin=1
+a      PASS   required  first request (x-bf-cache-key: demo) -> miss, one upstream call, row written to Postgres
+                        hit=false cache-id=e9480d9f-3b85-504b-b6b4-976fbb46514d chat_calls=1 embedding_calls=1 rows=1
+b      PASS   required  identical request -> hit, hit-type direct, no upstream call
+                        hit=true type=direct latency=1ms chat_calls=1
+c      PASS   required  paraphrase sharing most words -> hit, hit-type semantic, similarity >= threshold
+                        hit=true type=semantic similarity=0.878310110518638 threshold=0.8 (mock cosine 0.878310) chat_calls=1
+d      PASS   required  unrelated request -> miss, upstream call
+                        hit=false chat_calls 1->2 similarity-to-(a)=-0.0321 rows=2
+e      PASS   required  same question as (a) with x-bf-cache-key: other -> no hit (keys isolate entries)
+                        hit=false cache-id=613f9443-82ef-52bb-b380-37b556caf96e chat_calls 2->3
+f      PASS   required  DELETE /api/cache/clear/{cacheId} for the entry from (a) -> the same request misses
+                        auth: none (no config store => AuthBypassedMiddleware; foreign Origin -> 403); clear -> 200; re-request miss, same id, new completion chatcmpl-mock-000004; clear-by-key -> 200
+g      PASS   required  ways to bypass or refresh one cached entry, and what each writes back
+                        refresh = clear-by-id + re-request (same id, new completion); bypass without read or write = omit x-bf-cache-key; semantic+threshold>1 still hits identical prompts and adds a second row on a paraphrase miss; no-store still serves hits
+h      PASS   required  restart the gateway -> cached entries are still served from Postgres
+                        restart ok; direct hit chatcmpl-mock-000004; semantic hit similarity=0.8764167093162752; chat_calls unchanged=8
+i      PASS   required  where cache metadata appears in the HTTP JSON body (besides the headers)
+                        JSON body: extra_fields.cache_debug on the native /v1 route (cache_hit, cache_id, hit_type, requested_provider/model, provider_used, model_used, input_tokens, threshold, similarity, cache_hit_latency); streams: last chunk only
+x1     PASS   extra     x-bf-cache-type: direct stores a metadata-only row (NULL embedding, pgvector RequiresVectors() == false)
+                        NULL-embedding row 931375ff-4981-5211-9956-fafa02b82806; direct hit ok; paraphrase with cosine 0.8876 misses
+x2     PASS   extra     x-bf-cache-ttl: 2s -> entry expires; the expired row is deleted and rewritten
+                        expires_at stored as a JSON number, read back as float64 by the plugin; expired -> miss -> rewritten (expires_in 1798 s)
+x3     PASS   extra     streaming: chunks stored as a JSONB string array and replayed on a hit
+                        9 chunks stored; replay identical; cache_debug on the final chunk
+x4     PASS   extra     OpenAI SDK route /openai/v1/chat/completions: cache headers and body
+                        hit=true type=direct id=e9480d9f-3b85-504b-b6b4-976fbb46514d; body extra_fields present=true
+x6     PASS   extra     query plan of the semantic lookup; forced HNSW index scan returns the same row
+                        default plan at 8 rows: seq scan=true, hnsw index=false; forced HNSW plan returns the same row e9480d9f-3b85-504b-b6b4-976fbb46514d
+x5     PASS   extra     auth on /api/cache/* when a config store IS enabled (OSS setup-token lock)
+                        config store on: inference without x-bf-vk -> 401; /api/cache/clear without credential -> 401, wrong setup token -> 403, X-Bifrost-Setup-Token -> 200 (until dashboard auth is enabled; then Basic/Bearer session auth applies)
+
+required steps failed: 0, extra steps failed: 0, steps run: 16
+console log: C:/Users/PC1/AppData/Local/Temp/claude/c7499e7fccbe43de/908fdc55-aa3b-4ebf-83be-02dc30abe5c9/scratchpad/e2e-check/e2e-run.log; process logs: C:/Users/PC1/AppData/Local/Temp/claude/c7499e7fccbe43de/908fdc55-aa3b-4ebf-83be-02dc30abe5c9/scratchpad/e2e-check/logs
+OVERALL: PASS

@@ -1,0 +1,7 @@
+# Runtime data written by the companion (entry ages, decision log)
+data/
+# Built binaries
+/freshness-companion
+/freshness-companion.exe
+/demoserver
+/demoserver.exe

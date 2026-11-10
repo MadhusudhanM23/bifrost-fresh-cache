@@ -1,0 +1,4 @@
+[
+  {"question": "What are the support hours for Acme?", "answer": "Acme support is available Monday to Friday, 9am to 6pm. (Approved answer from the support team.)", "label": "support-approved", "source": "support handbook"},
+  {"question": "Does Acme offer a free trial?", "answer": "Yes, Acme offers a 14-day free trial with no card required. (Approved answer from the sales team.)", "label": "sales-approved"}
+]

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "client": {
+    "drop_excess_requests": false,
+    "enable_logging": false
+  },
+  "config_store": {
+    "enabled": false
+  },
+  "logs_store": {
+    "enabled": false
+  },
+  "providers": {
+    "openai": {
+      "keys": [
+        {
+          "name": "mock-openai-local",
+          "value": "sk-mock-local",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "http://mock-openai:18080",
+        "default_request_timeout_in_seconds": 30,
+        "max_retries": 0,
+        "allow_private_network": true
+      }
+    },
+    "xai": {
+      "keys": [
+        {
+          "name": "xai-from-env",
+          "value": "env.XAI_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "default_request_timeout_in_seconds": 60,
+        "max_retries": 1
+      }
+    },
+    "groq": {
+      "keys": [
+        {
+          "name": "groq-from-env",
+          "value": "env.GROQ_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "default_request_timeout_in_seconds": 60,
+        "max_retries": 1
+      }
+    },
+    "openrouter": {
+      "keys": [
+        {
+          "name": "openrouter-from-env",
+          "value": "env.OPENROUTER_API_KEY",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "default_request_timeout_in_seconds": 90,
+        "max_retries": 1
+      }
+    }
+  },
+  "vector_store": {
+    "enabled": true,
+    "type": "pgvector",
+    "config": {
+      "host": "postgres",
+      "port": "5432",
+      "user": "bifrost",
+      "password": "bifrost_password",
+      "database": "bifrost",
+      "ssl_mode": "disable",
+      "schema": "public",
+      "max_conns": "5"
+    }
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "semantic_cache",
+      "config": {
+        "provider": "openai",
+        "embedding_model": "mock-embedding",
+        "dimension": 256,
+        "threshold": 0.8,
+        "ttl": "30m",
+        "conversation_history_threshold": 3,
+        "cache_by_model": true,
+        "cache_by_provider": true,
+        "exclude_system_prompt": true
+      }
+    }
+  ]
+}

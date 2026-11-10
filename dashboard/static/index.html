@@ -1,0 +1,1889 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cache health</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #494843;
+    --muted: #66655f;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.14);
+    --wash: rgba(11, 11, 11, 0.04);
+    --direct: #2a78d6;
+    --semantic: #1baf7a;
+    --miss: #b5b3ab;
+    --good: #0a7a0a;
+    --good-text: #006300;
+    --warning: #fab219;
+    --critical: #c0392b;
+    --crit-text: #b02a2a;
+    --serious: #b8501f;
+    --unknown: #6f6d66;
+    --btn-bg: #0b0b0b;
+    --btn-ink: #fcfcfb;
+    --focus: #1a5fd0;
+    --ok-bg: #e4f4e4;
+    --ok-ink: #0a5a0a;
+    --bad-bg: #fbe7e7;
+    --bad-ink: #8f1d1d;
+    --neu-bg: #eceae3;
+    --neu-ink: #3d3c38;
+    --warn-bg: #fff3d1;
+    --warn-ink: #5c4200;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --muted: #a09e97;
+      --grid: #2c2c2a;
+      --axis: #44443f;
+      --border: rgba(255, 255, 255, 0.14);
+      --wash: rgba(255, 255, 255, 0.06);
+      --direct: #3987e5;
+      --semantic: #199e70;
+      --miss: #5a5955;
+      --good: #168516;
+      --good-text: #4cc34c;
+      --crit-text: #ff8a8a;
+      --unknown: #6e6d68;
+      --btn-bg: #f0efec;
+      --btn-ink: #1a1a19;
+      --focus: #7db3ff;
+      --ok-bg: #12301a;
+      --ok-ink: #9be39b;
+      --bad-bg: #3a1717;
+      --bad-ink: #ffb4b4;
+      --neu-bg: #2a2a28;
+      --neu-ink: #d8d7d1;
+      --warn-bg: #3a2f10;
+      --warn-ink: #ffd98a;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #a09e97;
+    --grid: #2c2c2a;
+    --axis: #44443f;
+    --border: rgba(255, 255, 255, 0.14);
+    --wash: rgba(255, 255, 255, 0.06);
+    --direct: #3987e5;
+    --semantic: #199e70;
+    --miss: #5a5955;
+    --good: #168516;
+    --good-text: #4cc34c;
+    --crit-text: #ff8a8a;
+    --unknown: #6e6d68;
+    --btn-bg: #f0efec;
+    --btn-ink: #1a1a19;
+    --focus: #7db3ff;
+    --ok-bg: #12301a;
+    --ok-ink: #9be39b;
+    --bad-bg: #3a1717;
+    --bad-ink: #ffb4b4;
+    --neu-bg: #2a2a28;
+    --neu-ink: #d8d7d1;
+    --warn-bg: #3a2f10;
+    --warn-ink: #ffd98a;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow-wrap: break-word;
+  }
+  main { max-width: 1120px; margin: 0 auto; padding: 28px 24px 64px; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+  .skip { position: absolute; left: -9999px; top: 8px; background: var(--btn-bg); color: var(--btn-ink); padding: 8px 12px; border-radius: 8px; z-index: 20; }
+  .skip:focus { left: 8px; }
+
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .top > div:first-child { flex: 1 1 360px; min-width: 0; }
+  h1 { font-size: 24px; line-height: 1.25; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { margin: 0; color: var(--ink-2); max-width: 64ch; }
+  .top-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .status {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 12px; background: var(--surface); font-size: 13px; color: var(--ink-2);
+  }
+  .status .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+  .status.up .dot { background: var(--good); }
+  .status.down .dot { background: var(--critical); }
+  .practice {
+    margin: 16px 0 0; padding: 9px 14px; border-radius: 10px;
+    background: var(--warn-bg); color: var(--warn-ink); font-size: 13.5px;
+  }
+  .alert {
+    margin: 12px 0 0; padding: 12px 16px; border-radius: 10px; font-size: 14px;
+    background: var(--bad-bg); color: var(--bad-ink); border: 1px solid var(--critical);
+  }
+  .alert[hidden] { display: none; }
+  .source { color: var(--ink-2); font-size: 13px; margin: 0 0 10px; }
+  .source code { font-size: 12px; }
+
+  button {
+    font: inherit; font-size: 14px; font-weight: 600;
+    border-radius: 8px; padding: 8px 14px; min-height: 38px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  }
+  button:hover { background: var(--wash); }
+  button.primary { background: var(--btn-bg); color: var(--btn-ink); border-color: var(--btn-bg); }
+  button.primary:hover { opacity: 0.88; background: var(--btn-bg); }
+  button.ghost { font-size: 13px; padding: 5px 12px; min-height: 32px; }
+  button:disabled, button[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+  label.inline { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 13.5px; }
+  input, select {
+    font: inherit; font-size: 14px; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--axis); border-radius: 6px; padding: 5px 8px; min-height: 34px;
+  }
+  input { width: 90px; }
+  input[type="checkbox"] { width: auto; min-height: 0; margin: 0; }
+  input.wide-input { width: 220px; max-width: 100%; }
+  .gen-status { color: var(--ink-2); font-size: 13px; }
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; }
+  .form-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; min-width: 0; margin-top: 16px; }
+  h2 { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
+  h3 { font-size: 15px; font-weight: 650; margin: 0; }
+  .card .desc { color: var(--ink-2); font-size: 13.5px; margin: 4px 0 14px; }
+  .fine { color: var(--ink-2); font-size: 13px; margin: 8px 0 0; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-ink); vertical-align: middle; white-space: nowrap; }
+  .pill.neutral { background: var(--neu-bg); color: var(--neu-ink); }
+
+  /* "What is this?" toggles */
+  .helper { margin: 2px 0 10px; }
+  .qm { display: inline-flex; align-items: center; gap: 7px; padding: 2px 10px 2px 3px; min-height: 28px; font-size: 13px; font-weight: 600; color: var(--ink-2); border-radius: 999px; background: transparent; border-color: transparent; }
+  .qm:hover { background: var(--wash); }
+  .qm .mark { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--btn-bg); color: var(--btn-ink); font-size: 13px; font-weight: 700; }
+  .help-text { margin: 6px 0 0; padding: 10px 14px; background: var(--wash); border-radius: 10px; color: var(--ink); font-size: 13.5px; max-width: 80ch; }
+  .help-text[hidden] { display: none; }
+
+  /* Hero */
+  .hero { margin-top: 20px; padding: 24px 26px; }
+  .hero-sentence { font-size: 20px; line-height: 1.4; font-weight: 600; margin: 8px 0 18px; max-width: 62ch; }
+  .big3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .stat { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--page); min-width: 0; }
+  .stat-label { font-size: 13.5px; font-weight: 650; color: var(--ink-2); }
+  .stat-value { font-size: 44px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; margin: 4px 0 4px; font-variant-numeric: tabular-nums; }
+  .stat-value.good { color: var(--good-text); }
+  .stat-value.bad { color: var(--crit-text); }
+  .stat-meaning { font-size: 13.5px; color: var(--ink-2); }
+
+  /* Try it */
+  .scen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 6px; }
+  .scen { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; background: var(--page); min-width: 0; }
+  .scen p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+  .scen .fine { margin: 0; }
+  .scen button { align-self: flex-start; }
+  .scen.off h3 { color: var(--ink-2); }
+  .scen-run { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: var(--wash); display: flex; gap: 14px; align-items: center; }
+  .scen-run[hidden] { display: none; }
+  .spinner { width: 22px; height: 22px; border: 3px solid var(--axis); border-top-color: var(--ink); border-radius: 50%; animation: spin 0.9s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; border-top-color: var(--axis); } }
+  .count { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: center; }
+  .result { margin-top: 18px; }
+  .result h3.res-title { font-size: 17px; }
+  .narr p { margin: 6px 0; max-width: 80ch; }
+  .sides { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+  .side { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--page); min-width: 0; }
+  .side h4 { margin: 0 0 10px; font-size: 15px; }
+  .verdict { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+  .verdict .ico { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 13px; font-weight: 700; flex: none; background: currentColor; }
+  .verdict .ico span { color: var(--page); }
+  .verdict.right { background: var(--ok-bg); color: var(--ok-ink); }
+  .verdict.wrong { background: var(--bad-bg); color: var(--bad-ink); }
+  .verdict.inconclusive, .verdict.error { background: var(--neu-bg); color: var(--neu-ink); }
+  .verdict .vt { display: block; }
+  .verdict .vt small { display: block; font-weight: 500; font-size: 13.5px; margin-top: 2px; color: inherit; }
+  .answer { margin: 10px 0 0; padding: 8px 12px; border-left: 3px solid var(--axis); color: var(--ink); font-size: 14px; font-style: italic; }
+  .facts { margin: 10px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); }
+  .facts li { margin: 3px 0; }
+  .takeaway { margin: 14px 0 0; padding: 12px 16px; border-radius: 10px; background: var(--wash); font-weight: 600; max-width: 90ch; }
+  details.steps { margin-top: 10px; }
+  details.steps summary { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  details.steps ol { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+  details.steps li { margin: 4px 0; }
+
+  /* Impact */
+  .assume { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 6px 0 12px; }
+  .money { display: grid; gap: 0; max-width: 640px; }
+  .money-row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-top: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  .money-row:first-child { border-top: none; }
+  .money-row .amt { font-weight: 700; white-space: nowrap; }
+  .money-row.total { font-size: 17px; font-weight: 700; border-top: 2px solid var(--axis); }
+  .money-row.total .amt.neg { color: var(--crit-text); }
+  .money-row.total .amt.pos { color: var(--good-text); }
+
+  /* Collapsible sections */
+  .band { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); margin: 30px 0 0; }
+  details.sec { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-top: 10px; }
+  details.sec > summary { padding: 14px 20px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: 16px; font-weight: 700; }
+  details.sec > summary .gist { font-size: 13.5px; font-weight: 400; color: var(--ink-2); }
+  details.sec[open] > summary { border-bottom: 1px solid var(--grid); }
+  .sec-body { padding: 4px 20px 18px; }
+  .sec-body .card { margin-top: 12px; background: var(--page); }
+  summary { cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  details.sec > summary::before { content: ""; width: 0; height: 0; border-left: 7px solid var(--ink-2); border-top: 5px solid transparent; border-bottom: 5px solid transparent; align-self: center; transition: transform 0.12s; flex: none; }
+  details.sec[open] > summary::before { transform: rotate(90deg); }
+  @media (prefers-reduced-motion: reduce) { details.sec > summary::before { transition: none; } }
+  h3.grp { font-size: 13px; font-weight: 700; color: var(--ink-2); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  h3.grp:first-child { margin-top: 6px; }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 4px 0; }
+  .kv .k { color: var(--ink-2); font-size: 13px; }
+  .kv .v { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .tiles .card { margin-top: 0; }
+  .tile .label { color: var(--ink-2); font-size: 13.5px; }
+  .tile .value { font-size: 28px; font-weight: 700; margin-top: 6px; letter-spacing: -0.01em; }
+  .tile .sub { color: var(--ink-2); font-size: 13px; margin-top: 4px; }
+  .tile .sub input { width: 64px; padding: 2px 6px; margin: 0 4px 0 2px; font-size: 13px; min-height: 28px; }
+  .tile .value.neg { color: var(--crit-text); }
+  details.how { margin: 0 0 12px; }
+  details.how p, .how-body p { margin: 4px 0; color: var(--ink-2); font-size: 13.5px; }
+  .how-body .formula { font-variant-numeric: tabular-nums; }
+  .whybtn{font:inherit;font-size:.8em;margin-top:.25rem;padding:.1rem .5rem;border:1px solid currentColor;border-radius:.6rem;background:transparent;color:inherit;cursor:pointer}.whybtn:focus-visible{outline:2px solid currentColor;outline-offset:2px}.whytext{font-size:.85em;max-width:34ch;white-space:normal}
+  .marks { display: flex; flex-direction: column; gap: 3px; }
+  .reason-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--grid); }
+  .reason-row:first-of-type { border-top: none; }
+  .reason-row .n { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+  .charts > .card { margin-top: 12px; }
+  .chart { width: 100%; }
+  .chart svg { display: block; overflow: visible; max-width: 100%; }
+  .chart text { font-family: inherit; }
+  .empty { color: var(--ink-2); font-size: 13.5px; padding: 14px 0; }
+  .note { color: var(--ink-2); font-size: 13px; margin: 12px 0 0; }
+  h3.mini { font-size: 12.5px; font-weight: 650; color: var(--ink-2); margin: 20px 0 8px; }
+  .seq { display: flex; flex-wrap: wrap; gap: 2px; }
+  .seq .cell { width: 14px; height: 14px; border-radius: 3px; }
+  .seq .cell.big { width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; font-size: 13px; color: var(--ink-2); }
+  .legend .item { display: inline-flex; align-items: center; gap: 7px; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .legend .num { color: var(--ink); font-weight: 600; }
+  .legend .ico { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff; flex: none; }
+
+  .signal { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--grid); }
+  .signal:first-of-type { border-top: none; padding-top: 4px; }
+  .signal .ico { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; margin-top: 1px; }
+  .signal .ico.warn { background: var(--warning); color: #0b0b0b; }
+  .signal .ico.ok { background: var(--good); color: #fff; }
+  .signal .text b { font-weight: 600; }
+  .signal .text .sub { color: var(--ink-2); font-size: 13px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { color: var(--ink-2); font-weight: 650; font-size: 12.5px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.muted, .muted { color: var(--ink-2); }
+  tbody tr:hover td { background: var(--wash); }
+  .table-wrap { overflow-x: auto; max-width: 100%; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .chip .ico { width: 15px; height: 15px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; }
+  .chip .sw { width: 9px; height: 9px; border-radius: 2px; }
+  code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: var(--wash); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+
+  #tip {
+    position: fixed; z-index: 10; pointer-events: none; max-width: 320px;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+  #tip[hidden] { display: none; }
+  #tip .t { font-weight: 600; margin-bottom: 2px; }
+  #tip .m { color: var(--ink-2); }
+
+  @media (max-width: 760px) {
+    .sides { grid-template-columns: 1fr; }
+    .big3 { grid-template-columns: 1fr; }
+    .stat { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; }
+    .stat-label { grid-column: 1 / -1; }
+    .stat-value { font-size: 36px; margin: 0; }
+  }
+  @media (max-width: 520px) {
+    main { padding: 20px 16px 48px; }
+    h1 { font-size: 21px; }
+    .hero { padding: 18px 16px; }
+    .hero-sentence { font-size: 18px; }
+    .card { padding: 16px; }
+    details.sec > summary { padding: 12px 16px; }
+    details.sec > summary { display: grid; grid-template-columns: 12px 1fr; column-gap: 10px; }
+    details.sec > summary .gist { grid-column: 2; }
+    .sec-body { padding: 2px 14px 14px; }
+    .money-row { flex-direction: column; gap: 2px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#story">Skip to the summary</a>
+<main>
+
+  <header class="top">
+    <div>
+      <h1>Is the cache saving money, and is it telling the truth?</h1>
+      <p class="lede">Think of the cache as a notebook of answers we already worked out. Re-using a note is quick and cheap, but only if the note is still right.</p>
+    </div>
+    <div class="top-right">
+      <div class="status" id="status" role="status"><span class="dot"></span><span id="statusText">Checking connection…</span></div>
+      <button class="ghost" id="btnRefresh" title="Reload every number on this page">Refresh</button>
+      <button class="ghost" id="btnTheme" title="Switch between automatic, light and dark colours">Theme: Auto</button>
+    </div>
+  </header>
+  <p class="practice" role="note"><b>Practice run.</b> Everything here uses a stand-in model and stand-in text matching, not a real AI. It shows how the safety net works. It does not show how a real model would score.</p>
+  <div class="alert" id="alertBox" role="alert" hidden></div>
+
+  <section class="card hero" id="story" aria-labelledby="heroTitle">
+    <h2 id="heroTitle">The short version</h2>
+    <div class="helper" data-help="This is the whole page in one sentence and three numbers. A &quot;saved&quot; call is a time the cache answered instead of the model. &quot;Stopped&quot; means a wrong or out-of-date answer was caught before the person saw it. &quot;Got through&quot; means a spot-check later found a wrong answer that had already been served."></div>
+    <p class="hero-sentence" id="heroSentence" aria-live="polite">Loading the live numbers…</p>
+    <div class="big3">
+      <div class="stat">
+        <div class="stat-label">Model calls saved <span class="pill" id="pSaved" hidden>early signal</span></div>
+        <div class="stat-value" id="hSaved">–</div>
+        <div class="stat-meaning" id="hSavedM">Times the cache answered instead of the model, after paying for our own extra checks.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Bad answers stopped <span class="pill" id="pStopped" hidden>early signal</span></div>
+        <div class="stat-value good" id="hStopped">–</div>
+        <div class="stat-meaning" id="hStoppedM">Wrong or out-of-date answers caught before anyone saw them.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Bad answers that got through <span class="pill" id="pReached" hidden>early signal</span></div>
+        <div class="stat-value" id="hReached">–</div>
+        <div class="stat-meaning" id="hReachedM">Wrong answers a spot-check found after they were already served.</div>
+      </div>
+    </div>
+    <p class="fine" id="heroFine">Questions are counted from what this dashboard sent. Stopped and got-through are counted by the companion since it last started.</p>
+  </section>
+
+  <section class="card" id="tryit" aria-labelledby="tryTitle">
+    <h2 id="tryTitle">Try it: plain cache or protected cache?</h2>
+    <div class="helper" data-help="Each button asks the same questions twice. One copy goes straight to the cache with no protection. The other goes through the freshness companion, a guard that double-checks a saved answer before handing it back. You then see both results side by side."></div>
+    <div class="scen-grid" id="scenGrid" role="group" aria-label="Scenarios you can run"><div class="empty">Loading the scenarios…</div></div>
+    <div class="scen-run" id="scenRun" role="status" aria-live="polite" hidden></div>
+    <div class="result" id="scenResult" aria-live="polite"></div>
+  </section>
+
+  <section class="card" id="impact" aria-labelledby="impTitle">
+    <h2 id="impTitle">What is it worth?</h2>
+    <div class="helper" data-help="Money saved is the number of answers the cache gave (instead of the model) times what one model call costs. We subtract the extra model calls our own safety checks used. The price per call is your guess, not something we measured, so change it to match your provider."></div>
+    <div class="assume">
+      <label for="inCost"><b>Cost of one model call (US$)</b></label>
+      <input type="text" inputmode="decimal" id="inCost" value="0.002" aria-describedby="costNote">
+      <span class="pill neutral" id="costNote">your assumption, not measured</span>
+      <button class="ghost" id="btnCostReset">Reset to $0.002</button>
+    </div>
+    <div class="money" id="moneyBox"><div class="empty">Loading…</div></div>
+    <p class="fine" id="moneyFine"></p>
+  </section>
+
+  <h2 class="band">More detail</h2>
+  <p class="fine" style="margin-top:4px">Everything below is the evidence behind the summary. Open any section.</p>
+
+  <details class="sec" id="secNumbers">
+    <summary title="Every headline number, grouped and in plain words"><span>All the numbers</span><span class="gist">savings, wrong or old answers, safety nets</span></summary>
+    <div class="sec-body">
+      <div class="helper" data-help="These tiles are the same numbers as the summary, split out. Savings tiles count what the cache did. The next group counts wrong or out-of-date answers. The last group counts the safety nets (shared refreshes and answers kept out of the cache on purpose)."></div>
+      <h3 class="grp">Savings</h3>
+      <div class="tiles">
+        <div class="card tile" title="Share of this dashboard's questions that the cache answered">
+          <div class="label">How often the cache answered</div>
+          <div class="value" id="tHitRate">–</div>
+          <div class="sub" id="tHitRateSub">No traffic yet</div>
+        </div>
+        <div class="card tile" title="Questions answered from the cache instead of the model">
+          <div class="label">Model calls skipped</div>
+          <div class="value" id="tAvoided">–</div>
+          <div class="sub" id="tAvoidedSub">&nbsp;</div>
+        </div>
+        <div class="card tile" title="Tokens are small pieces of text. This is how much text the model did not have to write again.">
+          <div class="label">Text the model did not write again (tokens)</div>
+          <div class="value" id="tTokens">–</div>
+          <div class="sub"><label>$<input type="text" id="pricePerK" placeholder="0.00" inputmode="decimal" aria-label="Your price in dollars per 1,000 tokens"> per 1K tokens</label></div>
+          <div class="sub" id="tDollars">Enter a price to estimate dollars saved</div>
+        </div>
+        <div class="card tile" title="Middle speed of answers that came from the cache">
+          <div class="label">Typical speed of a cache answer</div>
+          <div class="value" id="tLatency">–</div>
+          <div class="sub" id="tLatencySub">&nbsp;</div>
+        </div>
+        <div class="card tile" title="Model calls the cache skipped, minus extra calls our own checks made">
+          <div class="label">Calls saved after our own checks</div>
+          <div class="value" id="tNet">–</div>
+          <div class="sub" id="tNetSub">&nbsp;</div>
+        </div>
+      </div>
+      <h3 class="grp">Wrong or old answers</h3>
+      <div class="tiles">
+        <div class="card tile" title="Spot-checks ask the model again and compare. This is the share where the saved answer did not match.">
+          <div class="label">Look-alike mix-ups found by spot-checks</div>
+          <div class="value" id="tWrong">–</div>
+          <div class="sub" id="tWrongSub">&nbsp;</div>
+        </div>
+        <div class="card tile" title="A saved answer was checked against the live page and found out of date">
+          <div class="label">Out-of-date answers caught</div>
+          <div class="value" id="tStale">–</div>
+          <div class="sub" id="tStaleSub">&nbsp;</div>
+        </div>
+        <div class="card tile" title="Answers that looked right but did not match the source and were replaced">
+          <div class="label">Wrong answers corrected</div>
+          <div class="value" id="tFixed">–</div>
+          <div class="sub" id="tFixedSub">&nbsp;</div>
+        </div>
+        <div class="card tile" title="Out-of-date answers refreshed, wrong new answers fixed, and look-alike mix-ups blocked before serving">
+          <div class="label">Bad answers stopped</div>
+          <div class="value" id="tStopped">–</div>
+          <div class="sub" id="tStoppedSub">&nbsp;</div>
+        </div>
+        <div class="card tile" title="Wrong answers found by a spot-check after they were already served">
+          <div class="label">Wrong answers that got through</div>
+          <div class="value" id="tReached">–</div>
+          <div class="sub" id="tReachedSub">&nbsp;</div>
+        </div>
+      </div>
+      <h3 class="grp">Safety nets</h3>
+      <div class="tiles">
+        <div class="card tile" title="Many people asking at once after an answer went out of date. One refresh is shared instead of everyone re-asking.">
+          <div class="label">Pile-ups avoided</div>
+          <div class="value" id="tStampede">–</div>
+          <div class="sub" id="tStampedeSub">&nbsp;</div>
+        </div>
+        <div class="card tile" title="Requests that were deliberately never saved, such as ones built from live tool data">
+          <div class="label">Kept out of the cache on purpose</div>
+          <div class="value" id="tGuard">–</div>
+          <div class="sub" id="tGuardSub">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="secFlow">
+    <summary title="How the dashboard's questions were answered"><span>How questions were answered</span><span class="gist">cache or model, how fast, how close the match</span></summary>
+    <div class="sec-body">
+      <div class="helper" data-help="Each question was answered one of three ways: the exact same question was seen before, a similar question was seen before, or it was new and the model had to answer. Cache answers should be much faster than model answers."></div>
+      <div class="charts">
+        <div class="card">
+          <h3>Where requests went</h3>
+          <p class="desc">Every request the dashboard sent, by how it was answered.</p>
+          <div class="chart" id="cOutcomes"></div>
+          <div class="legend" id="lOutcomes"></div>
+          <h3 class="mini">Request order, oldest first</h3>
+          <div class="seq" id="cSequence"></div>
+        </div>
+        <div class="card">
+          <h3>Typical response time</h3>
+          <p class="desc">Measured round trip, middle value for each kind of answer.</p>
+          <div class="chart" id="cLatency"></div>
+          <p class="note">New questions go to a local stand-in model with about 100 ms of made-up delay. A real provider is usually much slower, so the gap would be larger.</p>
+        </div>
+        <div class="card">
+          <h3>How close was each similar match?</h3>
+          <p class="desc">Each dot is a reworded question answered from a saved one. Dots close to the line only just passed.</p>
+          <div class="chart" id="cSimilarity"></div>
+          <p class="note" id="nSimilarity"></p>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="secLook">
+    <summary title="Questions that look alike but need different answers"><span>Look-alike questions: are re-used answers right?</span><span class="gist">spot-checks and the check before serving</span></summary>
+    <div class="sec-body">
+      <div class="helper" data-help="Two questions can use almost the same words and still need different answers, like resetting a password versus resetting a username. For some re-used answers the companion asks the model again and compares. It can also do this check before serving, like reading the label before handing over a parcel."></div>
+      <div class="card wide">
+        <h3>Are the re-used answers right?</h3>
+        <p class="desc">A high hit rate only helps if the re-used answers are correct. For a share of similar-question matches the companion asks the model the same question again, skipping the cache, and compares the two answers.</p>
+        <div class="chart" id="cAudit"></div>
+        <div class="legend" id="lAudit"></div>
+        <div id="auditSignals"></div>
+        <p class="note" id="nAudit"></p>
+      </div>
+      <div class="card">
+        <h3>Checked before serving</h3>
+        <p class="desc">When a saved answer is a close call between look-alike questions, the companion asks the model first and only serves the saved answer if the model agrees, like checking the label before handing over the parcel.</p>
+        <div class="kv">
+          <div><div class="k">Checked, was right</div><div class="v" id="kvGateVerified">–</div></div>
+          <div><div class="k">Trusted from an earlier check</div><div class="v" id="kvGateTrusted">–</div></div>
+          <div><div class="k">Wrong, stopped</div><div class="v" id="kvGateBlocked">–</div></div>
+          <div><div class="k">Could not be checked</div><div class="v" id="kvGateUnverified">–</div></div>
+        </div>
+        <p class="note" id="nGate"></p>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="secStale">
+    <summary title="Answers that were true once but no longer are"><span>Out-of-date answers</span><span class="gist">checks against the live page, repeat offenders, the log</span></summary>
+    <div class="sec-body">
+      <div class="helper" data-help="Some facts change, like a price. A saved answer can be right when saved and wrong later. The companion checks the live source before re-using the answer. If it finds a difference it throws the old answer away and asks again."></div>
+      <div class="card">
+        <h3>Checks by fact</h3>
+        <p class="desc">What the companion found when it compared saved answers with the live source.</p>
+        <div class="chart" id="cFreshness"></div>
+        <div class="legend" id="lFreshness"></div>
+        <h3 class="mini">Checks in order, oldest first</h3>
+        <div class="seq" id="cFreshSeq"></div>
+      </div>
+      <div class="card">
+        <h3>New answers checked before re-use</h3>
+        <p class="desc">A brand-new answer can be wrong from the start, for example when the model was given outdated background. The companion checks it against the live source before it is re-used.</p>
+        <div class="kv">
+          <div><div class="k">New answers checked</div><div class="v" id="kvChecked">–</div></div>
+          <div><div class="k">Looked right but did not match the source</div><div class="v" id="kvContra">–</div></div>
+          <div><div class="k">Corrected</div><div class="v" id="kvCorrected">–</div></div>
+          <div><div class="k">Removed from the cache</div><div class="v" id="kvUncached">–</div></div>
+        </div>
+        <p class="note" id="nChecked"></p>
+      </div>
+      <div class="card wide">
+        <h3>Facts that keep going out of date</h3>
+        <p class="desc">A fact caught out of date <b id="thresholdLabel">2</b> or more times means the cache keeps serving it past its useful life. Give that fact a shorter lifetime (TTL) or a stricter match.</p>
+        <div id="signals"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card wide">
+        <h3>Recent checks</h3>
+        <p class="desc">Live from the companion's decision log (<code>GET /freshness/decisions</code>).</p>
+        <div class="table-wrap">
+          <table id="decisionsTable">
+            <thead><tr><th>Time</th><th>Fact</th><th>What it found</th><th>Saved → live</th><th>What it did</th><th>Why</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="secGuard">
+    <summary title="Requests the companion refuses to save"><span>Kept out of the cache on purpose</span><span class="gist">answers that must never be saved</span></summary>
+    <div class="sec-body">
+      <div class="helper" data-help="Some answers are unsafe to save: ones built from a tool's live result (like a receipt that changes every time) and ones where a saved text answer would skip a real action such as sending an email. The guard keeps those out of the cache."></div>
+      <div class="card">
+        <h3>What the guard kept out</h3>
+        <div id="guardBody"><div class="empty">Loading…</div></div>
+        <p class="note" id="nGuard"></p>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="secNotices">
+    <summary title="Tell the cache that something changed"><span>Tell the cache something changed</span><span class="gist">change notices</span></summary>
+    <div class="sec-body">
+      <div class="helper" data-help="When the system that owns a fact (like a price) says it changed, it can send a notice here. Saved answers written before the notice are then re-checked the next time they are used, instead of waiting for a timer."></div>
+      <div class="card">
+        <h3>Send a change notice</h3>
+        <div class="form-row">
+          <select id="nKind" aria-label="What changed"><option value="fact">Fact</option><option value="category">Category</option><option value="source_url">Source URL</option></select>
+          <input class="wide-input" type="text" id="nTarget" placeholder="Acme Pro plan price" aria-label="Name of what changed">
+          <button id="btnNotify">Send notice</button>
+        </div>
+        <div class="note" id="notifyStatus" role="status"></div>
+        <div class="table-wrap">
+          <table id="changesTable">
+            <thead><tr><th>Time</th><th>Notice</th><th>What changed</th><th>Cached evidence dropped</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="trafficDetails">
+    <summary title="Every request this dashboard sent"><span>Request log (<span id="trafficCount">0</span>)</span><span class="gist">one row per request</span></summary>
+    <div class="sec-body">
+      <p class="desc">Every row is one real HTTP request this dashboard sent through companion, then Bifrost, then the model, and what the reply headers said.</p>
+      <div class="table-wrap">
+        <table id="trafficTable">
+          <thead><tr><th>Time</th><th>Question</th><th>Kind</th><th>Result</th><th class="num">Closeness</th><th>Checks</th><th class="num">Tokens</th><th class="num">Latency</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <details class="sec" id="howCounted">
+    <summary title="The sums behind the headline numbers"><span>How this is counted</span><span class="gist">where each number comes from</span></summary>
+    <div class="sec-body">
+      <p class="source" id="sourceNote"></p>
+      <div class="how-body" id="howBody"><p>Loading…</p></div>
+    </div>
+  </details>
+
+  <details class="sec" id="secTools">
+    <summary title="Send a fixed batch of practice questions"><span>Practice traffic tools</span><span class="gist">fill the page with a fixed set of questions</span></summary>
+    <div class="sec-body">
+      <div class="helper" data-help="This sends a fixed list of about 18 practice questions through the companion (reworded ones, look-alikes and one that carries tool data). Use it to fill the numbers quickly. Reset clears only this dashboard's own tally, not the companion."></div>
+      <div class="controls">
+        <button class="primary" id="btnGenerate">Generate practice traffic</button>
+        <label class="inline">Rounds <input type="number" id="rounds" value="1" min="1" max="20"></label>
+        <label class="inline"><input type="checkbox" id="freshRun" checked> Start from an empty cache</label>
+        <button id="btnReset">Reset tally</button>
+        <span class="gen-status" id="genStatus" role="status"></span>
+      </div>
+    </div>
+  </details>
+
+</main>
+<div id="tip" hidden></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtInt = (n) => Number(n || 0).toLocaleString();
+const fmtMs = (n) => (n < 10 ? n.toFixed(1) : Math.round(n).toString()) + ' ms';
+const fmtTime = (t) => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleTimeString(); };
+
+const OUTCOMES = [
+  { key: 'direct', label: 'Same question seen before', color: 'var(--direct)' },
+  { key: 'semantic', label: 'Similar question seen before', color: 'var(--semantic)' },
+  { key: 'miss', label: 'New question (model called)', color: 'var(--miss)' },
+  { key: 'error', label: 'Error', color: 'var(--critical)' },
+];
+const FRESHNESS = [
+  { key: 'confirmed', label: 'Still correct', icon: '✓', color: 'var(--good)' },
+  { key: 'stale', label: 'Out of date, refreshed', icon: '↻', color: 'var(--critical)' },
+  { key: 'unable_to_verify', label: 'Could not check', icon: '?', color: 'var(--warning)' },
+  { key: 'unknown', label: 'Not checked', icon: '–', color: 'var(--unknown)' },
+  { key: 'contradicted', label: 'Looked right but was not', icon: '✕', color: 'var(--serious)' },
+];
+const freshByKey = Object.fromEntries(FRESHNESS.map((f) => [f.key, f]));
+const outcomeByKey = Object.fromEntries(OUTCOMES.map((o) => [o.key, o]));
+
+let lastStats = null;
+let lastDecisions = null;
+let lastAudits = null;
+let lastChanges = null;
+let lastSummary = null;
+
+function svgEl(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function newSvg(container, height) {
+  container.innerHTML = '';
+  const width = Math.max(260, container.clientWidth);
+  const svg = svgEl('svg', { width, height, viewBox: `0 0 ${width} ${height}`, role: 'img' }, container);
+  return { svg, width };
+}
+function emptyState(container, text) {
+  container.innerHTML = '<div class="empty">' + esc(text) + '</div>';
+}
+function tipHtml(title, lines) {
+  return '<div class="t">' + esc(title) + '</div>' + lines.map((l) => '<div class="m">' + esc(l) + '</div>').join('');
+}
+// Square at the baseline, 4px rounded data end.
+function barPath(x, y, w, h, r) {
+  if (w <= 0) return '';
+  r = Math.min(r, w, h / 2);
+  return `M${x},${y}H${x + w - r}A${r},${r} 0 0 1 ${x + w},${y + r}V${y + h - r}A${r},${r} 0 0 1 ${x + w - r},${y + h}H${x}Z`;
+}
+function niceStep(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
+  return 10 * p;
+}
+function median(arr) {
+  if (!arr.length) return null;
+  const s = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+// ---- Tooltip -------------------------------------------------------------
+const tip = $('tip');
+document.addEventListener('pointermove', (e) => {
+  const t = e.target.closest ? e.target.closest('[data-tip]') : null;
+  if (!t) { tip.hidden = true; return; }
+  tip.innerHTML = t.getAttribute('data-tip');
+  tip.hidden = false;
+  const pad = 14;
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + r.width > window.innerWidth - 8) x = e.clientX - r.width - pad;
+  if (y + r.height > window.innerHeight - 8) y = e.clientY - r.height - pad;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+});
+document.addEventListener('pointerleave', () => { tip.hidden = true; });
+window.addEventListener('scroll', () => { tip.hidden = true; }, { passive: true });
+
+// ---- Charts --------------------------------------------------------------
+function renderOutcomes(s) {
+  const box = $('cOutcomes'), legend = $('lOutcomes');
+  const counts = { direct: s.direct_hits, semantic: s.semantic_hits, miss: s.misses, error: s.errors };
+  const total = s.total_requests;
+  legend.innerHTML = '';
+  if (!total) { emptyState(box, 'No requests yet. Press Try it above to fill this in.'); return; }
+
+  const segs = OUTCOMES.filter((o) => counts[o.key] > 0);
+  const h = 28, gap = 2;
+  const { svg, width } = newSvg(box, h);
+  const clipId = 'clipOutcomes';
+  const defs = svgEl('defs', {}, svg);
+  const clip = svgEl('clipPath', { id: clipId }, defs);
+  svgEl('rect', { x: 0, y: 0, width, height: h, rx: 4 }, clip);
+  const g = svgEl('g', { 'clip-path': `url(#${clipId})` }, svg);
+  const usable = width - gap * (segs.length - 1);
+  let x = 0;
+  for (const o of segs) {
+    const w = (counts[o.key] / total) * usable;
+    const pct = ((counts[o.key] / total) * 100).toFixed(0) + '%';
+    svgEl('rect', {
+      x, y: 0, width: Math.max(w, 1), height: h, fill: o.color,
+      'data-tip': tipHtml(o.label, [fmtInt(counts[o.key]) + ' of ' + fmtInt(total) + ' requests (' + pct + ')']),
+    }, g);
+    x += w + gap;
+  }
+  for (const o of segs) {
+    const pct = ((counts[o.key] / total) * 100).toFixed(0);
+    legend.insertAdjacentHTML('beforeend',
+      '<span class="item"><span class="sw" style="background:' + o.color + '"></span>' + esc(o.label) +
+      ' <span class="num">' + fmtInt(counts[o.key]) + '</span> <span>(' + pct + '%)</span></span>');
+  }
+}
+
+function renderLatency(s) {
+  const box = $('cLatency');
+  const events = s.recent || [];
+  const rows = ['direct', 'semantic', 'miss'].map((k) => {
+    const vals = events.filter((e) => e.hit_type === k && e.latency_ms > 0).map((e) => e.latency_ms);
+    return { o: outcomeByKey[k], vals, med: median(vals) };
+  }).filter((r) => r.vals.length);
+  if (!rows.length) { emptyState(box, 'No timing data yet.'); return; }
+
+  const labelW = 132, valueW = 64, rowH = 34, barH = 18, axisH = 22;
+  const h = rows.length * rowH + axisH;
+  const { svg, width } = newSvg(box, h);
+  const plotW = width - labelW - valueW;
+  const dataMax = Math.max(...rows.map((r) => r.med));
+  const step = niceStep(dataMax / 3);
+  const max = Math.ceil(dataMax / step) * step;
+  const ticks = [];
+  for (let t = 0; t <= max + 1e-9; t += step) ticks.push(t);
+  const xs = (v) => labelW + (v / max) * plotW;
+
+  for (const t of ticks) {
+    svgEl('line', { x1: xs(t), x2: xs(t), y1: 0, y2: rows.length * rowH, stroke: 'var(--grid)', 'stroke-width': 1 }, svg);
+    const tx = svgEl('text', { x: xs(t), y: rows.length * rowH + 16, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)', 'font-variant-numeric': 'tabular-nums' }, svg);
+    tx.textContent = Math.round(t) + (t === max ? ' ms' : '');
+  }
+  svgEl('line', { x1: labelW, x2: labelW, y1: 0, y2: rows.length * rowH, stroke: 'var(--axis)', 'stroke-width': 1 }, svg);
+
+  rows.forEach((r, i) => {
+    const y = i * rowH + (rowH - barH) / 2;
+    const lab = svgEl('text', { x: 0, y: y + barH / 2 + 4, 'font-size': 12.5, fill: 'var(--ink-2)' }, svg);
+    lab.textContent = r.o.label.replace(' (model called)', '').replace(' seen before', '');
+    const w = xs(r.med) - labelW;
+    const hit = svgEl('g', {
+      'data-tip': tipHtml(r.o.label, [
+        'Median ' + fmtMs(r.med) + ' across ' + r.vals.length + ' request' + (r.vals.length === 1 ? '' : 's'),
+        'Fastest ' + fmtMs(Math.min(...r.vals)) + ', slowest ' + fmtMs(Math.max(...r.vals)),
+      ]),
+    }, svg);
+    svgEl('rect', { x: labelW, y: i * rowH, width: plotW + valueW, height: rowH, fill: 'transparent' }, hit);
+    svgEl('path', { d: barPath(labelW, y, Math.max(w, 2), barH, 4), fill: r.o.color }, hit);
+    const v = svgEl('text', { x: labelW + Math.max(w, 2) + 6, y: y + barH / 2 + 4, 'font-size': 12.5, 'font-weight': 600, fill: 'var(--ink)' }, hit);
+    v.textContent = fmtMs(r.med);
+  });
+}
+
+function renderSimilarity(s) {
+  const box = $('cSimilarity'), note = $('nSimilarity');
+  const pts = (s.recent || [])
+    .filter((e) => e.hit_type === 'semantic' && e.similarity)
+    .map((e) => ({ sim: parseFloat(e.similarity), thr: parseFloat(e.threshold), q: e.question, t: e.time }))
+    .filter((p) => !isNaN(p.sim));
+  note.textContent = '';
+  if (!pts.length) { emptyState(box, 'No similar-question matches yet. They appear when a reworded question is answered from a saved one.'); return; }
+
+  const thr = pts.map((p) => p.thr).find((v) => !isNaN(v));
+  const minSim = Math.min(...pts.map((p) => p.sim));
+  const lo = Math.max(0, Math.floor((Math.min(minSim, isNaN(thr) ? minSim : thr) - 0.05) * 20) / 20);
+  const hi = 1;
+  const padL = 8, padR = 8;
+  const w0 = Math.max(260, box.clientWidth);
+  const xs0 = (v) => padL + ((v - lo) / (hi - lo)) * (w0 - padL - padR);
+  let maxLevel = 0;
+  { const pl = []; for (const p of [...pts].sort((a, b) => a.sim - b.sim)) { const x = xs0(p.sim); let lv = 0; while (pl.some((q) => Math.abs(q.x - x) < 11 && q.level === lv)) lv++; pl.push({ x, level: lv }); maxLevel = Math.max(maxLevel, lv); } }
+  const baseY = 30 + (maxLevel + 1) * 12, h = baseY + 32;
+  const { svg, width } = newSvg(box, h);
+  svg.setAttribute('aria-label', 'Dot chart of similar-question matches by closeness to the cut-off.');
+  const xs = (v) => padL + ((v - lo) / (hi - lo)) * (width - padL - padR);
+
+  svgEl('line', { x1: xs(lo), x2: xs(hi), y1: baseY, y2: baseY, stroke: 'var(--axis)', 'stroke-width': 1 }, svg);
+  const step = hi - lo > 0.3 ? 0.1 : 0.05;
+  for (let v = lo; v <= hi + 1e-9; v += step) {
+    const t = svgEl('text', { x: xs(v), y: baseY + 18, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)', 'font-variant-numeric': 'tabular-nums' }, svg);
+    t.textContent = v.toFixed(2);
+    svgEl('line', { x1: xs(v), x2: xs(v), y1: baseY, y2: baseY + 4, stroke: 'var(--axis)', 'stroke-width': 1 }, svg);
+  }
+  if (!isNaN(thr)) {
+    svgEl('line', { x1: xs(thr), x2: xs(thr), y1: 6, y2: baseY, stroke: 'var(--ink-2)', 'stroke-width': 1 }, svg);
+    const t = svgEl('text', { x: xs(thr) - 6, y: 14, 'text-anchor': 'end', 'font-size': 11.5, fill: 'var(--ink-2)' }, svg);
+    t.textContent = 'cut-off ' + thr.toFixed(2);
+  }
+
+  // Stack dots that would overlap so every match stays visible.
+  const placed = [];
+  const sorted = [...pts].sort((a, b) => a.sim - b.sim);
+  for (const p of sorted) {
+    const x = xs(p.sim);
+    let level = 0;
+    while (placed.some((q) => Math.abs(q.x - x) < 11 && q.level === level)) level++;
+    placed.push({ x, level, p });
+  }
+  for (const d of placed) {
+    const cy = baseY - 10 - d.level * 12;
+    const margin = isNaN(thr) ? null : d.p.sim - thr;
+    const lines = ['Closeness ' + d.p.sim.toFixed(3)];
+    if (margin != null) lines.push((margin >= 0 ? '+' : '') + margin.toFixed(3) + ' above the cut-off');
+    lines.push(fmtTime(d.p.t));
+    const g = svgEl('g', { 'data-tip': tipHtml('“' + d.p.q + '”', lines) }, svg);
+    svgEl('circle', { cx: d.x, cy, r: 10, fill: 'transparent' }, g);
+    svgEl('circle', { cx: d.x, cy, r: 5, fill: 'var(--semantic)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
+  }
+
+  if (!isNaN(thr)) {
+    const closest = Math.min(...pts.map((p) => p.sim - thr));
+    note.innerHTML = 'Closest match cleared the cut-off by <b>' + closest.toFixed(3) + '</b>.' +
+      (closest < 0.03 ? ' That is close to the edge: raising the cut-off would turn these into new questions for the model.' : ' Matches have room before a cut-off change would affect them.');
+  }
+}
+
+function renderFreshness(d) {
+  const box = $('cFreshness'), legend = $('lFreshness');
+  legend.innerHTML = '';
+  const facts = (d && d.facts) || [];
+  if (!facts.length) { emptyState(box, 'No checks yet. They run when a saved answer touches a fact the companion watches, like a price.'); return; }
+
+  const labelH = 20, barH = 18, rowGap = 14, valueW = 40, gap = 2;
+  const rowH = labelH + barH + rowGap;
+  const h = facts.length * rowH - rowGap;
+  const { svg, width } = newSvg(box, h);
+  const plotW = width - valueW;
+  const max = Math.max(...facts.map((f) => f.total));
+
+  facts.forEach((f, i) => {
+    const y0 = i * rowH;
+    const lab = svgEl('text', { x: 0, y: y0 + 13, 'font-size': 12.5, fill: 'var(--ink-2)' }, svg);
+    lab.textContent = f.fact;
+    const segs = FRESHNESS.filter((k) => f[k.key] > 0);
+    const totalW = (f.total / max) * plotW;
+    const usable = totalW - gap * (segs.length - 1);
+    const clipId = 'clipFresh' + i;
+    const clip = svgEl('clipPath', { id: clipId }, svgEl('defs', {}, svg));
+    svgEl('rect', { x: 0, y: y0 + labelH, width: Math.max(totalW, 1), height: barH, rx: 4 }, clip);
+    const g = svgEl('g', { 'clip-path': `url(#${clipId})` }, svg);
+    let x = 0;
+    for (const k of segs) {
+      const w = (f[k.key] / f.total) * usable;
+      svgEl('rect', {
+        x, y: y0 + labelH, width: Math.max(w, 1), height: barH, fill: k.color,
+        'data-tip': tipHtml(f.fact, [k.label + ': ' + f[k.key] + ' of ' + f.total + ' checks']),
+      }, g);
+      x += w + gap;
+    }
+    const v = svgEl('text', { x: totalW + 6, y: y0 + labelH + barH / 2 + 4, 'font-size': 12.5, 'font-weight': 600, fill: 'var(--ink)' }, svg);
+    v.textContent = f.total;
+  });
+
+  for (const k of FRESHNESS) {
+    const n = (d.outcomes && d.outcomes[k.key]) || 0;
+    legend.insertAdjacentHTML('beforeend',
+      '<span class="item"><span class="ico" style="background:' + k.color + ';' + (k.key === 'unable_to_verify' ? 'color:#0b0b0b' : '') + '">' + k.icon + '</span>' +
+      esc(k.label) + ' <span class="num">' + n + '</span></span>');
+  }
+}
+
+function renderRequestSequence(s) {
+  const box = $('cSequence');
+  const events = [...(s.recent || [])].reverse();
+  if (!events.length) { box.innerHTML = ''; return; }
+  box.innerHTML = events.map((e) => {
+    const o = outcomeByKey[e.hit_type] || outcomeByKey.error;
+    const lines = [o.label, fmtTime(e.time)];
+    if (e.similarity) lines.splice(1, 0, 'Closeness ' + parseFloat(e.similarity).toFixed(3));
+    return '<span class="cell" style="background:' + o.color + '" data-tip="' + esc(tipHtml('“' + e.question + '”', lines)) + '"></span>';
+  }).join('');
+}
+
+function renderFreshSequence(d) {
+  const box = $('cFreshSeq');
+  const rows = [...((d && d.decisions) || [])].reverse();
+  if (!rows.length) { box.innerHTML = ''; return; }
+  box.innerHTML = rows.map((r) => {
+    const f = freshByKey[r.outcome] || { label: r.outcome, icon: '·', color: 'var(--unknown)' };
+    const ink = r.outcome === 'unable_to_verify' ? 'color:#0b0b0b;' : '';
+    const lines = [f.label];
+    if (r.cached_value || r.current_value) lines.push('Cached ' + (r.cached_value || '–') + ', live ' + (r.current_value || '–'));
+    lines.push(fmtTime(r.time));
+    return '<span class="cell big" style="background:' + f.color + ';' + ink + '" data-tip="' + esc(tipHtml(r.fact || 'Freshness check', lines)) + '">' + f.icon + '</span>';
+  }).join('');
+}
+
+// ---- Wrong-match audit ----------------------------------------------------
+function auditByID() {
+  const m = {};
+  for (const r of (lastAudits && lastAudits.audits) || []) m[r.id] = r;
+  return m;
+}
+
+// The companion's own messages say "threshold" and "wrong-match rate"; say it plainly here.
+function plainWords(t) {
+  return String(t).replace(/\bthreshold\b/gi, 'cut-off').replace(/wrong-match rate/gi, 'share of wrong matches').replace(/\baudits\b/g, 'spot-checks').replace(/\baudited\b/g, 'spot-checked').replace(/\bembedding\b/g, 'text-matching model');
+}
+
+function renderAudit() {
+  const a = lastAudits;
+  const box = $('cAudit'), legend = $('lAudit'), sig = $('auditSignals'), note = $('nAudit');
+  legend.innerHTML = ''; sig.innerHTML = ''; note.textContent = '';
+  if (!a) { emptyState(box, 'Loading…'); return; }
+  if (!a.enabled) {
+    emptyState(box, 'Spot-checks are off. Start the companion with -audit-rate (a share of similar-question matches) or -audit-near-margin (matches close to the cut-off) to turn them on.');
+    return;
+  }
+  const pts = (a.points || []).filter((p) => p.similarity != null);
+  if (!pts.length) { emptyState(box, a.judged ? 'The checked matches carried no closeness score.' : 'No spot-checks yet. They appear a moment after a reworded question is answered from the cache.'); return; }
+
+  const thr = a.threshold;
+  const adv = a.advice || {};
+  const sugg = adv.suggested_threshold;
+  const sims = pts.map((p) => p.similarity).concat(thr != null ? [thr] : [], sugg != null ? [sugg] : []);
+  const lo = Math.max(0, Math.floor((Math.min(...sims) - 0.05) * 20) / 20);
+  const hi = 1;
+  const padL = 8, padR = 8;
+  // Work out how many marks stack up first, so the chart is as tall as it needs to be.
+  const w0 = Math.max(260, box.clientWidth);
+  const xs0 = (v) => padL + ((v - lo) / (hi - lo)) * (w0 - padL - padR);
+  let maxLevel = 0;
+  { const pl = []; for (const p of [...pts].sort((x, y) => x.similarity - y.similarity)) { const x = xs0(p.similarity); let lv = 0; while (pl.some((q) => Math.abs(q.x - x) < 15 && q.level === lv)) lv++; pl.push({ x, level: lv }); maxLevel = Math.max(maxLevel, lv); } }
+  const baseY = 40 + (maxLevel + 1) * 15, h = baseY + 32;
+  const { svg, width } = newSvg(box, h);
+  svg.setAttribute('aria-label', 'Dot chart of audited matches by closeness to the cut-off. Details are in the text below.');
+  const xs = (v) => padL + ((v - lo) / (hi - lo)) * (width - padL - padR);
+
+  svgEl('line', { x1: xs(lo), x2: xs(hi), y1: baseY, y2: baseY, stroke: 'var(--axis)', 'stroke-width': 1 }, svg);
+  const step = hi - lo > 0.3 ? 0.1 : 0.05;
+  for (let v = lo; v <= hi + 1e-9; v += step) {
+    const t = svgEl('text', { x: xs(v), y: baseY + 18, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)', 'font-variant-numeric': 'tabular-nums' }, svg);
+    t.textContent = v.toFixed(2);
+    svgEl('line', { x1: xs(v), x2: xs(v), y1: baseY, y2: baseY + 4, stroke: 'var(--axis)', 'stroke-width': 1 }, svg);
+  }
+  if (thr != null) {
+    svgEl('line', { x1: xs(thr), x2: xs(thr), y1: 6, y2: baseY, stroke: 'var(--ink-2)', 'stroke-width': 1 }, svg);
+    const t = svgEl('text', { x: xs(thr) - 6, y: 14, 'text-anchor': 'end', 'font-size': 11.5, fill: 'var(--ink-2)' }, svg);
+    t.textContent = 'cut-off ' + thr.toFixed(2);
+  }
+  if (sugg != null) {
+    svgEl('line', { x1: xs(sugg), x2: xs(sugg), y1: 6, y2: baseY, stroke: 'var(--ink)', 'stroke-width': 2 }, svg);
+    const t = svgEl('text', { x: xs(sugg) + 6, y: 14, 'text-anchor': 'start', 'font-size': 11.5, 'font-weight': 600, fill: 'var(--ink)' }, svg);
+    t.textContent = 'suggested cut-off ' + sugg.toFixed(2);
+  }
+
+  // Questions are known for the dashboard's own traffic: join on the audit id.
+  const askedBy = {};
+  for (const e of (lastStats && lastStats.recent) || []) if (e.audit_id) askedBy[e.audit_id] = e.question;
+
+  // Stack marks that would overlap so every audited hit stays visible.
+  const placed = [];
+  for (const p of [...pts].sort((x, y) => x.similarity - y.similarity)) {
+    const x = xs(p.similarity);
+    let level = 0;
+    while (placed.some((q) => Math.abs(q.x - x) < 15 && q.level === level)) level++;
+    placed.push({ x, level, p });
+  }
+  for (const d of placed) {
+    const cy = baseY - 12 - d.level * 15;
+    const wrong = d.p.verdict === 'different';
+    const lines = ['Closeness ' + d.p.similarity.toFixed(3)];
+    if (thr != null) lines.push((d.p.similarity - thr >= 0 ? '+' : '') + (d.p.similarity - thr).toFixed(3) + ' above the cut-off');
+    if (d.p.gate) lines.push(wrong ? 'Checked before serving: the fresh answer disagreed, so the cached one was NOT served.' : 'Checked before serving: the fresh answer agreed, so the cached one was served.');
+    else lines.push(wrong ? 'The fresh answer disagreed with the cached one, which had already been served.' : 'The fresh answer agreed with the cached one.');
+    const title = (wrong ? (d.p.gate ? 'Wrong match, blocked' : 'Wrong match, got through') : 'Right match') + (askedBy[d.p.id] ? ': “' + askedBy[d.p.id] + '”' : '');
+    const g = svgEl('g', { 'data-tip': tipHtml(title, lines) }, svg);
+    svgEl('circle', { cx: d.x, cy, r: 11, fill: 'transparent' }, g);
+    if (wrong && d.p.gate) {
+      // Blocked: an outlined diamond, since the wrong answer never reached the user.
+      svgEl('path', { d: `M${d.x},${cy - 8}L${d.x + 8},${cy}L${d.x},${cy + 8}L${d.x - 8},${cy}Z`, fill: 'var(--surface)', stroke: 'var(--critical)', 'stroke-width': 2 }, g);
+    } else if (wrong) {
+      svgEl('path', { d: `M${d.x},${cy - 8}L${d.x + 8},${cy}L${d.x},${cy + 8}L${d.x - 8},${cy}Z`, fill: 'var(--critical)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
+    } else {
+      svgEl('circle', { cx: d.x, cy, r: 6, fill: 'var(--good)', stroke: 'var(--surface)', 'stroke-width': 2 }, g);
+    }
+  }
+
+  const right = a.same + (a.gate_same || 0), wrongN = a.different, blockedN = a.gate_different || 0;
+  legend.innerHTML =
+    '<span class="item"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="var(--good)"/></svg>Right match <span class="num">' + right + '</span></span>' +
+    '<span class="item"><svg width="14" height="14" aria-hidden="true"><path d="M7,0L14,7L7,14L0,7Z" fill="var(--critical)"/></svg>Wrong match, got through <span class="num">' + wrongN + '</span></span>' +
+    (blockedN ? '<span class="item"><svg width="14" height="14" aria-hidden="true"><path d="M7,1L13,7L7,13L1,7Z" fill="var(--surface)" stroke="var(--critical)" stroke-width="2"/></svg>Wrong match, blocked before serving <span class="num">' + blockedN + '</span></span>' : '') +
+    (a.errors ? '<span class="item">Could not be audited <span class="num">' + a.errors + '</span></span>' : '');
+
+  const rows = [];
+  if (adv.message) rows.push({ ok: adv.kind === 'ok', title: adv.kind === 'ok' ? 'No wrong matches found' : 'Cut-off advice', text: adv.message });
+  if (a.drift && a.drift.message) rows.push({ ok: false, title: 'The share of wrong matches is moving', text: a.drift.message });
+  sig.innerHTML = rows.map((r) =>
+    '<div class="signal"><span class="ico ' + (r.ok ? 'ok' : 'warn') + '" aria-hidden="true">' + (r.ok ? '✓' : '!') + '</span><div class="text"><b>' + esc(r.title) + '.</b> ' + esc(plainWords(r.text)) + '</div></div>'
+  ).join('');
+
+  const st = a.stats || {};
+  note.innerHTML = '<b>' + fmtInt(a.judged) + '</b> re-used answers spot-checked after they were served' +
+    (a.early_signal ? ' (early signal: the percentage settles after about 30)' : '') +
+    (a.gate_judged ? ', plus <b>' + fmtInt(a.gate_judged) + '</b> checked before serving (those wrong matches never reached a user and are not in the rate)' : '') +
+    '. Answers compared by <b>' + esc(a.compare || 'exact') + '</b> matching' +
+    (a.compare === 'exact' ? ': answers worded differently count as different, so this can overstate mix-ups for a free-text model' : '') +
+    '.' + (st.skipped ? ' ' + fmtInt(st.skipped) + ' chosen matches were not spot-checked because of the per-minute cap.' : '');
+}
+
+function renderCorrections() {
+  const d = lastDecisions;
+  if (!d) return;
+  $('kvChecked').textContent = fmtInt(d.new_checked);
+  $('kvContra').textContent = fmtInt(d.new_contradicted);
+  $('kvCorrected').textContent = fmtInt(d.corrected);
+  $('kvUncached').textContent = fmtInt(d.uncached);
+  $('nChecked').textContent = d.new_checked
+    ? 'Counted from the companion\'s decision log. "Corrected" includes out-of-date answers whose refresh still disagreed with the source.'
+    : 'Nothing checked yet. This runs for kinds of question whose policy turns on verify_new_answers.';
+}
+
+function renderChanges() {
+  const tbody = document.querySelector('#changesTable tbody');
+  const rows = (lastChanges && lastChanges.notices) || [];
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" class="muted">No notices yet.</td></tr>'; return; }
+  tbody.innerHTML = rows.slice(0, 8).map((n) =>
+    '<tr><td class="muted">' + esc(fmtTime(n.time)) + '</td><td><code>' + esc(n.id) + '</code></td>' +
+    '<td>' + esc(n.kind) + ': ' + esc(n.target) + (n.note ? '<div class="sub muted">' + esc(n.note) + '</div>' : '') + '</td>' +
+    '<td class="muted">' + ((n.evidence_dropped || []).length ? esc(n.evidence_dropped.join(', ')) : 'none cached') + '</td></tr>'
+  ).join('');
+}
+
+// ---- Tiles & tables -------------------------------------------------------
+function renderTiles() {
+  const s = lastStats, d = lastDecisions;
+  if (s) {
+    const hits = s.direct_hits + s.semantic_hits;
+    $('tHitRate').textContent = s.total_requests ? Math.round((hits / s.total_requests) * 100) + '%' : '–';
+    $('tHitRateSub').textContent = s.total_requests ? fmtInt(hits) + ' of ' + fmtInt(s.total_requests) + ' requests' : 'No traffic yet';
+    $('tAvoided').textContent = fmtInt(hits);
+    $('tAvoidedSub').textContent = fmtInt(s.direct_hits) + ' same question, ' + fmtInt(s.semantic_hits) + ' similar question';
+    $('tTokens').textContent = fmtInt(s.cached_total_tokens);
+    renderDollars();
+
+    const ev = s.recent || [];
+    const hitMed = median(ev.filter((e) => (e.hit_type === 'direct' || e.hit_type === 'semantic') && e.latency_ms > 0).map((e) => e.latency_ms));
+    const missMed = median(ev.filter((e) => e.hit_type === 'miss' && e.latency_ms > 0).map((e) => e.latency_ms));
+    $('tLatency').textContent = hitMed != null ? fmtMs(hitMed) : '–';
+    $('tLatencySub').textContent = missMed != null ? 'vs ' + fmtMs(missMed) + ' when the model answers' : (hitMed != null ? 'No new questions in this sample' : ' ');
+  }
+  if (d) {
+    const stale = (d.outcomes && d.outcomes.stale) || 0;
+    $('tStale').textContent = fmtInt(stale);
+    $('tStaleSub').textContent = 'in ' + fmtInt(d.total) + ' check' + (d.total === 1 ? '' : 's');
+    $('tFixed').textContent = fmtInt(d.corrected);
+    $('tFixedSub').textContent = d.new_contradicted
+      ? fmtInt(d.new_contradicted) + ' new answer' + (d.new_contradicted === 1 ? '' : 's') + ' looked right but did not match the source'
+      : 'No wrong new answers seen';
+  }
+  const a = lastAudits;
+  if (a) {
+    if (!a.enabled) {
+      $('tWrong').textContent = 'Off';
+      $('tWrongSub').textContent = 'Spot-checks are not switched on';
+    } else if (!a.judged) {
+      $('tWrong').textContent = '–';
+      $('tWrongSub').textContent = 'No spot-checks yet';
+    } else {
+      $('tWrong').textContent = Math.round(a.wrong_rate * 100) + '%';
+      $('tWrongSub').textContent = a.different + ' of ' + a.judged + ' spot-checked re-used answers' + (a.early_signal ? ' (early signal)' : '');
+    }
+  }
+}
+
+function renderDollars() {
+  const raw = $('pricePerK').value.trim();
+  const rate = parseFloat(raw);
+  if (!lastStats || raw === '' || isNaN(rate) || rate < 0) { $('tDollars').textContent = 'Enter a price to estimate dollars saved'; return; }
+  $('tDollars').textContent = '≈ $' + ((lastStats.cached_total_tokens / 1000) * rate).toFixed(4) + ' saved at your price';
+}
+$('pricePerK').addEventListener('input', () => { store.set('pricePerK', $('pricePerK').value); renderDollars(); });
+
+function renderSignals(d) {
+  const box = $('signals');
+  $('thresholdLabel').textContent = d.stale_threshold;
+  if (!d.warnings || !d.warnings.length) {
+    box.innerHTML = '<div class="signal"><span class="ico ok" aria-hidden="true">✓</span><div class="text"><b>No fact keeps going out of date.</b>' +
+      '<div class="sub">None was caught out of date ' + d.stale_threshold + ' times in the available log.</div></div></div>';
+    return;
+  }
+  box.innerHTML = d.warnings.map((w) => {
+    const f = (d.facts || []).find((x) => x.fact === w.fact);
+    const detail = f ? f.stale + ' of ' + f.total + ' checks found the saved answer out of date.' : '';
+    return '<div class="signal"><span class="ico warn" aria-hidden="true">!</span><div class="text"><b>' + esc(w.fact) + '</b> went stale ' + w.stale_count +
+      ' times. Give it a shorter lifetime (TTL) or a stricter match.<div class="sub">' + esc(detail) + '</div></div></div>';
+  }).join('');
+}
+
+function chip(key) {
+  const f = freshByKey[key] || { label: key, icon: '·', color: 'var(--unknown)' };
+  const ink = key === 'unable_to_verify' ? 'color:#0b0b0b;' : '';
+  return '<span class="chip"><span class="ico" style="background:' + f.color + ';' + ink + '" aria-hidden="true">' + f.icon + '</span>' + esc(f.label) + '</span>';
+}
+
+function renderDecisionsTable(d) {
+  const tbody = document.querySelector('#decisionsTable tbody');
+  const rows = (d.decisions || []).slice(0, 25);
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="muted">No checks logged yet.</td></tr>'; return; }
+  tbody.innerHTML = rows.map((r) =>
+    '<tr><td class="muted">' + esc(fmtTime(r.time)) + '</td>' +
+    '<td>' + esc(r.fact || '–') + (r.answer_of === 'new' ? ' <span class="muted">(new answer)</span>' : '') + '</td>' +
+    '<td>' + chip(r.outcome) + '</td>' +
+    '<td>' + (r.cached_value || r.current_value ? esc(r.cached_value || '–') + ' → ' + esc(r.current_value || '–') : '–') + '</td>' +
+    '<td class="muted">' + esc(r.action || '–') + (r.change_notice ? ' (after ' + esc(r.change_notice) + ')' : '') +
+      (r.shared_refresh ? ' (shared another request\'s refresh)' : '') + (r.gate ? ' (checked first: ' + esc(r.gate === 'blocked' ? 'wrong match, stopped' : r.gate === 'verified' ? 'was right' : r.gate === 'trusted' ? 'trusted' : 'could not be checked') + ')' : '') + '</td>' +
+    '<td class="muted">' + esc(r.reason || '') + '</td></tr>'
+  ).join('');
+}
+
+function renderTrafficTable(s) {
+  const tbody = document.querySelector('#trafficTable tbody');
+  const rows = (s.recent || []).slice(0, 50);
+  $('trafficCount').textContent = fmtInt((s.recent || []).length);
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" class="muted">No requests yet.</td></tr>'; return; }
+  const audits = auditByID();
+  const mark = (bg, icon, text, ink) =>
+    '<span class="chip"><span class="ico" style="background:' + bg + ';' + (ink ? 'color:#0b0b0b' : '') + '" aria-hidden="true">' + icon + '</span>' + text + '</span>';
+  const GATE_MARKS = {
+    blocked: () => mark('var(--warning)', '!', 'Wrong match blocked', true),
+    verified: () => mark('var(--good)', '✓', 'Checked first, right'),
+    trusted: () => mark('var(--good)', '✓', 'Trusted from an earlier check'),
+    unverified: () => mark('var(--unknown)', '?', 'Could not be checked first'),
+  };
+  const auditCell = (e) => {
+    const marks = [];
+    if (e.gate && GATE_MARKS[e.gate]) marks.push(GATE_MARKS[e.gate]());
+    if (e.shared_refresh) marks.push(mark('var(--direct)', '↻', 'Shared a refresh'));
+    if (e.guard) marks.push(mark('var(--unknown)', '–', 'Kept out of cache'));
+    // A check made before serving was already shown above; only audits made
+    // after serving add a "right/wrong match" verdict.
+    if (e.audit_id && !e.gate) {
+      const r = audits[e.audit_id];
+      if (!r || (r.verdict !== 'same' && r.verdict !== 'different')) marks.push('<span class="muted">' + (r ? 'could not audit' : 'checking…') + '</span>');
+      else marks.push(r.verdict === 'same' ? mark('var(--good)', '✓', 'Right match') : mark('var(--critical)', '✕', 'Wrong match got through'));
+    }
+    const why = e.request_id ? '<div><button type="button" class="whybtn" data-rid="' + esc(e.request_id) + '" aria-label="Why did I get this answer?">Why?</button><div class="whytext muted" role="status"></div></div>' : '';
+    if (!marks.length) return (why || '<span class="muted">–</span>');
+    return '<div class="marks">' + marks.join('') + '</div>' + why;
+  };
+  tbody.innerHTML = rows.map((e) => {
+    const o = outcomeByKey[e.hit_type] || outcomeByKey.error;
+    return '<tr><td class="muted">' + esc(fmtTime(e.time)) + '</td>' +
+      '<td>' + esc(e.question) + '</td>' +
+      '<td class="muted">' + esc(e.kind) + '</td>' +
+      '<td><span class="chip"><span class="sw" style="background:' + o.color + '"></span>' + esc(o.label) + '</span></td>' +
+      '<td class="num">' + (e.similarity ? parseFloat(e.similarity).toFixed(3) : '–') + '</td>' +
+      '<td>' + auditCell(e) + '</td>' +
+      '<td class="num">' + (e.total_tokens || '–') + '</td>' +
+      '<td class="num">' + (e.latency_ms ? fmtMs(e.latency_ms) : '–') + '</td></tr>';
+  }).join('');
+}
+
+// ---- Headline numbers, gate and guard -------------------------------------
+document.addEventListener('click', async (ev) => {
+  const b = ev.target.closest && ev.target.closest('.whybtn');
+  if (!b) return;
+  const out = b.parentElement.querySelector('.whytext');
+  b.disabled = true;
+  out.textContent = 'Looking…';
+  try {
+    const res = await fetch('/api/explain/' + encodeURIComponent(b.dataset.rid));
+    const d = await res.json();
+    out.textContent = res.ok ? (d.plain || 'No explanation available.') : (d.error || 'Could not get the explanation.');
+  } catch (e) {
+    out.textContent = 'Could not reach the dashboard.';
+  }
+  b.disabled = false;
+});
+
+const GUARD_REASONS = {
+  'sensitive:email': 'Contained an email address',
+  'sensitive:card': 'Looked like a payment card number',
+  'sensitive:api_key': 'Contained what looks like a secret key',
+  'sensitive:jwt': 'Contained a login token',
+  'sensitive:bearer_token': 'Contained a login token',
+  'sensitive:ssn': 'Contained what looks like a national ID number',
+  'sensitive:iban': 'Contained what looks like a bank account number',
+  'sensitive:phone': 'Contained a phone number',
+  tool_results: 'Built from a tool\'s live result',
+  side_effect_tool: 'Could trigger a real action (send, create, delete, update)',
+};
+const plural = (n, one, many) => fmtInt(n) + ' ' + (n === 1 ? one : many);
+
+function renderSummary() {
+  const sm = lastSummary;
+  if (!sm) return;
+  const s = sm.summary, miss = sm.missing || [];
+  const b = s.bad_stopped, r = s.reached_users, v = s.saving, g = s.guard, gt = s.gate;
+
+  $('tStopped').textContent = fmtInt(b.total);
+  $('tStoppedSub').textContent = plural(b.stale_refreshed, 'out-of-date answer', 'out-of-date answers') + ' refreshed, ' +
+    fmtInt(b.wrong_new_fixed) + ' wrong new answers fixed, ' + fmtInt(b.gate_blocked) + ' look-alike mix-ups blocked';
+
+  if (miss.includes('audits') || !(lastAudits && lastAudits.enabled)) {
+    $('tReached').textContent = miss.includes('audits') ? '–' : 'Off';
+    $('tReachedSub').textContent = miss.includes('audits') ? 'Spot-check data not available' : 'Spot-checks are not switched on';
+  } else if (!r.audited) {
+    $('tReached').textContent = '–';
+    $('tReachedSub').textContent = 'No spot-checks yet';
+  } else {
+    $('tReached').textContent = fmtInt(r.count);
+    $('tReachedSub').textContent = 'found in ' + fmtInt(r.audited) + ' spot-checked re-used answers (' + Math.round(r.share * 100) + '%)' +
+      (r.early ? ' (early signal)' : '') + '. Only a sample is checked, so the real number may be higher.';
+  }
+
+  $('tStampede').textContent = fmtInt(s.stampedes);
+  $('tStampedeSub').textContent = s.stampedes
+    ? 'requests shared one refresh, so ' + plural(s.stampedes, 'model call was', 'model calls were') + ' saved'
+    : 'Nobody had to wait for another request\'s refresh';
+
+  if (!g.available) {
+    $('tGuard').textContent = '–';
+    $('tGuardSub').textContent = 'The companion does not report this';
+  } else if (!g.enabled) {
+    $('tGuard').textContent = 'Off';
+    $('tGuardSub').textContent = 'The guard is not switched on';
+  } else {
+    $('tGuard').textContent = fmtInt(g.bypassed);
+    const parts = Object.keys(g.by_reason || {}).sort().map((k) => fmtInt(g.by_reason[k]) + ' ' + (k === 'tool_results' ? 'tool results' : k === 'side_effect_tool' ? 'possible actions' : k));
+    $('tGuardSub').textContent = parts.length ? parts.join(', ') : 'Nothing needed keeping out yet';
+  }
+
+  const net = $('tNet');
+  net.className = 'value' + (v.negative ? ' neg' : '');
+  net.textContent = (v.net > 0 ? '+' : v.net < 0 ? '−' : '') + fmtInt(Math.abs(v.net));
+  $('tNetSub').textContent = v.plain;
+
+  // Gate card
+  $('kvGateVerified').textContent = fmtInt(gt.verified);
+  $('kvGateTrusted').textContent = fmtInt(gt.trusted);
+  $('kvGateBlocked').textContent = fmtInt(gt.blocked);
+  $('kvGateUnverified').textContent = fmtInt(gt.unverified);
+  $('nGate').textContent = gt.active
+    ? 'Counted by the companion since it started. Very close matches skip this check and are only spot-checked after they are served (see above). "Could not be checked" answers were served unchecked.'
+    : 'No close-call match has been checked yet. Press Try it and run the look-alike scenario: a look-alike question right after its twin triggers it.';
+
+  // Guard card
+  const gb = $('guardBody');
+  if (!g.available) {
+    gb.innerHTML = '<div class="empty">The companion did not answer the guard question. It may be an older version without it.</div>';
+  } else if (!g.enabled) {
+    gb.innerHTML = '<div class="empty">The guard is off in the companion\'s policy, so nothing is kept out on purpose.</div>';
+  } else {
+    const keys = Object.keys(g.by_reason || {}).sort();
+    gb.innerHTML = '<div class="kv"><div><div class="k">Requests kept out</div><div class="v">' + fmtInt(g.bypassed) + '</div></div></div>' +
+      (keys.length
+        ? keys.map((k) => '<div class="reason-row"><span>' + esc(GUARD_REASONS[k] || k) + '</span><span class="n">' + fmtInt(g.by_reason[k]) + '</span></div>').join('')
+        : '<div class="empty">Nothing has needed keeping out yet.</div>');
+  }
+  $('nGuard').textContent = g.available && g.enabled && g.since ? 'Counted since the companion started (' + new Date(g.since).toLocaleTimeString() + '). Only counts are kept, never the questions.' : '';
+
+  // How this is counted
+  const judge = v.judge_factor === 2;
+  $('howBody').innerHTML =
+    '<p><b>Net saving</b> = model calls the cache avoided − extra model calls our own checks used.</p>' +
+    '<p class="formula"><b>Avoided ' + fmtInt(v.avoided) + '</b> = ' + fmtInt(v.cache_hits_served) + ' answers served from the cache + ' + fmtInt(v.stampede_waits) + ' requests that shared a refresh.</p>' +
+    '<p class="formula"><b>Extra ' + fmtInt(v.extra) + '</b> = ' + fmtInt(v.post_serve_calls) + ' for spot-checks after serving' + (judge ? ' (two calls each, because a second model compares)' : '') +
+    ' + ' + fmtInt(v.gate_calls) + ' for checks before serving + ' + fmtInt(v.correct_calls) + ' for corrections.</p>' +
+    '<p>A check that blocks a wrong match is not counted as extra: its fresh answer is the answer the user received, and a system with no cache would have made that call anyway.</p>' +
+    '<p>Cache answers come from this dashboard\'s own requests (and reset with Reset tally). Checks are counted by the companion since it started, so with Reset tally or other users on the same companion the saving can look too low. It is in model calls, not tokens, because spot-checks do not record tokens; the tokens tile counts cache answers only.</p>' +
+    (miss.length ? '<p><b>Not available from the companion right now:</b> ' + esc(miss.join(', ')) + ' (counted as zero).</p>' : '');
+}
+
+// ---- Data loading ---------------------------------------------------------
+function setAlert(html) {
+  const box = $('alertBox');
+  if (!html) { box.hidden = true; box.textContent = ''; return; }
+  box.hidden = false;
+  box.innerHTML = html;
+}
+
+async function loadHealth() {
+  const st = $('status'), txt = $('statusText'), src = $('sourceNote');
+  try {
+    const r = await fetch('/api/health');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    backendDown = false;
+    if (j.reachable) {
+      companionDown = false;
+      setAlert('');
+      st.className = 'status up';
+      txt.textContent = 'Live';
+      src.innerHTML = 'Freshness companion at <code>' + esc(j.companion_url) + '</code> forwarding to Bifrost at <code>' + esc(j.companion.bifrost_url) +
+        '</code>, evidence from ' + esc(j.companion.evidence_provider) + '. Freshness numbers come from its decision log. ' +
+        "Cache numbers are this dashboard's own tally of real responses it received, because Bifrost has no aggregate stats endpoint; the tally resets when the dashboard restarts.";
+    } else {
+      companionDown = true;
+      st.className = 'status down';
+      txt.textContent = 'Companion not answering';
+      src.textContent = 'Could not reach ' + j.companion_url + ': ' + j.error;
+      setAlert('<b>The freshness companion is not answering</b> at <code>' + esc(j.companion_url) + '</code>. The numbers below may be missing or out of date, and the Try it buttons are switched off. Start the stack (docker compose up), then press Refresh.');
+    }
+  } catch (e) {
+    backendDown = true;
+    companionDown = true;
+    st.className = 'status down';
+    txt.textContent = 'Dashboard program not answering';
+    src.textContent = '';
+    setAlert('<b>This page cannot reach the dashboard program that feeds it.</b> Is it still running? Start it again, then press Refresh.');
+  }
+  renderScenarioCards();
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    lastStats = await r.json();
+  } catch (e) {
+    $('cOutcomes').innerHTML = '<div class="empty">Could not load the request counts. Press Refresh to try again.</div>';
+    return;
+  }
+  renderOutcomes(lastStats);
+  renderLatency(lastStats);
+  renderSimilarity(lastStats);
+  renderRequestSequence(lastStats);
+  renderTrafficTable(lastStats);
+  renderTiles();
+}
+
+async function loadDecisions() {
+  let r, d;
+  try {
+    r = await fetch('/api/decisions');
+    d = await r.json();
+  } catch (e) {
+    $('signals').innerHTML = '<div class="empty">Could not load the checks. Press Refresh to try again.</div>';
+    return;
+  }
+  if (!r.ok) { $('signals').innerHTML = '<div class="empty">' + esc(d.error || 'Could not load the checks') + '</div>'; return; }
+  lastDecisions = d;
+  renderFreshness(d);
+  renderFreshSequence(d);
+  renderSignals(d);
+  renderDecisionsTable(d);
+  renderCorrections();
+  renderTiles();
+}
+
+async function loadAudits() {
+  try {
+    const r = await fetch('/api/audits');
+    const a = await r.json();
+    lastAudits = r.ok ? a : { enabled: false, points: [], audits: [] };
+    if (!r.ok) $('cAudit').innerHTML = '<div class="empty">' + esc(a.error || 'Could not load audits') + '</div>';
+  } catch (e) {
+    lastAudits = { enabled: false, points: [], audits: [] };
+  }
+  if (lastAudits.enabled || lastAudits.points) renderAudit();
+  if (lastStats) renderTrafficTable(lastStats);
+  renderTiles();
+  renderSummary();
+}
+
+async function loadSummary() {
+  try {
+    const r = await fetch('/api/summary');
+    if (r.ok) lastSummary = await r.json();
+  } catch (e) { /* keep the last numbers */ }
+  renderSummary();
+}
+
+async function loadAuditsAndSummary() {
+  await loadAudits();
+  await loadSummary();
+  renderStory();
+}
+
+async function loadChanges() {
+  try {
+    const r = await fetch('/api/changes');
+    if (r.ok) lastChanges = await r.json();
+  } catch (e) { /* the table keeps its last rows */ }
+  renderChanges();
+}
+
+async function refreshAll() {
+  await Promise.allSettled([loadHealth(), loadStats(), loadDecisions(), loadAudits(), loadChanges(), loadSummary()]);
+  if (lastStats) renderTrafficTable(lastStats);
+  firstLoadDone = true;
+  renderStory();
+}
+
+$('btnGenerate').addEventListener('click', async () => {
+  const rounds = $('rounds').value || 1;
+  const btn = $('btnGenerate');
+  btn.disabled = true;
+  $('genStatus').textContent = 'Sending real requests through the companion…';
+  try {
+    const fresh = $('freshRun').checked ? '&fresh=1' : '';
+    const r = await fetch('/api/generate?rounds=' + encodeURIComponent(rounds) + fresh, { method: 'POST' });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+    await refreshAll();
+    $('genStatus').textContent = 'Sent ' + j.events.length + ' requests at ' + new Date().toLocaleTimeString() + '. Spot-checks finish a moment later.';
+    // Audits run in the background after each answer is returned.
+    setTimeout(loadAuditsAndSummary, 1500);
+    setTimeout(loadAuditsAndSummary, 4000);
+  } catch (e) {
+    $('genStatus').textContent = 'Did not finish: ' + e.message + '. Is the companion running?';
+  }
+  btn.disabled = false;
+});
+$('btnRefresh').addEventListener('click', async () => {
+  await refreshAll();
+  $('genStatus').textContent = 'Refreshed at ' + new Date().toLocaleTimeString() + '.';
+});
+$('btnNotify').addEventListener('click', async () => {
+  const kind = $('nKind').value, target = $('nTarget').value.trim();
+  const out = $('notifyStatus');
+  if (!target) { out.textContent = 'Enter the name of the ' + kind.replace('_', ' ') + ' that changed.'; return; }
+  out.textContent = 'Sending…';
+  try {
+    const r = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [kind]: target }) });
+    const j = await r.json();
+    out.textContent = r.ok
+      ? 'Notice ' + j.id + ' accepted: ' + (j.evidence_dropped && j.evidence_dropped.length ? 'cached evidence dropped, ' : 'no cached evidence to drop, ') + 'older cached answers are re-checked on their next use.'
+      : 'Not accepted: ' + ((j.error && j.error.message) || j.error || 'HTTP ' + r.status);
+    await loadChanges();
+  } catch (e) {
+    out.textContent = 'Failed: ' + e.message;
+  }
+});
+$('btnReset').addEventListener('click', async () => {
+  await fetch('/api/reset', { method: 'POST' });
+  await refreshAll();
+  $('genStatus').textContent = 'Tally reset.';
+});
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => rerenderCharts(), 120);
+});
+
+
+// ===========================================================================
+// Plain-language layer: remembered settings, theme, help toggles, the summary
+// at the top, the money card and the guided "Try it" scenarios.
+// ===========================================================================
+const store = {
+  get(k) { try { return localStorage.getItem('cacheDash.' + k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem('cacheDash.' + k, v); } catch (e) { /* storage blocked: the page still works, it just forgets */ } },
+};
+
+let firstLoadDone = false;
+let companionDown = false;
+let backendDown = false;
+
+// ---- Theme: Auto follows the system, Light and Dark are remembered ----------
+const THEMES = ['auto', 'light', 'dark'];
+function applyTheme(t) {
+  if (THEMES.indexOf(t) < 0) t = 'auto';
+  const root = document.documentElement;
+  if (t === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+  const b = $('btnTheme');
+  const next = THEMES[(THEMES.indexOf(t) + 1) % THEMES.length];
+  b.textContent = 'Theme: ' + t.charAt(0).toUpperCase() + t.slice(1);
+  b.setAttribute('aria-label', 'Colour theme: ' + t + '. Activate to switch to ' + next + '.');
+  b.dataset.theme = t;
+}
+$('btnTheme').addEventListener('click', () => {
+  const cur = $('btnTheme').dataset.theme || 'auto';
+  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+  store.set('theme', next);
+  applyTheme(next);
+});
+applyTheme(store.get('theme') || 'auto');
+
+// ---- "What is this?" toggles ------------------------------------------------
+document.querySelectorAll('.helper[data-help]').forEach((el, i) => {
+  const id = 'help-' + i;
+  el.innerHTML = '<button type="button" class="qm" aria-expanded="false" aria-controls="' + id + '" title="What is this?">' +
+    '<span class="mark" aria-hidden="true">?</span><span>What is this?</span></button>' +
+    '<p class="help-text" id="' + id + '" hidden>' + esc(el.getAttribute('data-help')) + '</p>';
+  const btn = el.querySelector('button'), box = el.querySelector('.help-text');
+  btn.addEventListener('click', () => {
+    const open = box.hidden;
+    box.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  });
+});
+
+// Charts measure their container, so draw them again when a section opens.
+function rerenderCharts() {
+  if (lastStats) { renderOutcomes(lastStats); renderLatency(lastStats); renderSimilarity(lastStats); }
+  if (lastDecisions) renderFreshness(lastDecisions);
+  if (lastAudits) renderAudit();
+}
+document.addEventListener('toggle', (e) => { if (e.target && e.target.open) rerenderCharts(); }, true);
+
+// ---- The short version --------------------------------------------------------
+const EARLY_BELOW = 30;
+function setStat(id, text, cls) {
+  const el = $(id);
+  el.textContent = text;
+  el.className = 'stat-value' + (cls ? ' ' + cls : '');
+}
+
+function renderHero() {
+  const sentence = $('heroSentence');
+  if (!firstLoadDone) { sentence.textContent = 'Loading the live numbers…'; return; }
+  const s = lastStats || { total_requests: 0, direct_hits: 0, semantic_hits: 0 };
+  const sum = lastSummary && lastSummary.summary;
+  const total = s.total_requests, hits = s.direct_hits + s.semantic_hits;
+  const stopped = sum ? sum.bad_stopped.total : 0;
+  const v = sum ? sum.saving : null;
+  const r = sum ? sum.reached_users : null;
+  const auditsOff = !(lastAudits && lastAudits.enabled);
+  const nothingYet = !total && !stopped && !(v && (v.avoided || v.extra));
+
+  // The three numbers
+  if (!sum || companionDown) {
+    setStat('hSaved', '–'); setStat('hStopped', '–', 'good'); setStat('hReached', '–');
+    $('hSavedM').textContent = 'No live numbers right now.';
+    $('hStoppedM').textContent = 'No live numbers right now.';
+    $('hReachedM').textContent = 'No live numbers right now.';
+  } else {
+    const net = v.net;
+    setStat('hSaved', (net > 0 ? '+' : net < 0 ? '−' : '') + fmtInt(Math.abs(net)), net < 0 ? 'bad' : '');
+    $('hSavedM').textContent = nothingYet ? 'Times the cache answered instead of the model, after paying for our own extra checks. Nothing to count yet.' : v.plain;
+    const b = sum.bad_stopped;
+    setStat('hStopped', fmtInt(b.total), b.total > 0 ? 'good' : '');
+    $('hStoppedM').textContent = b.total
+      ? plural(b.stale_refreshed, 'out-of-date answer', 'out-of-date answers') + ' refreshed, ' + fmtInt(b.wrong_new_fixed) + ' wrong new answers fixed, ' + fmtInt(b.gate_blocked) + ' look-alike mix-ups blocked, all before anyone saw them.'
+      : 'Wrong or out-of-date answers caught before anyone saw them. None caught yet.';
+    if (auditsOff) {
+      setStat('hReached', 'Off');
+      $('hReachedM').textContent = 'Spot-checks are switched off, so this cannot be measured.';
+    } else if (!r.audited) {
+      setStat('hReached', '–');
+      $('hReachedM').textContent = 'No spot-checks have finished yet, so we cannot say.';
+    } else {
+      setStat('hReached', fmtInt(r.count), r.count > 0 ? 'bad' : '');
+      $('hReachedM').textContent = 'Found in ' + fmtInt(r.audited) + ' spot-checked answers. Only a sample is checked, so the real number could be higher.';
+    }
+  }
+  $('pSaved').hidden = !(total > 0 && total < EARLY_BELOW);
+  $('pStopped').hidden = !(total > 0 && total < EARLY_BELOW);
+  $('pReached').hidden = !(r && r.audited > 0 && r.early);
+
+  // The sentence
+  if (companionDown && !total) {
+    sentence.textContent = 'The freshness companion is not answering, so there are no live numbers to show yet.';
+  } else if (nothingYet) {
+    sentence.textContent = 'No traffic yet. Press “Run this” on one of the Try it scenarios below and watch these numbers fill in.';
+  } else if (!total && sum) {
+    sentence.textContent = 'This dashboard has not sent any questions yet, so there is no cache count. Since it last started, the companion stopped ' + plural(stopped, 'wrong or out-of-date answer', 'wrong or out-of-date answers') + (auditsOff || !r.audited ? '.' : '; ' + fmtInt(r.count) + ' got through.') + ' Press “Run this” below to add live traffic.';
+  } else {
+    let tail;
+    if (!sum) tail = 'We could not read how many bad answers were stopped.';
+    else if (auditsOff) tail = 'We stopped ' + plural(stopped, 'wrong or out-of-date answer', 'wrong or out-of-date answers') + '. Spot-checks are off, so we cannot say how many got through.';
+    else if (!r.audited) tail = 'We stopped ' + plural(stopped, 'wrong or out-of-date answer', 'wrong or out-of-date answers') + '. No spot-check has finished yet, so we cannot say how many got through.';
+    else tail = 'We stopped ' + plural(stopped, 'wrong or out-of-date answer', 'wrong or out-of-date answers') + '; ' + fmtInt(r.count) + ' got through.';
+    sentence.textContent = 'In this session the cache answered ' + fmtInt(hits) + ' of ' + plural(total, 'question', 'questions') + ' without calling the model. ' + tail;
+  }
+}
+
+// ---- What is it worth? ---------------------------------------------------------
+const DEFAULT_COST = 0.002;
+let costPerCall = DEFAULT_COST;
+function parseMoney(raw) {
+  const n = parseFloat(String(raw).replace(/[$\s,]/g, ''));
+  return isFinite(n) && n >= 0 ? n : null;
+}
+function money(x) {
+  const a = Math.abs(x);
+  const t = '$' + (a >= 1 ? a.toFixed(2) : a.toFixed(4));
+  return x < 0 ? '−' + t : t;
+}
+(function initAssumptions() {
+  const saved = parseMoney(store.get('costPerCall') || '');
+  if (saved !== null) { costPerCall = saved; $('inCost').value = String(saved); }
+  const k = store.get('pricePerK');
+  if (k) $('pricePerK').value = k;
+})();
+$('inCost').addEventListener('input', () => {
+  const n = parseMoney($('inCost').value);
+  const note = $('costNote');
+  if (n === null) {
+    note.textContent = 'type a number like 0.002';
+    $('inCost').setAttribute('aria-invalid', 'true');
+    return;
+  }
+  $('inCost').removeAttribute('aria-invalid');
+  note.textContent = 'your assumption, not measured';
+  costPerCall = n;
+  store.set('costPerCall', String(n));
+  renderImpact();
+});
+$('btnCostReset').addEventListener('click', () => {
+  costPerCall = DEFAULT_COST;
+  $('inCost').value = String(DEFAULT_COST);
+  $('inCost').removeAttribute('aria-invalid');
+  $('costNote').textContent = 'your assumption, not measured';
+  store.set('costPerCall', String(DEFAULT_COST));
+  renderImpact();
+});
+
+function renderImpact() {
+  const box = $('moneyBox'), fine = $('moneyFine');
+  if (!firstLoadDone) { box.innerHTML = '<div class="empty">Loading…</div>'; fine.textContent = ''; return; }
+  const sum = lastSummary && lastSummary.summary;
+  if (!sum || companionDown) {
+    box.innerHTML = '<div class="empty">' + (companionDown ? 'The companion is not answering, so there is nothing to price yet.' : 'The numbers could not be loaded. Press Refresh to try again.') + '</div>';
+    fine.textContent = '';
+    return;
+  }
+  const v = sum.saving;
+  if (!v.avoided && !v.extra && !sum.bad_stopped.total) {
+    box.innerHTML = '<div class="empty">No traffic yet. Press “Run this” on a Try it scenario above and the money adds up here.</div>';
+    fine.textContent = '';
+    return;
+  }
+  const saved = v.avoided * costPerCall, spent = v.extra * costPerCall, net = saved - spent;
+  const r = sum.reached_users;
+  const reached = !(lastAudits && lastAudits.enabled) ? 'not measured (spot-checks are off)' : !r.audited ? 'not known yet' : fmtInt(r.count) + (r.early ? ' (early signal)' : '');
+  box.innerHTML =
+    '<div class="money-row"><span>Answers the cache gave instead of the model: <b>' + fmtInt(v.avoided) + '</b> × ' + money(costPerCall) + '</span><span class="amt">+' + money(saved) + '</span></div>' +
+    '<div class="money-row"><span>Extra model calls our own checks used: <b>' + fmtInt(v.extra) + '</b> × ' + money(costPerCall) + '</span><span class="amt">−' + money(spent) + '</span></div>' +
+    '<div class="money-row total"><span>Worth so far</span><span class="amt ' + (net < 0 ? 'neg' : net > 0 ? 'pos' : '') + '">' + money(net) + '</span></div>' +
+    '<div class="money-row"><span>Wrong or out-of-date answers stopped</span><span class="amt">' + fmtInt(sum.bad_stopped.total) + '</span></div>' +
+    '<div class="money-row"><span>Wrong answers that got through</span><span class="amt">' + esc(reached) + '</span></div>';
+  fine.textContent = 'Calls are counted, not tokens. The price per call is your own guess (saved in this browser), so change it to match your provider. These counts come from a practice run on a stand-in model; real savings depend on your real traffic.' +
+    (net < 0 ? ' Right now the extra checks cost more than the cache saved. That is normal for a handful of requests.' : '');
+}
+
+function renderStory() { renderHero(); renderImpact(); }
+
+// ---- Try it ----------------------------------------------------------------------
+let scenarioInfos = [];
+let scenarioBusy = false;
+let countdownTimer = null;
+
+async function loadScenarios() {
+  const grid = $('scenGrid');
+  try {
+    const r = await fetch('/api/scenarios');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    scenarioInfos = (await r.json()).scenarios || [];
+  } catch (e) {
+    grid.innerHTML = '<div class="empty">The scenarios could not be loaded. Is the dashboard program still running?</div>';
+    return;
+  }
+  renderScenarioCards();
+}
+
+function renderScenarioCards() {
+  const grid = $('scenGrid');
+  if (!scenarioInfos.length) return;
+  grid.innerHTML = scenarioInfos.map((s) => {
+    const noteId = 'scnnote-' + s.id;
+    const off = !s.available || companionDown || scenarioBusy;
+    let note;
+    if (!s.available) note = s.unavailable;
+    else if (companionDown) note = 'The companion is not answering, so this cannot run right now.';
+    else if (s.expected_seconds >= 8) note = 'Takes about ' + s.expected_seconds + ' seconds, because it waits for the companion to notice the change.';
+    else note = 'Takes a few seconds.';
+    return '<div class="scen' + (!s.available ? ' off' : '') + '"><h3>' + esc(s.title) + '</h3><p>' + esc(s.blurb) + '</p>' +
+      '<button type="button" class="primary" data-scn="' + esc(s.id) + '" aria-describedby="' + noteId + '"' + (off ? ' aria-disabled="true"' : '') + '>Run this</button>' +
+      '<p class="fine" id="' + noteId + '">' + esc(note) + '</p></div>';
+  }).join('');
+}
+$('scenGrid').addEventListener('click', (e) => {
+  const b = e.target.closest ? e.target.closest('button[data-scn]') : null;
+  if (!b || b.getAttribute('aria-disabled') === 'true') return;
+  runScenario(b.getAttribute('data-scn'));
+});
+
+function showRun(phase, hint) {
+  const box = $('scenRun');
+  box.hidden = false;
+  box.innerHTML = '<div class="spinner" aria-hidden="true"></div><div><div id="runPhase"></div><div class="fine" id="runHint"></div></div><div class="count" id="runCount" hidden></div>';
+  $('runPhase').textContent = phase;
+  $('runHint').textContent = hint || '';
+}
+function stopCountdown() { if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; } }
+function updateRun(snap) {
+  if (!$('runPhase')) return;
+  $('runPhase').textContent = snap.phase || 'Working';
+  const c = $('runCount');
+  stopCountdown();
+  if (snap.wait_until_ms) {
+    const offset = (snap.now_ms || Date.now()) - Date.now();
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((snap.wait_until_ms - (Date.now() + offset)) / 1000));
+      if (c) { c.hidden = false; c.textContent = String(left); }
+      $('runHint').textContent = left > 0 ? left + ' second' + (left === 1 ? '' : 's') + ' to go. The companion remembers what the page said for about 5 seconds, so we wait for that to run out.' : 'Asking again…';
+    };
+    tick();
+    countdownTimer = setInterval(tick, 250);
+  } else if (c) {
+    c.hidden = true;
+    $('runHint').textContent = '';
+  }
+}
+
+const pause = (ms) => new Promise((res) => setTimeout(res, ms));
+async function pollRun(runID) {
+  let failures = 0;
+  const deadline = Date.now() + 3 * 60 * 1000;
+  while (Date.now() < deadline) {
+    await pause(400);
+    try {
+      const r = await fetch('/api/scenario-runs/' + encodeURIComponent(runID));
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const snap = await r.json();
+      failures = 0;
+      if (snap.state === 'running') updateRun(snap); else return snap;
+    } catch (e) {
+      if (++failures >= 5) throw new Error('lost contact with the dashboard program while the scenario was running');
+    }
+  }
+  throw new Error('the scenario is taking much longer than expected');
+}
+
+async function runScenario(id) {
+  if (scenarioBusy) return;
+  const info = scenarioInfos.find((s) => s.id === id);
+  if (!info) return;
+  scenarioBusy = true;
+  renderScenarioCards();
+  $('scenResult').innerHTML = '';
+  showRun('Starting “' + info.title + '”…');
+  try {
+    const r = await fetch('/api/scenarios/' + encodeURIComponent(id) + '/run', { method: 'POST' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || ('the dashboard answered HTTP ' + r.status));
+    const snap = await pollRun(j.run_id);
+    if (snap.state === 'done' && snap.result) renderScenarioResult(snap.result);
+    else showScenarioError(snap.error || 'The scenario stopped without a result.');
+  } catch (e) {
+    showScenarioError(e.message || String(e));
+  }
+  stopCountdown();
+  $('scenRun').hidden = true;
+  scenarioBusy = false;
+  renderScenarioCards();
+  refreshAll();
+  setTimeout(loadAuditsAndSummary, 1500);
+  setTimeout(loadAuditsAndSummary, 4000);
+}
+
+function showScenarioError(msg) {
+  $('scenResult').innerHTML = '<div class="alert" role="alert"><b>That scenario did not finish.</b> ' + esc(msg) +
+    '<div class="fine">If it had changed the demo page, the dashboard puts the original back by itself.</div></div>';
+}
+
+const VERDICTS = {
+  right: { icon: '✓', title: 'Good result' },
+  wrong: { icon: '✕', title: 'Bad result' },
+  inconclusive: { icon: '?', title: 'Could not tell' },
+  error: { icon: '!', title: 'Did not finish' },
+};
+
+function plainStatus(s) {
+  return ({ confirmed: 'the saved answer was still correct', stale: 'the saved answer was out of date', unable_to_verify: 'could not be checked', unknown: 'not checked', contradicted: 'looked right but was not' })[s] || s;
+}
+function plainAction(a) {
+  return ({ served: 'served the saved answer', served_with_warning: 'served the saved answer with a warning', refreshed: 'dropped the saved answer and asked the model again', refresh_failed: 'tried to refresh but could not', corrected: 'fixed a wrong answer', uncached: 'removed a wrong answer from the cache' })[a] || a;
+}
+function stepWhat(st) {
+  if (st.error) return 'Failed: ' + st.error;
+  const bits = [];
+  if (st.reused) bits.push(st.hit_type === 'semantic' ? 'served a saved answer for a similar question' + (st.similarity ? ' (closeness ' + st.similarity + ')' : '') : 'served a saved answer');
+  else bits.push('asked the model');
+  if (st.status) bits.push('check: ' + plainStatus(st.status));
+  if (st.action && st.action !== 'served') bits.push(plainAction(st.action));
+  if (st.gate) bits.push('look-alike check: ' + ({ blocked: 'saved answer rejected', verified: 'saved answer approved', trusted: 'trusted from earlier', unverified: 'could not check' })[st.gate]);
+  if (st.guard) bits.push('kept out of the cache on purpose');
+  if (st.shared_refresh) bits.push('shared another request\'s refresh');
+  return bits.join('; ');
+}
+
+function renderSide(side, cls) {
+  const v = VERDICTS[side.verdict] || VERDICTS.inconclusive;
+  const steps = side.steps || [];
+  return '<section class="side ' + cls + '" aria-label="' + esc(side.label) + '">' +
+    '<h4>' + esc(side.label) + '</h4>' +
+    '<div class="verdict ' + esc(side.verdict) + '"><span class="ico" aria-hidden="true"><span>' + v.icon + '</span></span><span class="vt">' + esc(v.title) + '<small>' + esc(side.verdict_text) + '</small></span></div>' +
+    (side.answer ? '<p class="answer">“' + esc(side.answer) + '”</p>' : '') +
+    ((side.facts || []).length ? '<ul class="facts">' + side.facts.map((f) => '<li>' + esc(f) + '</li>').join('') + '</ul>' : '') +
+    (steps.length ? '<details class="steps"><summary>Each request (' + steps.length + ')</summary><ol>' +
+      steps.map((st) => '<li><b>' + esc(st.label) + ':</b> ' + esc(stepWhat(st)) + (st.answer ? ' <span class="muted">“' + esc(st.answer.length > 90 ? st.answer.slice(0, 87) + '…' : st.answer) + '”</span>' : '') + '</li>').join('') +
+      '</ol></details>' : '') +
+    '</section>';
+}
+
+function takeawayFor(res) {
+  const p = res.plain.verdict, c = res.protected.verdict;
+  if (p === 'wrong' && c === 'right') return 'Same questions, different outcome: the plain cache gave a bad result and the companion did not.';
+  if (p === 'right' && c === 'right') return 'Both did fine this time, so nothing here needed protecting.';
+  if (c === 'wrong') return 'The companion did not get this one right this time. Its side explains why.';
+  if (p === 'error' || c === 'error') return 'One side did not finish, so there is nothing fair to compare.';
+  return 'This run did not show a clear difference. Press Run this again.';
+}
+
+function renderScenarioResult(res) {
+  const notes = (res.notes || []).map((n) => '<p class="fine">' + esc(n) + '</p>').join('');
+  const restoredBad = res.page_restored === false ? '<div class="alert" role="alert"><b>Check the demo page.</b> It could not be confirmed as put back to its original. See the note below.</div>' : '';
+  $('scenResult').innerHTML = '<div class="result">' +
+    '<h3 class="res-title">' + esc(res.title) + '</h3>' +
+    '<div class="narr">' + (res.narration || []).map((n) => '<p>' + esc(n) + '</p>').join('') + '</div>' +
+    restoredBad +
+    '<div class="sides">' + renderSide(res.plain, 'plain') + renderSide(res.protected, 'prot') + '</div>' +
+    '<p class="takeaway">' + esc(takeawayFor(res)) + '</p>' +
+    notes +
+    '<p class="fine">Practice run: a stand-in model and stand-in text matching were used, so this shows how the mechanism behaves, not how a real model would score. It took ' + (res.took_ms / 1000).toFixed(1) + ' seconds.</p>' +
+    '</div>';
+  const t = $('scenResult').querySelector('.res-title');
+  if (t) { t.setAttribute('tabindex', '-1'); t.focus({ preventScroll: false }); }
+}
+
+// ---- Start ---------------------------------------------------------------------
+loadScenarios();
+refreshAll();
+setInterval(refreshAll, 15000);
+</script>
+</body>
+</html>

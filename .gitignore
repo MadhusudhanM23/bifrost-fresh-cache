@@ -1,0 +1,43 @@
+﻿# ---- secrets: never commit ----
+.env
+.env.*
+!.env.example
+
+# ---- internal working notes (not part of the submission) ----
+PROJECT_NOTES.md
+
+# ---- built programs (rebuilt from source; some are over GitHub's 100 MB limit) ----
+*.exe
+*.dll
+bin/
+**/bin/
+eval-harness/bin/
+e2e/bin/
+freshness-companion/freshness-companion
+freshness-companion/demoserver
+dashboard/dashboard
+
+# ---- runtime data and scratch logs ----
+freshness-companion/data/
+freshness-companion/run-logs/
+dashboard/*.log
+e2e/run-logs/
+e2e/build/*.log
+e2e/logs/exp-*.log
+e2e/logs/smoke-*.log
+e2e/logs/runner-console.txt
+*.tmp
+
+# ---- keep the measured evidence ----
+!e2e/e2e-run.log
+!e2e/logs/gateway-run1.log
+!e2e/logs/gateway-run2.log
+!e2e/logs/gateway-authprobe.log
+!e2e/logs/mock-openai.log
+!eval-harness/results/
+
+# ---- editors / OS ----
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

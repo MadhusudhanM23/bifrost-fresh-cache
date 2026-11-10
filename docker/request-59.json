@@ -1,0 +1,7 @@
+{
+  "model": "openai/gpt-4o-mini",
+  "messages": [
+    {"role": "system", "content": "You answer questions about Acme.\nContext:\n- The Acme Pro plan costs $59 per month.\nAnswer in one sentence and state the monthly price."},
+    {"role": "user", "content": "How much does the Acme Pro plan cost per month?"}
+  ]
+}

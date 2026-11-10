@@ -1,0 +1,86 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "setup_token": "e2e-setup-token-local",
+  "client": {
+    "drop_excess_requests": false,
+    "enable_logging": false
+  },
+  "config_store": {
+    "enabled": true,
+    "type": "postgres",
+    "config": {
+      "host": "127.0.0.1",
+      "port": "5433",
+      "user": "bifrost",
+      "password": "bifrost_password",
+      "db_name": "bifrost_e2e_configstore",
+      "ssl_mode": "disable"
+    }
+  },
+  "logs_store": {
+    "enabled": false
+  },
+  "governance": {
+    "virtual_keys": [
+      {
+        "id": "vk-e2e-probe",
+        "name": "e2e-probe",
+        "value": "sk-bf-e2e-probe-local",
+        "is_active": true,
+        "provider_configs": [
+          {
+            "provider": "openai",
+            "allowed_models": ["*"],
+            "key_ids": ["*"],
+            "weight": 1
+          }
+        ]
+      }
+    ]
+  },
+  "providers": {
+    "openai": {
+      "keys": [
+        {
+          "name": "mock-openai-local",
+          "value": "sk-mock-local",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "http://127.0.0.1:18080",
+        "default_request_timeout_in_seconds": 30,
+        "max_retries": 0
+      }
+    }
+  },
+  "vector_store": {
+    "enabled": true,
+    "type": "pgvector",
+    "config": {
+      "host": "127.0.0.1",
+      "port": "5433",
+      "user": "bifrost",
+      "password": "bifrost_password",
+      "database": "bifrost",
+      "ssl_mode": "disable",
+      "schema": "public",
+      "max_conns": "5"
+    }
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "semantic_cache",
+      "config": {
+        "provider": "openai",
+        "embedding_model": "mock-embedding",
+        "dimension": 256,
+        "threshold": 0.8,
+        "ttl": "30m",
+        "vector_store_namespace": "bifrost_e2e_authprobe"
+      }
+    }
+  ]
+}

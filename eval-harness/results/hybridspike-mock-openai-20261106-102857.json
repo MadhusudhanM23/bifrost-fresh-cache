@@ -1,0 +1,4295 @@
+{
+  "tool": "hybridspike",
+  "banner": "BAG-OF-WORDS EMBEDDINGS - NOT A SEMANTIC MODEL - A LEXICAL RULE LOOKS BETTER HERE THAN IT WOULD NEXT TO REAL EMBEDDINGS",
+  "command": [
+    "C:\\Users\\PC1\\AppData\\Local\\go-build\\59\\5998f02bdd2ccc3147b659e8f8be8ad09fe05f7037c06e6f2fc26ab6de795d3a-d\\hybridspike.exe",
+    "-embedder",
+    "openai",
+    "-base-url",
+    "http://127.0.0.1:18080/v1",
+    "-model",
+    "mock-embedding",
+    "-label",
+    "mock-openai"
+  ],
+  "started_at": "2026-11-06T04:58:57Z",
+  "finished_at": "2026-11-06T04:58:57Z",
+  "embedder": "openai-compatible model=mock-embedding base_url=http://127.0.0.1:18080/v1",
+  "meaningful_for_quality": false,
+  "dataset": "datasets\\paraphrases.json",
+  "pairs": 84,
+  "should_share_pairs": 42,
+  "should_not_share_pairs": 42,
+  "dimension": 256,
+  "postgres": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) / pgvector 0.8.7",
+  "schema_used_and_dropped": "hybridspike",
+  "max_abs_go_cosine_minus_postgres_cosine": 1.0914761683356033e-7,
+  "swap_rule_k": 2,
+  "similarity_by_label": {
+    "hit": {
+      "count": 42,
+      "min": -0.08326910724800533,
+      "median": 0.23890924065874425,
+      "max": 0.5542869676919993
+    },
+    "miss": {
+      "count": 42,
+      "min": 0,
+      "median": 0.6667948594698256,
+      "max": 1
+    }
+  },
+  "operating_points": [
+    {
+      "name": "best-F1 vector threshold",
+      "why": "the threshold that separates the two groups best with the vector alone (ties: higher precision, then lower threshold)",
+      "threshold": 0,
+      "methods": [
+        {
+          "method": "vector only",
+          "confusion": {
+            "true_hits": 39,
+            "false_hits": 42,
+            "false_misses": 3,
+            "true_misses": 0,
+            "precision": 0.48148148148148145,
+            "recall": 0.9285714285714286,
+            "f1": 0.6341463414634146
+          },
+          "wrong_matches_kept": 42,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-01",
+            "neg-02",
+            "neg-03",
+            "neg-04",
+            "neg-05",
+            "neg-06",
+            "neg-07",
+            "neg-08",
+            "neg-09",
+            "neg-10",
+            "neg-11",
+            "neg-12",
+            "neg-13",
+            "neg-14",
+            "neg-15",
+            "neg-16",
+            "neg-17",
+            "neg-18",
+            "neg-19",
+            "neg-20",
+            "neg-21",
+            "neg-22",
+            "neg-23",
+            "neg-24",
+            "neg-25",
+            "neg-26",
+            "neg-27",
+            "neg-28",
+            "neg-29",
+            "neg-30",
+            "neg-31",
+            "neg-32",
+            "neg-33",
+            "neg-34",
+            "neg-35",
+            "neg-36",
+            "neg-37",
+            "neg-38",
+            "neg-39",
+            "neg-40",
+            "neg-41",
+            "neg-42"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text swap rule (k=2)",
+          "confusion": {
+            "true_hits": 37,
+            "false_hits": 3,
+            "false_misses": 5,
+            "true_misses": 39,
+            "precision": 0.925,
+            "recall": 0.8809523809523809,
+            "f1": 0.9024390243902439
+          },
+          "wrong_matches_kept": 3,
+          "wrong_matches_removed_vs_vector_only": 39,
+          "right_matches_lost_vs_vector_only": 2,
+          "wrong_matches_still_served": [
+            "neg-03",
+            "neg-09",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-39",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text strict (each question must contain every word of the other)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 41,
+          "right_matches_lost_vs_vector_only": 39,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ],
+          "right_matches_lost_ids": [
+            "pos-01",
+            "pos-02",
+            "pos-03",
+            "pos-04",
+            "pos-05",
+            "pos-06",
+            "pos-07",
+            "pos-08",
+            "pos-09",
+            "pos-11",
+            "pos-12",
+            "pos-14",
+            "pos-15",
+            "pos-17",
+            "pos-18",
+            "pos-19",
+            "pos-20",
+            "pos-21",
+            "pos-22",
+            "pos-23",
+            "pos-24",
+            "pos-25",
+            "pos-26",
+            "pos-27",
+            "pos-28",
+            "pos-29",
+            "pos-30",
+            "pos-31",
+            "pos-32",
+            "pos-33",
+            "pos-34",
+            "pos-35",
+            "pos-36",
+            "pos-37",
+            "pos-38",
+            "pos-39",
+            "pos-40",
+            "pos-41",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, no synonyms)",
+          "confusion": {
+            "true_hits": 38,
+            "false_hits": 4,
+            "false_misses": 4,
+            "true_misses": 38,
+            "precision": 0.9047619047619048,
+            "recall": 0.9047619047619048,
+            "f1": 0.9047619047619048
+          },
+          "wrong_matches_kept": 4,
+          "wrong_matches_removed_vs_vector_only": 38,
+          "right_matches_lost_vs_vector_only": 1,
+          "wrong_matches_still_served": [
+            "neg-03",
+            "neg-09",
+            "neg-25",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, with synonym list)",
+          "confusion": {
+            "true_hits": 37,
+            "false_hits": 3,
+            "false_misses": 5,
+            "true_misses": 39,
+            "precision": 0.925,
+            "recall": 0.8809523809523809,
+            "f1": 0.9024390243902439
+          },
+          "wrong_matches_kept": 3,
+          "wrong_matches_removed_vs_vector_only": 39,
+          "right_matches_lost_vs_vector_only": 2,
+          "wrong_matches_still_served": [
+            "neg-09",
+            "neg-25",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-12",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word strict rule (any differing word, with synonym list)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 41,
+          "right_matches_lost_vs_vector_only": 39,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ],
+          "right_matches_lost_ids": [
+            "pos-01",
+            "pos-02",
+            "pos-03",
+            "pos-04",
+            "pos-05",
+            "pos-06",
+            "pos-07",
+            "pos-08",
+            "pos-09",
+            "pos-11",
+            "pos-12",
+            "pos-14",
+            "pos-15",
+            "pos-17",
+            "pos-18",
+            "pos-19",
+            "pos-20",
+            "pos-21",
+            "pos-22",
+            "pos-23",
+            "pos-24",
+            "pos-25",
+            "pos-26",
+            "pos-27",
+            "pos-28",
+            "pos-29",
+            "pos-30",
+            "pos-31",
+            "pos-32",
+            "pos-33",
+            "pos-34",
+            "pos-35",
+            "pos-36",
+            "pos-37",
+            "pos-38",
+            "pos-39",
+            "pos-40",
+            "pos-41",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + ts_rank \u003e= 0.000 (cut-off tuned on these same pairs: optimistic)",
+          "confusion": {
+            "true_hits": 39,
+            "false_hits": 42,
+            "false_misses": 3,
+            "true_misses": 0,
+            "precision": 0.48148148148148145,
+            "recall": 0.9285714285714286,
+            "f1": 0.6341463414634146
+          },
+          "wrong_matches_kept": 42,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-01",
+            "neg-02",
+            "neg-03",
+            "neg-04",
+            "neg-05",
+            "neg-06",
+            "neg-07",
+            "neg-08",
+            "neg-09",
+            "neg-10",
+            "neg-11",
+            "neg-12",
+            "neg-13",
+            "neg-14",
+            "neg-15",
+            "neg-16",
+            "neg-17",
+            "neg-18",
+            "neg-19",
+            "neg-20",
+            "neg-21",
+            "neg-22",
+            "neg-23",
+            "neg-24",
+            "neg-25",
+            "neg-26",
+            "neg-27",
+            "neg-28",
+            "neg-29",
+            "neg-30",
+            "neg-31",
+            "neg-32",
+            "neg-33",
+            "neg-34",
+            "neg-35",
+            "neg-36",
+            "neg-37",
+            "neg-38",
+            "neg-39",
+            "neg-40",
+            "neg-41",
+            "neg-42"
+          ],
+          "tuned_on_this_data": true,
+          "tuned_parameter": "ts_rank cut-off 0.0000 picked to maximise F1 on this data"
+        }
+      ]
+    },
+    {
+      "name": "deployed threshold 0.80",
+      "why": "the threshold in docker/bifrost-config.json",
+      "threshold": 0.8,
+      "methods": [
+        {
+          "method": "vector only",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 9,
+            "false_misses": 42,
+            "true_misses": 33,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 9,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-07",
+            "neg-09",
+            "neg-12",
+            "neg-17",
+            "neg-27",
+            "neg-31",
+            "neg-33",
+            "neg-38",
+            "neg-41"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text swap rule (k=2)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 8,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text strict (each question must contain every word of the other)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 8,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, no synonyms)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 8,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, with synonym list)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 8,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ]
+        },
+        {
+          "method": "vector + differing-word strict rule (any differing word, with synonym list)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 8,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ]
+        },
+        {
+          "method": "vector + ts_rank \u003e= 0.021 (cut-off tuned on these same pairs: optimistic)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 9,
+            "false_misses": 42,
+            "true_misses": 33,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 9,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-07",
+            "neg-09",
+            "neg-12",
+            "neg-17",
+            "neg-27",
+            "neg-31",
+            "neg-33",
+            "neg-38",
+            "neg-41"
+          ],
+          "tuned_on_this_data": true,
+          "tuned_parameter": "ts_rank cut-off 0.0208 picked to maximise F1 on this data"
+        }
+      ]
+    },
+    {
+      "name": "recall \u003e= 0.80 threshold",
+      "why": "the highest threshold where the vector still serves at least 80% of the true paraphrases: the regime a real embedding model lives in, where look-alikes sit next to paraphrases",
+      "threshold": 0.04,
+      "methods": [
+        {
+          "method": "vector only",
+          "confusion": {
+            "true_hits": 34,
+            "false_hits": 41,
+            "false_misses": 8,
+            "true_misses": 1,
+            "precision": 0.4533333333333333,
+            "recall": 0.8095238095238095,
+            "f1": 0.5811965811965811
+          },
+          "wrong_matches_kept": 41,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-01",
+            "neg-02",
+            "neg-03",
+            "neg-04",
+            "neg-05",
+            "neg-06",
+            "neg-07",
+            "neg-08",
+            "neg-09",
+            "neg-10",
+            "neg-11",
+            "neg-12",
+            "neg-13",
+            "neg-14",
+            "neg-16",
+            "neg-17",
+            "neg-18",
+            "neg-19",
+            "neg-20",
+            "neg-21",
+            "neg-22",
+            "neg-23",
+            "neg-24",
+            "neg-25",
+            "neg-26",
+            "neg-27",
+            "neg-28",
+            "neg-29",
+            "neg-30",
+            "neg-31",
+            "neg-32",
+            "neg-33",
+            "neg-34",
+            "neg-35",
+            "neg-36",
+            "neg-37",
+            "neg-38",
+            "neg-39",
+            "neg-40",
+            "neg-41",
+            "neg-42"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text swap rule (k=2)",
+          "confusion": {
+            "true_hits": 32,
+            "false_hits": 3,
+            "false_misses": 10,
+            "true_misses": 39,
+            "precision": 0.9142857142857143,
+            "recall": 0.7619047619047619,
+            "f1": 0.8311688311688312
+          },
+          "wrong_matches_kept": 3,
+          "wrong_matches_removed_vs_vector_only": 38,
+          "right_matches_lost_vs_vector_only": 2,
+          "wrong_matches_still_served": [
+            "neg-03",
+            "neg-09",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-39",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text strict (each question must contain every word of the other)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 40,
+          "right_matches_lost_vs_vector_only": 34,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ],
+          "right_matches_lost_ids": [
+            "pos-01",
+            "pos-02",
+            "pos-03",
+            "pos-04",
+            "pos-06",
+            "pos-08",
+            "pos-09",
+            "pos-11",
+            "pos-12",
+            "pos-15",
+            "pos-17",
+            "pos-18",
+            "pos-19",
+            "pos-20",
+            "pos-21",
+            "pos-23",
+            "pos-25",
+            "pos-26",
+            "pos-27",
+            "pos-28",
+            "pos-29",
+            "pos-30",
+            "pos-31",
+            "pos-32",
+            "pos-33",
+            "pos-34",
+            "pos-35",
+            "pos-36",
+            "pos-37",
+            "pos-38",
+            "pos-39",
+            "pos-40",
+            "pos-41",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, no synonyms)",
+          "confusion": {
+            "true_hits": 33,
+            "false_hits": 4,
+            "false_misses": 9,
+            "true_misses": 38,
+            "precision": 0.8918918918918919,
+            "recall": 0.7857142857142857,
+            "f1": 0.8354430379746834
+          },
+          "wrong_matches_kept": 4,
+          "wrong_matches_removed_vs_vector_only": 37,
+          "right_matches_lost_vs_vector_only": 1,
+          "wrong_matches_still_served": [
+            "neg-03",
+            "neg-09",
+            "neg-25",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, with synonym list)",
+          "confusion": {
+            "true_hits": 32,
+            "false_hits": 3,
+            "false_misses": 10,
+            "true_misses": 39,
+            "precision": 0.9142857142857143,
+            "recall": 0.7619047619047619,
+            "f1": 0.8311688311688312
+          },
+          "wrong_matches_kept": 3,
+          "wrong_matches_removed_vs_vector_only": 38,
+          "right_matches_lost_vs_vector_only": 2,
+          "wrong_matches_still_served": [
+            "neg-09",
+            "neg-25",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-12",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word strict rule (any differing word, with synonym list)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 40,
+          "right_matches_lost_vs_vector_only": 34,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ],
+          "right_matches_lost_ids": [
+            "pos-01",
+            "pos-02",
+            "pos-03",
+            "pos-04",
+            "pos-06",
+            "pos-08",
+            "pos-09",
+            "pos-11",
+            "pos-12",
+            "pos-15",
+            "pos-17",
+            "pos-18",
+            "pos-19",
+            "pos-20",
+            "pos-21",
+            "pos-23",
+            "pos-25",
+            "pos-26",
+            "pos-27",
+            "pos-28",
+            "pos-29",
+            "pos-30",
+            "pos-31",
+            "pos-32",
+            "pos-33",
+            "pos-34",
+            "pos-35",
+            "pos-36",
+            "pos-37",
+            "pos-38",
+            "pos-39",
+            "pos-40",
+            "pos-41",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + ts_rank \u003e= 0.000 (cut-off tuned on these same pairs: optimistic)",
+          "confusion": {
+            "true_hits": 34,
+            "false_hits": 41,
+            "false_misses": 8,
+            "true_misses": 1,
+            "precision": 0.4533333333333333,
+            "recall": 0.8095238095238095,
+            "f1": 0.5811965811965811
+          },
+          "wrong_matches_kept": 41,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-01",
+            "neg-02",
+            "neg-03",
+            "neg-04",
+            "neg-05",
+            "neg-06",
+            "neg-07",
+            "neg-08",
+            "neg-09",
+            "neg-10",
+            "neg-11",
+            "neg-12",
+            "neg-13",
+            "neg-14",
+            "neg-16",
+            "neg-17",
+            "neg-18",
+            "neg-19",
+            "neg-20",
+            "neg-21",
+            "neg-22",
+            "neg-23",
+            "neg-24",
+            "neg-25",
+            "neg-26",
+            "neg-27",
+            "neg-28",
+            "neg-29",
+            "neg-30",
+            "neg-31",
+            "neg-32",
+            "neg-33",
+            "neg-34",
+            "neg-35",
+            "neg-36",
+            "neg-37",
+            "neg-38",
+            "neg-39",
+            "neg-40",
+            "neg-41",
+            "neg-42"
+          ],
+          "tuned_on_this_data": true,
+          "tuned_parameter": "ts_rank cut-off 0.0000 picked to maximise F1 on this data"
+        }
+      ]
+    },
+    {
+      "name": "no vector filter",
+      "why": "every pair passes the vector check; shows what the keyword check can do on its own",
+      "threshold": -1,
+      "methods": [
+        {
+          "method": "vector only",
+          "confusion": {
+            "true_hits": 42,
+            "false_hits": 42,
+            "false_misses": 0,
+            "true_misses": 0,
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.6666666666666666
+          },
+          "wrong_matches_kept": 42,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-01",
+            "neg-02",
+            "neg-03",
+            "neg-04",
+            "neg-05",
+            "neg-06",
+            "neg-07",
+            "neg-08",
+            "neg-09",
+            "neg-10",
+            "neg-11",
+            "neg-12",
+            "neg-13",
+            "neg-14",
+            "neg-15",
+            "neg-16",
+            "neg-17",
+            "neg-18",
+            "neg-19",
+            "neg-20",
+            "neg-21",
+            "neg-22",
+            "neg-23",
+            "neg-24",
+            "neg-25",
+            "neg-26",
+            "neg-27",
+            "neg-28",
+            "neg-29",
+            "neg-30",
+            "neg-31",
+            "neg-32",
+            "neg-33",
+            "neg-34",
+            "neg-35",
+            "neg-36",
+            "neg-37",
+            "neg-38",
+            "neg-39",
+            "neg-40",
+            "neg-41",
+            "neg-42"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text swap rule (k=2)",
+          "confusion": {
+            "true_hits": 40,
+            "false_hits": 3,
+            "false_misses": 2,
+            "true_misses": 39,
+            "precision": 0.9302325581395349,
+            "recall": 0.9523809523809523,
+            "f1": 0.9411764705882352
+          },
+          "wrong_matches_kept": 3,
+          "wrong_matches_removed_vs_vector_only": 39,
+          "right_matches_lost_vs_vector_only": 2,
+          "wrong_matches_still_served": [
+            "neg-03",
+            "neg-09",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-39",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + PostgreSQL full-text strict (each question must contain every word of the other)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 41,
+          "right_matches_lost_vs_vector_only": 42,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ],
+          "right_matches_lost_ids": [
+            "pos-01",
+            "pos-02",
+            "pos-03",
+            "pos-04",
+            "pos-05",
+            "pos-06",
+            "pos-07",
+            "pos-08",
+            "pos-09",
+            "pos-10",
+            "pos-11",
+            "pos-12",
+            "pos-13",
+            "pos-14",
+            "pos-15",
+            "pos-16",
+            "pos-17",
+            "pos-18",
+            "pos-19",
+            "pos-20",
+            "pos-21",
+            "pos-22",
+            "pos-23",
+            "pos-24",
+            "pos-25",
+            "pos-26",
+            "pos-27",
+            "pos-28",
+            "pos-29",
+            "pos-30",
+            "pos-31",
+            "pos-32",
+            "pos-33",
+            "pos-34",
+            "pos-35",
+            "pos-36",
+            "pos-37",
+            "pos-38",
+            "pos-39",
+            "pos-40",
+            "pos-41",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, no synonyms)",
+          "confusion": {
+            "true_hits": 41,
+            "false_hits": 4,
+            "false_misses": 1,
+            "true_misses": 38,
+            "precision": 0.9111111111111111,
+            "recall": 0.9761904761904762,
+            "f1": 0.9425287356321839
+          },
+          "wrong_matches_kept": 4,
+          "wrong_matches_removed_vs_vector_only": 38,
+          "right_matches_lost_vs_vector_only": 1,
+          "wrong_matches_still_served": [
+            "neg-03",
+            "neg-09",
+            "neg-25",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word swap rule (k=2, with synonym list)",
+          "confusion": {
+            "true_hits": 40,
+            "false_hits": 3,
+            "false_misses": 2,
+            "true_misses": 39,
+            "precision": 0.9302325581395349,
+            "recall": 0.9523809523809523,
+            "f1": 0.9411764705882352
+          },
+          "wrong_matches_kept": 3,
+          "wrong_matches_removed_vs_vector_only": 39,
+          "right_matches_lost_vs_vector_only": 2,
+          "wrong_matches_still_served": [
+            "neg-09",
+            "neg-25",
+            "neg-26"
+          ],
+          "right_matches_lost_ids": [
+            "pos-12",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + differing-word strict rule (any differing word, with synonym list)",
+          "confusion": {
+            "true_hits": 0,
+            "false_hits": 1,
+            "false_misses": 42,
+            "true_misses": 41,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          "wrong_matches_kept": 1,
+          "wrong_matches_removed_vs_vector_only": 41,
+          "right_matches_lost_vs_vector_only": 42,
+          "wrong_matches_still_served": [
+            "neg-09"
+          ],
+          "right_matches_lost_ids": [
+            "pos-01",
+            "pos-02",
+            "pos-03",
+            "pos-04",
+            "pos-05",
+            "pos-06",
+            "pos-07",
+            "pos-08",
+            "pos-09",
+            "pos-10",
+            "pos-11",
+            "pos-12",
+            "pos-13",
+            "pos-14",
+            "pos-15",
+            "pos-16",
+            "pos-17",
+            "pos-18",
+            "pos-19",
+            "pos-20",
+            "pos-21",
+            "pos-22",
+            "pos-23",
+            "pos-24",
+            "pos-25",
+            "pos-26",
+            "pos-27",
+            "pos-28",
+            "pos-29",
+            "pos-30",
+            "pos-31",
+            "pos-32",
+            "pos-33",
+            "pos-34",
+            "pos-35",
+            "pos-36",
+            "pos-37",
+            "pos-38",
+            "pos-39",
+            "pos-40",
+            "pos-41",
+            "pos-42"
+          ]
+        },
+        {
+          "method": "vector + ts_rank \u003e= 0.000 (cut-off tuned on these same pairs: optimistic)",
+          "confusion": {
+            "true_hits": 42,
+            "false_hits": 42,
+            "false_misses": 0,
+            "true_misses": 0,
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.6666666666666666
+          },
+          "wrong_matches_kept": 42,
+          "wrong_matches_removed_vs_vector_only": 0,
+          "right_matches_lost_vs_vector_only": 0,
+          "wrong_matches_still_served": [
+            "neg-01",
+            "neg-02",
+            "neg-03",
+            "neg-04",
+            "neg-05",
+            "neg-06",
+            "neg-07",
+            "neg-08",
+            "neg-09",
+            "neg-10",
+            "neg-11",
+            "neg-12",
+            "neg-13",
+            "neg-14",
+            "neg-15",
+            "neg-16",
+            "neg-17",
+            "neg-18",
+            "neg-19",
+            "neg-20",
+            "neg-21",
+            "neg-22",
+            "neg-23",
+            "neg-24",
+            "neg-25",
+            "neg-26",
+            "neg-27",
+            "neg-28",
+            "neg-29",
+            "neg-30",
+            "neg-31",
+            "neg-32",
+            "neg-33",
+            "neg-34",
+            "neg-35",
+            "neg-36",
+            "neg-37",
+            "neg-38",
+            "neg-39",
+            "neg-40",
+            "neg-41",
+            "neg-42"
+          ],
+          "tuned_on_this_data": true,
+          "tuned_parameter": "ts_rank cut-off 0.0000 picked to maximise F1 on this data"
+        }
+      ]
+    }
+  ],
+  "swap_rule_k_sensitivity_at_recall_point": [
+    {
+      "k": 1,
+      "with_synonyms": false,
+      "confusion": {
+        "true_hits": 42,
+        "false_hits": 17,
+        "false_misses": 0,
+        "true_misses": 25,
+        "precision": 0.711864406779661,
+        "recall": 1,
+        "f1": 0.8316831683168318
+      }
+    },
+    {
+      "k": 2,
+      "with_synonyms": false,
+      "confusion": {
+        "true_hits": 41,
+        "false_hits": 4,
+        "false_misses": 1,
+        "true_misses": 38,
+        "precision": 0.9111111111111111,
+        "recall": 0.9761904761904762,
+        "f1": 0.9425287356321839
+      }
+    },
+    {
+      "k": 3,
+      "with_synonyms": false,
+      "confusion": {
+        "true_hits": 36,
+        "false_hits": 2,
+        "false_misses": 6,
+        "true_misses": 40,
+        "precision": 0.9473684210526315,
+        "recall": 0.8571428571428571,
+        "f1": 0.9
+      }
+    },
+    {
+      "k": 4,
+      "with_synonyms": false,
+      "confusion": {
+        "true_hits": 25,
+        "false_hits": 2,
+        "false_misses": 17,
+        "true_misses": 40,
+        "precision": 0.9259259259259259,
+        "recall": 0.5952380952380952,
+        "f1": 0.7246376811594204
+      }
+    },
+    {
+      "k": 1,
+      "with_synonyms": true,
+      "confusion": {
+        "true_hits": 42,
+        "false_hits": 16,
+        "false_misses": 0,
+        "true_misses": 26,
+        "precision": 0.7241379310344828,
+        "recall": 1,
+        "f1": 0.8400000000000001
+      }
+    },
+    {
+      "k": 2,
+      "with_synonyms": true,
+      "confusion": {
+        "true_hits": 40,
+        "false_hits": 3,
+        "false_misses": 2,
+        "true_misses": 39,
+        "precision": 0.9302325581395349,
+        "recall": 0.9523809523809523,
+        "f1": 0.9411764705882352
+      }
+    },
+    {
+      "k": 3,
+      "with_synonyms": true,
+      "confusion": {
+        "true_hits": 36,
+        "false_hits": 2,
+        "false_misses": 6,
+        "true_misses": 40,
+        "precision": 0.9473684210526315,
+        "recall": 0.8571428571428571,
+        "f1": 0.9
+      }
+    },
+    {
+      "k": 4,
+      "with_synonyms": true,
+      "confusion": {
+        "true_hits": 25,
+        "false_hits": 2,
+        "false_misses": 17,
+        "true_misses": 40,
+        "precision": 0.9259259259259259,
+        "recall": 0.5952380952380952,
+        "f1": 0.7246376811594204
+      }
+    }
+  ],
+  "pairs_detail": [
+    {
+      "id": "pos-01",
+      "label": "hit",
+      "a": "How do I get a refund for an order that arrived late?",
+      "b": "My package showed up days late. Can I get my money back?",
+      "cosine": 0.31094670840846167,
+      "cosine_in_postgres": 0.3109467327594757,
+      "fts_lexemes_only_in_a": [
+        "arriv",
+        "order",
+        "refund"
+      ],
+      "fts_lexemes_only_in_b": [
+        "back",
+        "day",
+        "money",
+        "packag",
+        "show"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.02084321528673172,
+      "words_only_in_a": [
+        "arriv",
+        "order",
+        "refund"
+      ],
+      "words_only_in_b": [
+        "back",
+        "day",
+        "money",
+        "package",
+        "show",
+        "up"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "arriv",
+        "order"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "back",
+        "day",
+        "package",
+        "show",
+        "up"
+      ]
+    },
+    {
+      "id": "pos-02",
+      "label": "hit",
+      "a": "How do I reset my password?",
+      "b": "I forgot my password and can't log in, how do I set a new one?",
+      "cosine": 0.43204937937358534,
+      "cosine_in_postgres": 0.432049423456192,
+      "fts_lexemes_only_in_a": [
+        "reset"
+      ],
+      "fts_lexemes_only_in_b": [
+        "forgot",
+        "log",
+        "new",
+        "one",
+        "set"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.020264236256480217,
+      "words_only_in_a": [
+        "reset"
+      ],
+      "words_only_in_b": [
+        "forgot",
+        "log",
+        "new",
+        "one",
+        "set",
+        "t"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "reset"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "forgot",
+        "log",
+        "new",
+        "one",
+        "set",
+        "t"
+      ]
+    },
+    {
+      "id": "pos-03",
+      "label": "hit",
+      "a": "How can I change the email address on my account?",
+      "b": "I want to update the email I use to sign in.",
+      "cosine": 0.22786635759382498,
+      "cosine_in_postgres": 0.22786635839540847,
+      "fts_lexemes_only_in_a": [
+        "account",
+        "address",
+        "chang"
+      ],
+      "fts_lexemes_only_in_b": [
+        "sign",
+        "updat",
+        "use",
+        "want"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.013678359799087048,
+      "words_only_in_a": [
+        "account",
+        "address",
+        "change"
+      ],
+      "words_only_in_b": [
+        "sign",
+        "update",
+        "use",
+        "want"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "account",
+        "address"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "sign",
+        "use",
+        "want"
+      ]
+    },
+    {
+      "id": "pos-04",
+      "label": "hit",
+      "a": "How much does the Pro plan cost per month?",
+      "b": "What's the monthly price of the Pro tier?",
+      "cosine": 0.37605915792292516,
+      "cosine_in_postgres": 0.3760591559427726,
+      "fts_lexemes_only_in_a": [
+        "cost",
+        "much",
+        "per",
+        "plan"
+      ],
+      "fts_lexemes_only_in_b": [
+        "price",
+        "tier"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.02533029578626156,
+      "words_only_in_a": [
+        "cost",
+        "month",
+        "much",
+        "per",
+        "plan"
+      ],
+      "words_only_in_b": [
+        "monthly",
+        "price",
+        "s",
+        "tier"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "month",
+        "much",
+        "per",
+        "plan"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "monthly",
+        "s",
+        "tier"
+      ]
+    },
+    {
+      "id": "pos-05",
+      "label": "hit",
+      "a": "Where is my order?",
+      "b": "Can you tell me the current status of my shipment?",
+      "cosine": 0,
+      "cosine_in_postgres": 0,
+      "fts_lexemes_only_in_a": [
+        "order"
+      ],
+      "fts_lexemes_only_in_b": [
+        "current",
+        "shipment",
+        "status",
+        "tell"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "order"
+      ],
+      "words_only_in_b": [
+        "current",
+        "shipment",
+        "statu",
+        "tell"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "order"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "current",
+        "shipment",
+        "statu",
+        "tell"
+      ]
+    },
+    {
+      "id": "pos-06",
+      "label": "hit",
+      "a": "Can I change the delivery address after placing an order?",
+      "b": "I typed the wrong shipping address on my order, can it still be updated?",
+      "cosine": 0.3631176623216367,
+      "cosine_in_postgres": 0.3631176460718408,
+      "fts_lexemes_only_in_a": [
+        "chang",
+        "deliveri",
+        "place"
+      ],
+      "fts_lexemes_only_in_b": [
+        "ship",
+        "still",
+        "type",
+        "updat",
+        "wrong"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.02084321528673172,
+      "words_only_in_a": [
+        "after",
+        "change",
+        "delivery",
+        "plac"
+      ],
+      "words_only_in_b": [
+        "shipp",
+        "still",
+        "typ",
+        "updat",
+        "wrong"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "after",
+        "delivery",
+        "plac",
+        "update"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "shipp",
+        "still",
+        "typ",
+        "updat",
+        "wrong"
+      ]
+    },
+    {
+      "id": "pos-07",
+      "label": "hit",
+      "a": "How do I cancel my subscription?",
+      "b": "I'd like to stop my plan from renewing. How do I do that?",
+      "cosine": 0,
+      "cosine_in_postgres": 0,
+      "fts_lexemes_only_in_a": [
+        "cancel",
+        "subscript"
+      ],
+      "fts_lexemes_only_in_b": [
+        "d",
+        "like",
+        "plan",
+        "renew",
+        "stop"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "cancel",
+        "subscription"
+      ],
+      "words_only_in_b": [
+        "d",
+        "like",
+        "plan",
+        "renew",
+        "stop"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "subscription"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "d",
+        "like",
+        "plan",
+        "renew"
+      ]
+    },
+    {
+      "id": "pos-08",
+      "label": "hit",
+      "a": "Can I pay with PayPal?",
+      "b": "Do you accept PayPal as a payment method?",
+      "cosine": 0.5530100413375021,
+      "cosine_in_postgres": 0.5530100464820862,
+      "fts_lexemes_only_in_a": [
+        "pay"
+      ],
+      "fts_lexemes_only_in_b": [
+        "accept",
+        "method",
+        "payment"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.022797266021370888,
+      "words_only_in_a": [
+        "pay"
+      ],
+      "words_only_in_b": [
+        "accept",
+        "method",
+        "payment"
+      ],
+      "words_only_in_a_with_synonyms": null,
+      "words_only_in_b_with_synonyms": [
+        "accept",
+        "method"
+      ]
+    },
+    {
+      "id": "pos-09",
+      "label": "hit",
+      "a": "Where can I download my invoices?",
+      "b": "How do I get copies of my past bills for our accounting team?",
+      "cosine": 0.07242068243779014,
+      "cosine_in_postgres": 0.07242068648338318,
+      "fts_lexemes_only_in_a": [
+        "download",
+        "invoic"
+      ],
+      "fts_lexemes_only_in_b": [
+        "account",
+        "bill",
+        "copi",
+        "get",
+        "past",
+        "team"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "download",
+        "invoic"
+      ],
+      "words_only_in_b": [
+        "account",
+        "bill",
+        "copy",
+        "past",
+        "team"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "download",
+        "invoic"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "account",
+        "copy",
+        "invoice",
+        "past",
+        "team"
+      ]
+    },
+    {
+      "id": "pos-10",
+      "label": "hit",
+      "a": "How do I turn on two-factor authentication?",
+      "b": "How can I enable 2FA on my account?",
+      "cosine": -0.05634361698190111,
+      "cosine_in_postgres": -0.05634362045954533,
+      "fts_lexemes_only_in_a": [
+        "authent",
+        "factor",
+        "turn",
+        "two",
+        "two-factor"
+      ],
+      "fts_lexemes_only_in_b": [
+        "2fa",
+        "account",
+        "enabl"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "authentication",
+        "factor",
+        "turn",
+        "two"
+      ],
+      "words_only_in_b": [
+        "2fa",
+        "account",
+        "enable"
+      ],
+      "words_only_in_a_with_synonyms": null,
+      "words_only_in_b_with_synonyms": [
+        "account"
+      ]
+    },
+    {
+      "id": "pos-11",
+      "label": "hit",
+      "a": "What is the rate limit for the API?",
+      "b": "How many API requests am I allowed to make per minute?",
+      "cosine": 0.23890924065874425,
+      "cosine_in_postgres": 0.2389092594385147,
+      "fts_lexemes_only_in_a": [
+        "limit",
+        "rate"
+      ],
+      "fts_lexemes_only_in_b": [
+        "allow",
+        "make",
+        "mani",
+        "minut",
+        "per",
+        "request"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.014474455267190933,
+      "words_only_in_a": [
+        "limit",
+        "rate"
+      ],
+      "words_only_in_b": [
+        "allow",
+        "make",
+        "many",
+        "minute",
+        "per",
+        "request"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "limit",
+        "rate"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "allow",
+        "make",
+        "many",
+        "minute",
+        "per",
+        "request"
+      ]
+    },
+    {
+      "id": "pos-12",
+      "label": "hit",
+      "a": "How do I generate a new API key?",
+      "b": "Where can I create an API token for my integration?",
+      "cosine": 0.25007816164017765,
+      "cosine_in_postgres": 0.25007817894453355,
+      "fts_lexemes_only_in_a": [
+        "generat",
+        "key",
+        "new"
+      ],
+      "fts_lexemes_only_in_b": [
+        "creat",
+        "integr",
+        "token"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.01519817765802145,
+      "words_only_in_a": [
+        "generate",
+        "key",
+        "new"
+      ],
+      "words_only_in_b": [
+        "create",
+        "integration",
+        "token"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "generate",
+        "new"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "create",
+        "integration"
+      ]
+    },
+    {
+      "id": "pos-13",
+      "label": "hit",
+      "a": "Do you ship internationally?",
+      "b": "Can I order from outside the United States and have it delivered abroad?",
+      "cosine": -0.04618802153517006,
+      "cosine_in_postgres": -0.04618801921606064,
+      "fts_lexemes_only_in_a": [
+        "intern",
+        "ship"
+      ],
+      "fts_lexemes_only_in_b": [
+        "abroad",
+        "deliv",
+        "order",
+        "outsid",
+        "state",
+        "unit"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "internationally",
+        "ship"
+      ],
+      "words_only_in_b": [
+        "abroad",
+        "deliver",
+        "order",
+        "outside",
+        "stat",
+        "unit"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "ship"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "deliver",
+        "order",
+        "outside",
+        "stat",
+        "unit"
+      ]
+    },
+    {
+      "id": "pos-14",
+      "label": "hit",
+      "a": "What is your return policy?",
+      "b": "How many days do I have to send an item back?",
+      "cosine": 0.033709993123162106,
+      "cosine_in_postgres": 0.03370999272793507,
+      "fts_lexemes_only_in_a": [
+        "polici",
+        "return"
+      ],
+      "fts_lexemes_only_in_b": [
+        "back",
+        "day",
+        "item",
+        "mani",
+        "send"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "policy",
+        "return"
+      ],
+      "words_only_in_b": [
+        "back",
+        "day",
+        "item",
+        "many",
+        "send"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "policy",
+        "return"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "back",
+        "day",
+        "item",
+        "many",
+        "send"
+      ]
+    },
+    {
+      "id": "pos-15",
+      "label": "hit",
+      "a": "How do I delete my account permanently?",
+      "b": "I want my account and all of my data removed for good.",
+      "cosine": 0.36893239368631087,
+      "cosine_in_postgres": 0.36893237736619655,
+      "fts_lexemes_only_in_a": [
+        "delet",
+        "perman"
+      ],
+      "fts_lexemes_only_in_b": [
+        "data",
+        "good",
+        "remov",
+        "want"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.016211388632655144,
+      "words_only_in_a": [
+        "delete",
+        "permanently"
+      ],
+      "words_only_in_b": [
+        "all",
+        "data",
+        "good",
+        "remov",
+        "want"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "delete",
+        "permanently"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "all",
+        "data",
+        "good",
+        "remov",
+        "want"
+      ]
+    },
+    {
+      "id": "pos-16",
+      "label": "hit",
+      "a": "Does the app work offline?",
+      "b": "Can I use the application without an internet connection?",
+      "cosine": -0.08326910724800533,
+      "cosine_in_postgres": -0.08326910436153412,
+      "fts_lexemes_only_in_a": [
+        "app",
+        "offlin",
+        "work"
+      ],
+      "fts_lexemes_only_in_b": [
+        "applic",
+        "connect",
+        "internet",
+        "use",
+        "without"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "app",
+        "offline",
+        "work"
+      ],
+      "words_only_in_b": [
+        "application",
+        "connection",
+        "internet",
+        "use",
+        "without"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "app",
+        "offline",
+        "work"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "application",
+        "connection",
+        "internet",
+        "use",
+        "without"
+      ]
+    },
+    {
+      "id": "pos-17",
+      "label": "hit",
+      "a": "Do you integrate with Slack?",
+      "b": "Can we get your product's notifications in our Slack workspace?",
+      "cosine": 0.24980732174401601,
+      "cosine_in_postgres": 0.24980731308460236,
+      "fts_lexemes_only_in_a": [
+        "integr"
+      ],
+      "fts_lexemes_only_in_b": [
+        "get",
+        "notif",
+        "product",
+        "workspac"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.021277448162436485,
+      "words_only_in_a": [
+        "integrate"
+      ],
+      "words_only_in_b": [
+        "notification",
+        "product",
+        "s",
+        "workspace"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "integrate"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "notification",
+        "product",
+        "s",
+        "workspace"
+      ]
+    },
+    {
+      "id": "pos-18",
+      "label": "hit",
+      "a": "The app keeps crashing when I open it.",
+      "b": "Every time I launch the app it closes immediately.",
+      "cosine": 0.14569287935358963,
+      "cosine_in_postgres": 0.14569288738881203,
+      "fts_lexemes_only_in_a": [
+        "crash",
+        "keep",
+        "open"
+      ],
+      "fts_lexemes_only_in_b": [
+        "close",
+        "everi",
+        "immedi",
+        "launch",
+        "time"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.01266514789313078,
+      "words_only_in_a": [
+        "crash",
+        "keep",
+        "open"
+      ],
+      "words_only_in_b": [
+        "clos",
+        "every",
+        "immediately",
+        "launch",
+        "time"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "crash",
+        "keep",
+        "open"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "clos",
+        "every",
+        "immediately",
+        "launch",
+        "time"
+      ]
+    },
+    {
+      "id": "pos-19",
+      "label": "hit",
+      "a": "Why was I charged twice this month?",
+      "b": "I see two identical charges on my card for the same subscription.",
+      "cosine": 0.14002800764369602,
+      "cosine_in_postgres": 0.14002800822424966,
+      "fts_lexemes_only_in_a": [
+        "month",
+        "twice"
+      ],
+      "fts_lexemes_only_in_b": [
+        "card",
+        "ident",
+        "see",
+        "subscript",
+        "two"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.015198176726698875,
+      "words_only_in_a": [
+        "month",
+        "twice"
+      ],
+      "words_only_in_b": [
+        "card",
+        "identical",
+        "same",
+        "see",
+        "subscription",
+        "two"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "month",
+        "twice"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "2fa",
+        "card",
+        "identical",
+        "same",
+        "see",
+        "subscription"
+      ]
+    },
+    {
+      "id": "pos-20",
+      "label": "hit",
+      "a": "Is there a discount for annual billing?",
+      "b": "Do I save money if I pay yearly instead of monthly?",
+      "cosine": 0.043519413988924456,
+      "cosine_in_postgres": 0.04351941496133804,
+      "fts_lexemes_only_in_a": [
+        "annual",
+        "bill",
+        "discount"
+      ],
+      "fts_lexemes_only_in_b": [
+        "instead",
+        "money",
+        "month",
+        "pay",
+        "save",
+        "year"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "annual",
+        "bill",
+        "discount"
+      ],
+      "words_only_in_b": [
+        "instead",
+        "money",
+        "monthly",
+        "pay",
+        "save",
+        "yearly"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "annual",
+        "discount",
+        "invoice"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "instead",
+        "monthly",
+        "payment",
+        "refund",
+        "save",
+        "yearly"
+      ]
+    },
+    {
+      "id": "pos-21",
+      "label": "hit",
+      "a": "How do I upgrade from the Basic plan to Pro?",
+      "b": "I want to move my account up to the Pro plan from Basic.",
+      "cosine": 0.49957537147329684,
+      "cosine_in_postgres": 0.4995753913991272,
+      "fts_lexemes_only_in_a": [
+        "upgrad"
+      ],
+      "fts_lexemes_only_in_b": [
+        "account",
+        "move",
+        "want"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03799544274806976,
+      "words_only_in_a": [
+        "upgrade"
+      ],
+      "words_only_in_b": [
+        "account",
+        "move",
+        "up",
+        "want"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "upgrade"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "account",
+        "move",
+        "up",
+        "want"
+      ]
+    },
+    {
+      "id": "pos-22",
+      "label": "hit",
+      "a": "How do I invite a teammate to my workspace?",
+      "b": "What's the way to add a colleague to our team account?",
+      "cosine": 0.023544080467400554,
+      "cosine_in_postgres": 0.023544080555438995,
+      "fts_lexemes_only_in_a": [
+        "invit",
+        "teammat",
+        "workspac"
+      ],
+      "fts_lexemes_only_in_b": [
+        "account",
+        "add",
+        "colleagu",
+        "team",
+        "way"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "invite",
+        "teammate",
+        "workspace"
+      ],
+      "words_only_in_b": [
+        "account",
+        "add",
+        "colleague",
+        "s",
+        "team",
+        "way"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "invite",
+        "teammate",
+        "workspace"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "account",
+        "add",
+        "colleague",
+        "s",
+        "team",
+        "way"
+      ]
+    },
+    {
+      "id": "pos-23",
+      "label": "hit",
+      "a": "How long does standard shipping take?",
+      "b": "What's the usual delivery time for regular shipping?",
+      "cosine": 0.15488062035072667,
+      "cosine_in_postgres": 0.15488061770440997,
+      "fts_lexemes_only_in_a": [
+        "long",
+        "standard",
+        "take"
+      ],
+      "fts_lexemes_only_in_b": [
+        "deliveri",
+        "regular",
+        "time",
+        "usual"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.013678359799087048,
+      "words_only_in_a": [
+        "long",
+        "standard",
+        "take"
+      ],
+      "words_only_in_b": [
+        "delivery",
+        "regular",
+        "s",
+        "time",
+        "usual"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "long",
+        "standard",
+        "take"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "delivery",
+        "regular",
+        "s",
+        "time",
+        "usual"
+      ]
+    },
+    {
+      "id": "pos-24",
+      "label": "hit",
+      "a": "Can I export my data to CSV?",
+      "b": "Is there a way to download all my records as a spreadsheet file?",
+      "cosine": 0,
+      "cosine_in_postgres": 3.3569169666236576e-10,
+      "fts_lexemes_only_in_a": [
+        "csv",
+        "data",
+        "export"
+      ],
+      "fts_lexemes_only_in_b": [
+        "download",
+        "file",
+        "record",
+        "spreadsheet",
+        "way"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "csv",
+        "data",
+        "export"
+      ],
+      "words_only_in_b": [
+        "all",
+        "download",
+        "file",
+        "record",
+        "spreadsheet",
+        "way"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "csv",
+        "data",
+        "export"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "all",
+        "download",
+        "file",
+        "record",
+        "spreadsheet",
+        "way"
+      ]
+    },
+    {
+      "id": "pos-25",
+      "label": "hit",
+      "a": "Is my data encrypted?",
+      "b": "Do you encrypt customer information at rest and in transit?",
+      "cosine": 0.12222646627042816,
+      "cosine_in_postgres": 0.12222646938404647,
+      "fts_lexemes_only_in_a": [
+        "data"
+      ],
+      "fts_lexemes_only_in_b": [
+        "custom",
+        "inform",
+        "rest",
+        "transit"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.021277448162436485,
+      "words_only_in_a": [
+        "data"
+      ],
+      "words_only_in_b": [
+        "customer",
+        "information",
+        "rest",
+        "transit"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "data"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "customer",
+        "information",
+        "rest",
+        "transit"
+      ]
+    },
+    {
+      "id": "pos-26",
+      "label": "hit",
+      "a": "Is there a dark mode?",
+      "b": "Can I switch the interface to a dark theme?",
+      "cosine": 0.375,
+      "cosine_in_postgres": 0.375,
+      "fts_lexemes_only_in_a": [
+        "mode"
+      ],
+      "fts_lexemes_only_in_b": [
+        "interfac",
+        "switch",
+        "theme"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.022797266021370888,
+      "words_only_in_a": [
+        "mode"
+      ],
+      "words_only_in_b": [
+        "interface",
+        "switch",
+        "theme"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "mode"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "interface",
+        "switch",
+        "theme"
+      ]
+    },
+    {
+      "id": "pos-27",
+      "label": "hit",
+      "a": "Do you have a Python SDK?",
+      "b": "Is there an official Python client library for your API?",
+      "cosine": 0.3045547950507524,
+      "cosine_in_postgres": 0.3045548084112888,
+      "fts_lexemes_only_in_a": [
+        "sdk"
+      ],
+      "fts_lexemes_only_in_b": [
+        "api",
+        "client",
+        "librari",
+        "offici"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.021277448162436485,
+      "words_only_in_a": [
+        "sdk"
+      ],
+      "words_only_in_b": [
+        "api",
+        "client",
+        "library",
+        "official"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "sdk"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "api",
+        "client",
+        "library",
+        "official"
+      ]
+    },
+    {
+      "id": "pos-28",
+      "label": "hit",
+      "a": "I didn't receive the verification email.",
+      "b": "The confirmation email never arrived in my inbox.",
+      "cosine": 0.22680460581325723,
+      "cosine_in_postgres": 0.2268046005484704,
+      "fts_lexemes_only_in_a": [
+        "didn",
+        "receiv",
+        "verif"
+      ],
+      "fts_lexemes_only_in_b": [
+        "arriv",
+        "confirm",
+        "inbox",
+        "never"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.013678359799087048,
+      "words_only_in_a": [
+        "didn",
+        "receive",
+        "t",
+        "verification"
+      ],
+      "words_only_in_b": [
+        "arriv",
+        "confirmation",
+        "inbox",
+        "never"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "didn",
+        "receive",
+        "t",
+        "verification"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "arriv",
+        "confirmation",
+        "inbox",
+        "never"
+      ]
+    },
+    {
+      "id": "pos-29",
+      "label": "hit",
+      "a": "Can I cancel an order that hasn't shipped yet?",
+      "b": "My order is still processing. Is it possible to cancel it before it ships?",
+      "cosine": 0.3852570642647098,
+      "cosine_in_postgres": 0.38525706529617576,
+      "fts_lexemes_only_in_a": [
+        "hasn",
+        "yet"
+      ],
+      "fts_lexemes_only_in_b": [
+        "possibl",
+        "process",
+        "still"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.033435989171266556,
+      "words_only_in_a": [
+        "hasn",
+        "shipp",
+        "t",
+        "yet"
+      ],
+      "words_only_in_b": [
+        "before",
+        "possible",
+        "process",
+        "ship",
+        "still"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "hasn",
+        "shipp",
+        "t",
+        "yet"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "before",
+        "possible",
+        "process",
+        "ship",
+        "still"
+      ]
+    },
+    {
+      "id": "pos-30",
+      "label": "hit",
+      "a": "How do I update my credit card details?",
+      "b": "My card expired, where do I enter a new one for billing?",
+      "cosine": 0.25910011025251833,
+      "cosine_in_postgres": 0.2591001027017925,
+      "fts_lexemes_only_in_a": [
+        "credit",
+        "detail",
+        "updat"
+      ],
+      "fts_lexemes_only_in_b": [
+        "bill",
+        "enter",
+        "expir",
+        "new",
+        "one"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.01266514789313078,
+      "words_only_in_a": [
+        "credit",
+        "detail",
+        "update"
+      ],
+      "words_only_in_b": [
+        "bill",
+        "enter",
+        "expir",
+        "new",
+        "one"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "credit",
+        "detail",
+        "update"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "enter",
+        "expir",
+        "invoice",
+        "new",
+        "one"
+      ]
+    },
+    {
+      "id": "pos-31",
+      "label": "hit",
+      "a": "Do I have to pay for return shipping?",
+      "b": "Is sending an item back free, or do I cover the postage?",
+      "cosine": 0.047551703980890224,
+      "cosine_in_postgres": 0.047551706433296204,
+      "fts_lexemes_only_in_a": [
+        "pay",
+        "return",
+        "ship"
+      ],
+      "fts_lexemes_only_in_b": [
+        "back",
+        "cover",
+        "free",
+        "item",
+        "postag",
+        "send"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "pay",
+        "return",
+        "shipp"
+      ],
+      "words_only_in_b": [
+        "back",
+        "cover",
+        "free",
+        "item",
+        "postage",
+        "send"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "payment",
+        "return",
+        "shipp"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "back",
+        "cover",
+        "free",
+        "item",
+        "postage",
+        "send"
+      ]
+    },
+    {
+      "id": "pos-32",
+      "label": "hit",
+      "a": "Do you offer a free trial?",
+      "b": "Can I try the product for free before buying?",
+      "cosine": 0.2487341690815455,
+      "cosine_in_postgres": 0.24873419106006622,
+      "fts_lexemes_only_in_a": [
+        "offer",
+        "trial"
+      ],
+      "fts_lexemes_only_in_b": [
+        "buy",
+        "product",
+        "tri"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.017731206491589546,
+      "words_only_in_a": [
+        "offer",
+        "trial"
+      ],
+      "words_only_in_b": [
+        "before",
+        "buy",
+        "product",
+        "try"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "offer",
+        "trial"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "before",
+        "buy",
+        "product",
+        "try"
+      ]
+    },
+    {
+      "id": "pos-33",
+      "label": "hit",
+      "a": "How do I change my username?",
+      "b": "Can I rename my account's username to something else?",
+      "cosine": 0.3843530573929037,
+      "cosine_in_postgres": 0.38435304164886475,
+      "fts_lexemes_only_in_a": [
+        "chang"
+      ],
+      "fts_lexemes_only_in_b": [
+        "account",
+        "els",
+        "renam",
+        "someth"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.021277448162436485,
+      "words_only_in_a": [
+        "change"
+      ],
+      "words_only_in_b": [
+        "account",
+        "else",
+        "rename",
+        "s",
+        "someth"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "update"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "account",
+        "else",
+        "rename",
+        "s",
+        "someth"
+      ]
+    },
+    {
+      "id": "pos-34",
+      "label": "hit",
+      "a": "How can I contact customer support?",
+      "b": "What's the best way to reach a person on your support team?",
+      "cosine": 0.19448665677956453,
+      "cosine_in_postgres": 0.19448665115316832,
+      "fts_lexemes_only_in_a": [
+        "contact",
+        "custom"
+      ],
+      "fts_lexemes_only_in_b": [
+        "best",
+        "person",
+        "reach",
+        "team",
+        "way"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.015198176726698875,
+      "words_only_in_a": [
+        "contact",
+        "customer"
+      ],
+      "words_only_in_b": [
+        "best",
+        "person",
+        "reach",
+        "s",
+        "team",
+        "way"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "contact",
+        "customer"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "best",
+        "person",
+        "reach",
+        "s",
+        "team",
+        "way"
+      ]
+    },
+    {
+      "id": "pos-35",
+      "label": "hit",
+      "a": "How do I connect my Google Calendar?",
+      "b": "Can I sync events from Google Calendar with the app?",
+      "cosine": 0.5542869676919993,
+      "cosine_in_postgres": 0.5542870163917542,
+      "fts_lexemes_only_in_a": [
+        "connect"
+      ],
+      "fts_lexemes_only_in_b": [
+        "app",
+        "event",
+        "sync"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03242277726531029,
+      "words_only_in_a": [
+        "connect"
+      ],
+      "words_only_in_b": [
+        "app",
+        "event",
+        "sync"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "connect"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "app",
+        "event",
+        "sync"
+      ]
+    },
+    {
+      "id": "pos-36",
+      "label": "hit",
+      "a": "What does HTTP error 429 mean when calling your API?",
+      "b": "I keep getting 'too many requests' errors from the API. What's going on?",
+      "cosine": 0.22801182237135212,
+      "cosine_in_postgres": 0.22801183843647965,
+      "fts_lexemes_only_in_a": [
+        "429",
+        "call",
+        "http",
+        "mean"
+      ],
+      "fts_lexemes_only_in_b": [
+        "get",
+        "go",
+        "keep",
+        "mani",
+        "request"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.018816791474819183,
+      "words_only_in_a": [
+        "429",
+        "call",
+        "http",
+        "mean"
+      ],
+      "words_only_in_b": [
+        "gett",
+        "going",
+        "keep",
+        "many",
+        "request",
+        "s",
+        "too"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "429",
+        "call",
+        "http",
+        "mean"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "gett",
+        "going",
+        "keep",
+        "many",
+        "request",
+        "s",
+        "too"
+      ]
+    },
+    {
+      "id": "pos-37",
+      "label": "hit",
+      "a": "What happens to my data if I cancel?",
+      "b": "If I end my subscription, will my files be deleted?",
+      "cosine": 0.1132730943577198,
+      "cosine_in_postgres": 0.11327309161424637,
+      "fts_lexemes_only_in_a": [
+        "cancel",
+        "data",
+        "happen"
+      ],
+      "fts_lexemes_only_in_b": [
+        "delet",
+        "end",
+        "file",
+        "subscript"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "cancel",
+        "data",
+        "happen"
+      ],
+      "words_only_in_b": [
+        "delet",
+        "end",
+        "fil",
+        "subscription"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "cancel",
+        "data",
+        "happen"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "delet",
+        "end",
+        "fil",
+        "subscription"
+      ]
+    },
+    {
+      "id": "pos-38",
+      "label": "hit",
+      "a": "Can I pick up my order in store?",
+      "b": "Is in-store collection available instead of home delivery?",
+      "cosine": 0.29036034315714543,
+      "cosine_in_postgres": 0.2903603699910753,
+      "fts_lexemes_only_in_a": [
+        "order",
+        "pick"
+      ],
+      "fts_lexemes_only_in_b": [
+        "avail",
+        "collect",
+        "deliveri",
+        "home",
+        "instead",
+        "in-stor"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.014474455267190933,
+      "words_only_in_a": [
+        "order",
+        "pick",
+        "up"
+      ],
+      "words_only_in_b": [
+        "available",
+        "collection",
+        "delivery",
+        "home",
+        "instead"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "order",
+        "pick",
+        "up"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "available",
+        "collection",
+        "delivery",
+        "home",
+        "instead"
+      ]
+    },
+    {
+      "id": "pos-39",
+      "label": "hit",
+      "a": "How many users can the Team plan have?",
+      "b": "What's the seat limit on the Team plan?",
+      "cosine": 0.5151274236439295,
+      "cosine_in_postgres": 0.515127420425415,
+      "fts_lexemes_only_in_a": [
+        "mani",
+        "user"
+      ],
+      "fts_lexemes_only_in_b": [
+        "limit",
+        "seat"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.0303963553160429,
+      "words_only_in_a": [
+        "many",
+        "user"
+      ],
+      "words_only_in_b": [
+        "limit",
+        "s",
+        "seat"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "many",
+        "user"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "limit",
+        "s",
+        "seat"
+      ]
+    },
+    {
+      "id": "pos-40",
+      "label": "hit",
+      "a": "How do I log out of all devices?",
+      "b": "Can I sign out of every session at once from my account settings?",
+      "cosine": 0.06600983619844494,
+      "cosine_in_postgres": 0.06600984185934067,
+      "fts_lexemes_only_in_a": [
+        "devic",
+        "log"
+      ],
+      "fts_lexemes_only_in_b": [
+        "account",
+        "everi",
+        "session",
+        "set",
+        "sign"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "all",
+        "devic",
+        "log"
+      ],
+      "words_only_in_b": [
+        "account",
+        "every",
+        "once",
+        "session",
+        "setting",
+        "sign"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "all",
+        "devic",
+        "log"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "account",
+        "every",
+        "once",
+        "session",
+        "setting",
+        "sign"
+      ]
+    },
+    {
+      "id": "pos-41",
+      "label": "hit",
+      "a": "Do you charge VAT on subscriptions?",
+      "b": "Will tax be added on top of my subscription price?",
+      "cosine": 0.323575114464717,
+      "cosine_in_postgres": 0.32357513904571533,
+      "fts_lexemes_only_in_a": [
+        "charg",
+        "vat"
+      ],
+      "fts_lexemes_only_in_b": [
+        "ad",
+        "price",
+        "tax",
+        "top"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.016211388632655144,
+      "words_only_in_a": [
+        "charge",
+        "vat"
+      ],
+      "words_only_in_b": [
+        "add",
+        "price",
+        "tax",
+        "top"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "charge",
+        "vat"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "add",
+        "price",
+        "tax",
+        "top"
+      ]
+    },
+    {
+      "id": "pos-42",
+      "label": "hit",
+      "a": "The dashboard is loading very slowly.",
+      "b": "Your dashboard takes forever to load for me.",
+      "cosine": 0.45749570758920544,
+      "cosine_in_postgres": 0.4574957489967346,
+      "fts_lexemes_only_in_a": [
+        "slowli"
+      ],
+      "fts_lexemes_only_in_b": [
+        "forev",
+        "take"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03546241298317909,
+      "words_only_in_a": [
+        "slowly",
+        "very"
+      ],
+      "words_only_in_b": [
+        "forever",
+        "tak"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "slowly",
+        "very"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "forever",
+        "tak"
+      ]
+    },
+    {
+      "id": "neg-01",
+      "label": "miss",
+      "note": "refund vs cancel",
+      "a": "Can I get a refund for a late order?",
+      "b": "How do I cancel a late order?",
+      "cosine": 0.572351471472339,
+      "cosine_in_postgres": 0.5723514727458799,
+      "fts_lexemes_only_in_a": [
+        "get",
+        "refund"
+      ],
+      "fts_lexemes_only_in_b": [
+        "cancel"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03546241298317909,
+      "words_only_in_a": [
+        "refund"
+      ],
+      "words_only_in_b": [
+        "cancel"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "refund"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "cancel"
+      ]
+    },
+    {
+      "id": "neg-02",
+      "label": "miss",
+      "note": "different plan",
+      "a": "What is the price of the Pro plan?",
+      "b": "What is the price of the Team plan?",
+      "cosine": 0.7283570409307717,
+      "cosine_in_postgres": 0.7283570170402527,
+      "fts_lexemes_only_in_a": [
+        "pro"
+      ],
+      "fts_lexemes_only_in_b": [
+        "team"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "pro"
+      ],
+      "words_only_in_b": [
+        "team"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "pro"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "team"
+      ]
+    },
+    {
+      "id": "neg-03",
+      "label": "miss",
+      "note": "password vs 2FA",
+      "a": "How do I reset my password?",
+      "b": "How do I reset my two-factor authentication?",
+      "cosine": 0.3631365238535045,
+      "cosine_in_postgres": 0.36313655972480774,
+      "fts_lexemes_only_in_a": [
+        "password"
+      ],
+      "fts_lexemes_only_in_b": [
+        "authent",
+        "factor",
+        "two",
+        "two-factor"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.021277448162436485,
+      "words_only_in_a": [
+        "password"
+      ],
+      "words_only_in_b": [
+        "authentication",
+        "factor",
+        "two"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "password"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "2fa"
+      ]
+    },
+    {
+      "id": "neg-04",
+      "label": "miss",
+      "note": "permanent delete vs temporary deactivation",
+      "a": "How do I delete my account?",
+      "b": "How do I temporarily deactivate my account?",
+      "cosine": 0.4093776101606328,
+      "cosine_in_postgres": 0.40937759932146145,
+      "fts_lexemes_only_in_a": [
+        "delet"
+      ],
+      "fts_lexemes_only_in_b": [
+        "deactiv",
+        "temporarili"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.02533029578626156,
+      "words_only_in_a": [
+        "delete"
+      ],
+      "words_only_in_b": [
+        "deactivate",
+        "temporarily"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "delete"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "deactivate",
+        "temporarily"
+      ]
+    },
+    {
+      "id": "neg-05",
+      "label": "miss",
+      "note": "opposite action",
+      "a": "How do I upgrade my plan?",
+      "b": "How do I downgrade my plan?",
+      "cosine": 0.5009794328681195,
+      "cosine_in_postgres": 0.5009794533836516,
+      "fts_lexemes_only_in_a": [
+        "upgrad"
+      ],
+      "fts_lexemes_only_in_b": [
+        "downgrad"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.0303963553160429,
+      "words_only_in_a": [
+        "upgrade"
+      ],
+      "words_only_in_b": [
+        "downgrade"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "upgrade"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "downgrade"
+      ]
+    },
+    {
+      "id": "neg-06",
+      "label": "miss",
+      "note": "monthly vs annual",
+      "a": "Is monthly billing available for the Pro plan?",
+      "b": "Is annual billing available for the Pro plan?",
+      "cosine": 0.7769546554242183,
+      "cosine_in_postgres": 0.7769546045688044,
+      "fts_lexemes_only_in_a": [
+        "month"
+      ],
+      "fts_lexemes_only_in_b": [
+        "annual"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "monthly"
+      ],
+      "words_only_in_b": [
+        "annual"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "monthly"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "annual"
+      ]
+    },
+    {
+      "id": "neg-07",
+      "label": "miss",
+      "note": "export vs import",
+      "a": "How do I export my contacts to a CSV file?",
+      "b": "How do I import my contacts from a CSV file?",
+      "cosine": 0.8160720960636174,
+      "cosine_in_postgres": 0.8160720114729412,
+      "fts_lexemes_only_in_a": [
+        "export"
+      ],
+      "fts_lexemes_only_in_b": [
+        "import"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.045594532042741776,
+      "words_only_in_a": [
+        "export"
+      ],
+      "words_only_in_b": [
+        "import"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "export"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "import"
+      ]
+    },
+    {
+      "id": "neg-08",
+      "label": "miss",
+      "note": "opposite action",
+      "a": "How do I add a member to my team?",
+      "b": "How do I remove a member from my team?",
+      "cosine": 0.6667948594698256,
+      "cosine_in_postgres": 0.6667948961257935,
+      "fts_lexemes_only_in_a": [
+        "add"
+      ],
+      "fts_lexemes_only_in_b": [
+        "remov"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "add"
+      ],
+      "words_only_in_b": [
+        "remove"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "add"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "delete"
+      ]
+    },
+    {
+      "id": "neg-09",
+      "label": "miss",
+      "note": "destination vs origin",
+      "a": "Do you ship to Canada?",
+      "b": "Do you ship from Canada?",
+      "cosine": 1,
+      "cosine_in_postgres": 1,
+      "fts_lexemes_only_in_a": [],
+      "fts_lexemes_only_in_b": [],
+      "fts_each_contains_all_words_of_the_other": true,
+      "fts_rank_any_word": 0.0607927106320858,
+      "words_only_in_a": null,
+      "words_only_in_b": null,
+      "words_only_in_a_with_synonyms": null,
+      "words_only_in_b_with_synonyms": null
+    },
+    {
+      "id": "neg-10",
+      "label": "miss",
+      "note": "cancel vs pause",
+      "a": "How do I cancel my subscription?",
+      "b": "How do I pause my subscription?",
+      "cosine": 0.6416236526819377,
+      "cosine_in_postgres": 0.6416236162185669,
+      "fts_lexemes_only_in_a": [
+        "cancel"
+      ],
+      "fts_lexemes_only_in_b": [
+        "paus"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.0303963553160429,
+      "words_only_in_a": [
+        "cancel"
+      ],
+      "words_only_in_b": [
+        "pause"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "cancel"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "pause"
+      ]
+    },
+    {
+      "id": "neg-11",
+      "label": "miss",
+      "note": "different process",
+      "a": "How long does a refund take?",
+      "b": "How long does shipping take?",
+      "cosine": 0.6,
+      "cosine_in_postgres": 0.6000000178813953,
+      "fts_lexemes_only_in_a": [
+        "refund"
+      ],
+      "fts_lexemes_only_in_b": [
+        "ship"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "refund"
+      ],
+      "words_only_in_b": [
+        "shipp"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "refund"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "shipp"
+      ]
+    },
+    {
+      "id": "neg-12",
+      "label": "miss",
+      "note": "opposite action",
+      "a": "How do I enable two-factor authentication?",
+      "b": "How do I disable two-factor authentication?",
+      "cosine": 0.8457654219322105,
+      "cosine_in_postgres": 0.8457654714584351,
+      "fts_lexemes_only_in_a": [
+        "enabl"
+      ],
+      "fts_lexemes_only_in_b": [
+        "disabl"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "enable"
+      ],
+      "words_only_in_b": [
+        "disable"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "enable"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "disable"
+      ]
+    },
+    {
+      "id": "neg-13",
+      "label": "miss",
+      "note": "rotate (replace) vs revoke (invalidate)",
+      "a": "How do I rotate my API key?",
+      "b": "How do I revoke my API key?",
+      "cosine": 0.625,
+      "cosine_in_postgres": 0.625,
+      "fts_lexemes_only_in_a": [
+        "rotat"
+      ],
+      "fts_lexemes_only_in_b": [
+        "revok"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "rotate"
+      ],
+      "words_only_in_b": [
+        "revoke"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "rotate"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "revoke"
+      ]
+    },
+    {
+      "id": "neg-14",
+      "label": "miss",
+      "note": "past document vs future date",
+      "a": "Where can I find last month's invoice?",
+      "b": "When will next month's invoice be issued?",
+      "cosine": 0.5657789512801619,
+      "cosine_in_postgres": 0.5657789707183838,
+      "fts_lexemes_only_in_a": [
+        "find",
+        "last"
+      ],
+      "fts_lexemes_only_in_b": [
+        "issu",
+        "next"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.0303963553160429,
+      "words_only_in_a": [
+        "find",
+        "last"
+      ],
+      "words_only_in_b": [
+        "issu",
+        "next"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "find",
+        "last"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "issu",
+        "next"
+      ]
+    },
+    {
+      "id": "neg-15",
+      "label": "miss",
+      "note": "order status vs company location",
+      "a": "Where is my order?",
+      "b": "Where is your warehouse located?",
+      "cosine": 0,
+      "cosine_in_postgres": 0,
+      "fts_lexemes_only_in_a": [
+        "order"
+      ],
+      "fts_lexemes_only_in_b": [
+        "locat",
+        "warehous"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0,
+      "words_only_in_a": [
+        "order"
+      ],
+      "words_only_in_b": [
+        "locat",
+        "warehouse"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "order"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "locat",
+        "warehouse"
+      ]
+    },
+    {
+      "id": "neg-16",
+      "label": "miss",
+      "note": "different address",
+      "a": "How do I change my shipping address?",
+      "b": "How do I change my billing address?",
+      "cosine": 0.7253235664820743,
+      "cosine_in_postgres": 0.7253236174583435,
+      "fts_lexemes_only_in_a": [
+        "ship"
+      ],
+      "fts_lexemes_only_in_b": [
+        "bill"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "shipp"
+      ],
+      "words_only_in_b": [
+        "bill"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "shipp"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "invoice"
+      ]
+    },
+    {
+      "id": "neg-17",
+      "label": "miss",
+      "note": "different plan",
+      "a": "Does the Pro plan include a free trial?",
+      "b": "Does the Team plan include a free trial?",
+      "cosine": 0.8289563383053072,
+      "cosine_in_postgres": 0.8289563655853271,
+      "fts_lexemes_only_in_a": [
+        "pro"
+      ],
+      "fts_lexemes_only_in_b": [
+        "team"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "pro"
+      ],
+      "words_only_in_b": [
+        "team"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "pro"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "team"
+      ]
+    },
+    {
+      "id": "neg-18",
+      "label": "miss",
+      "note": "different language",
+      "a": "How do I install the Python SDK?",
+      "b": "How do I install the Node.js SDK?",
+      "cosine": 0.6362847612838861,
+      "cosine_in_postgres": 0.6362847089767456,
+      "fts_lexemes_only_in_a": [
+        "python"
+      ],
+      "fts_lexemes_only_in_b": [
+        "node.js"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "python"
+      ],
+      "words_only_in_b": [
+        "js",
+        "node"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "python"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "js",
+        "node"
+      ]
+    },
+    {
+      "id": "neg-19",
+      "label": "miss",
+      "note": "unauthorized vs rate limited",
+      "a": "What does API error 401 mean?",
+      "b": "What does API error 429 mean?",
+      "cosine": 0.76770017099908,
+      "cosine_in_postgres": 0.7677002181917497,
+      "fts_lexemes_only_in_a": [
+        "401"
+      ],
+      "fts_lexemes_only_in_b": [
+        "429"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.045594532042741776,
+      "words_only_in_a": [
+        "401"
+      ],
+      "words_only_in_b": [
+        "429"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "401"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "429"
+      ]
+    },
+    {
+      "id": "neg-20",
+      "label": "miss",
+      "note": "return vs exchange",
+      "a": "Can I return an item after 30 days?",
+      "b": "Can I exchange an item after 30 days?",
+      "cosine": 0.6812012072035459,
+      "cosine_in_postgres": 0.6812012601614762,
+      "fts_lexemes_only_in_a": [
+        "return"
+      ],
+      "fts_lexemes_only_in_b": [
+        "exchang"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.045594532042741776,
+      "words_only_in_a": [
+        "return"
+      ],
+      "words_only_in_b": [
+        "exchange"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "return"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "exchange"
+      ]
+    },
+    {
+      "id": "neg-21",
+      "label": "miss",
+      "note": "address vs notifications",
+      "a": "How do I change my email address?",
+      "b": "How do I change my email notification settings?",
+      "cosine": 0.5059924592267421,
+      "cosine_in_postgres": 0.5059924427266393,
+      "fts_lexemes_only_in_a": [
+        "address"
+      ],
+      "fts_lexemes_only_in_b": [
+        "notif",
+        "set"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03546241298317909,
+      "words_only_in_a": [
+        "address"
+      ],
+      "words_only_in_b": [
+        "notification",
+        "setting"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "address"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "notification",
+        "setting"
+      ]
+    },
+    {
+      "id": "neg-22",
+      "label": "miss",
+      "note": "storage vs charge",
+      "a": "Do you store my credit card number?",
+      "b": "Why was my credit card charged?",
+      "cosine": 0.518978134241764,
+      "cosine_in_postgres": 0.5189781188964844,
+      "fts_lexemes_only_in_a": [
+        "number",
+        "store"
+      ],
+      "fts_lexemes_only_in_b": [
+        "charg"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03546241298317909,
+      "words_only_in_a": [
+        "number",
+        "store"
+      ],
+      "words_only_in_b": [
+        "charg"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "number",
+        "store"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "charg"
+      ]
+    },
+    {
+      "id": "neg-23",
+      "label": "miss",
+      "note": "different platform, different steps",
+      "a": "How do I turn on dark mode in the mobile app?",
+      "b": "How do I turn on dark mode in the desktop app?",
+      "cosine": 0.7590721152765898,
+      "cosine_in_postgres": 0.7590721845626831,
+      "fts_lexemes_only_in_a": [
+        "mobil"
+      ],
+      "fts_lexemes_only_in_b": [
+        "desktop"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "mobile"
+      ],
+      "words_only_in_b": [
+        "desktop"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "mobile"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "desktop"
+      ]
+    },
+    {
+      "id": "neg-24",
+      "label": "miss",
+      "note": "opposite action",
+      "a": "How do I add a new payment method?",
+      "b": "How do I remove a payment method?",
+      "cosine": 0.6363636358920072,
+      "cosine_in_postgres": 0.6363636255264282,
+      "fts_lexemes_only_in_a": [
+        "add",
+        "new"
+      ],
+      "fts_lexemes_only_in_b": [
+        "remov"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03546241298317909,
+      "words_only_in_a": [
+        "add",
+        "new"
+      ],
+      "words_only_in_b": [
+        "remove"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "add",
+        "new"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "delete"
+      ]
+    },
+    {
+      "id": "neg-25",
+      "label": "miss",
+      "note": "document currency vs payment currency",
+      "a": "Can I get my invoices in euros?",
+      "b": "Can I pay my invoices in euros?",
+      "cosine": 0.75,
+      "cosine_in_postgres": 0.7500000223517428,
+      "fts_lexemes_only_in_a": [
+        "get"
+      ],
+      "fts_lexemes_only_in_b": [
+        "pay"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": null,
+      "words_only_in_b": [
+        "pay"
+      ],
+      "words_only_in_a_with_synonyms": null,
+      "words_only_in_b_with_synonyms": [
+        "payment"
+      ]
+    },
+    {
+      "id": "neg-26",
+      "label": "miss",
+      "note": "per file vs per account",
+      "a": "What's the maximum file upload size?",
+      "b": "What's the maximum storage per account?",
+      "cosine": 0.21248647105037036,
+      "cosine_in_postgres": 0.21248647347012006,
+      "fts_lexemes_only_in_a": [
+        "file",
+        "size",
+        "upload"
+      ],
+      "fts_lexemes_only_in_b": [
+        "account",
+        "per",
+        "storag"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.01519817765802145,
+      "words_only_in_a": [
+        "file",
+        "size",
+        "upload"
+      ],
+      "words_only_in_b": [
+        "account",
+        "per",
+        "storage"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "file",
+        "size",
+        "upload"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "account",
+        "per",
+        "storage"
+      ]
+    },
+    {
+      "id": "neg-27",
+      "label": "miss",
+      "note": "external vs internal sharing",
+      "a": "How do I share a dashboard with someone outside my company?",
+      "b": "How do I share a dashboard with someone inside my company?",
+      "cosine": 0.8581163303210331,
+      "cosine_in_postgres": 0.8581164394686499,
+      "fts_lexemes_only_in_a": [
+        "outsid"
+      ],
+      "fts_lexemes_only_in_b": [
+        "insid"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "outside"
+      ],
+      "words_only_in_b": [
+        "inside"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "outside"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "inside"
+      ]
+    },
+    {
+      "id": "neg-28",
+      "label": "miss",
+      "note": "different problem",
+      "a": "Why was my order cancelled?",
+      "b": "Why was my order delayed?",
+      "cosine": 0.5222329678670935,
+      "cosine_in_postgres": 0.5222330093383789,
+      "fts_lexemes_only_in_a": [
+        "cancel"
+      ],
+      "fts_lexemes_only_in_b": [
+        "delay"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.0303963553160429,
+      "words_only_in_a": [
+        "cancell"
+      ],
+      "words_only_in_b": [
+        "delay"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "cancell"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "delay"
+      ]
+    },
+    {
+      "id": "neg-29",
+      "label": "miss",
+      "note": "plan change vs refund",
+      "a": "Can I change my plan in the middle of a billing cycle?",
+      "b": "Can I get a refund in the middle of a billing cycle?",
+      "cosine": 0.6025367084877574,
+      "cosine_in_postgres": 0.6025366424002275,
+      "fts_lexemes_only_in_a": [
+        "chang",
+        "plan"
+      ],
+      "fts_lexemes_only_in_b": [
+        "get",
+        "refund"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03647562488913536,
+      "words_only_in_a": [
+        "change",
+        "plan"
+      ],
+      "words_only_in_b": [
+        "refund"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "plan",
+        "update"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "refund"
+      ]
+    },
+    {
+      "id": "neg-30",
+      "label": "miss",
+      "note": "different eligibility",
+      "a": "Do you offer student discounts?",
+      "b": "Do you offer nonprofit discounts?",
+      "cosine": 0.6495924548932419,
+      "cosine_in_postgres": 0.6495924785611775,
+      "fts_lexemes_only_in_a": [
+        "student"
+      ],
+      "fts_lexemes_only_in_b": [
+        "nonprofit"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "student"
+      ],
+      "words_only_in_b": [
+        "nonprofit"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "student"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "nonprofit"
+      ]
+    },
+    {
+      "id": "neg-31",
+      "label": "miss",
+      "note": "opposite action",
+      "a": "How do I connect Slack to my workspace?",
+      "b": "How do I disconnect Slack from my workspace?",
+      "cosine": 0.8123623944599232,
+      "cosine_in_postgres": 0.8123624324798584,
+      "fts_lexemes_only_in_a": [
+        "connect"
+      ],
+      "fts_lexemes_only_in_b": [
+        "disconnect"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "connect"
+      ],
+      "words_only_in_b": [
+        "disconnect"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "connect"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "disconnect"
+      ]
+    },
+    {
+      "id": "neg-32",
+      "label": "miss",
+      "note": "different plan",
+      "a": "What is the API rate limit on the free plan?",
+      "b": "What is the API rate limit on the enterprise plan?",
+      "cosine": 0.746003846592251,
+      "cosine_in_postgres": 0.7460038884283274,
+      "fts_lexemes_only_in_a": [
+        "free"
+      ],
+      "fts_lexemes_only_in_b": [
+        "enterpris"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "free"
+      ],
+      "words_only_in_b": [
+        "enterprise"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "free"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "enterprise"
+      ]
+    },
+    {
+      "id": "neg-33",
+      "label": "miss",
+      "note": "keys vs requests",
+      "a": "Is there a limit on API keys per account?",
+      "b": "Is there a limit on API requests per account?",
+      "cosine": 0.827586200149592,
+      "cosine_in_postgres": 0.8275862438925374,
+      "fts_lexemes_only_in_a": [
+        "key"
+      ],
+      "fts_lexemes_only_in_b": [
+        "request"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "key"
+      ],
+      "words_only_in_b": [
+        "request"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "key"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "request"
+      ]
+    },
+    {
+      "id": "neg-34",
+      "label": "miss",
+      "note": "restore vs destroy",
+      "a": "How do I recover a deleted file?",
+      "b": "How do I permanently delete a file?",
+      "cosine": 0.44074127735352675,
+      "cosine_in_postgres": 0.4407412541133542,
+      "fts_lexemes_only_in_a": [
+        "recov"
+      ],
+      "fts_lexemes_only_in_b": [
+        "perman"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "delet",
+        "recover"
+      ],
+      "words_only_in_b": [
+        "delete",
+        "permanently"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "delet",
+        "recover"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "delete",
+        "permanently"
+      ]
+    },
+    {
+      "id": "neg-35",
+      "label": "miss",
+      "note": "return shipment vs outbound order",
+      "a": "Can I track my return?",
+      "b": "Can I track my order?",
+      "cosine": 0.4103913408340617,
+      "cosine_in_postgres": 0.41039134294960944,
+      "fts_lexemes_only_in_a": [
+        "return"
+      ],
+      "fts_lexemes_only_in_b": [
+        "order"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.0303963553160429,
+      "words_only_in_a": [
+        "return"
+      ],
+      "words_only_in_b": [
+        "order"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "return"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "order"
+      ]
+    },
+    {
+      "id": "neg-36",
+      "label": "miss",
+      "note": "different channel",
+      "a": "How do I verify my email address?",
+      "b": "How do I verify my phone number?",
+      "cosine": 0.35136418446315326,
+      "cosine_in_postgres": 0.35136418648744805,
+      "fts_lexemes_only_in_a": [
+        "address",
+        "email"
+      ],
+      "fts_lexemes_only_in_b": [
+        "number",
+        "phone"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.020264236256480217,
+      "words_only_in_a": [
+        "address",
+        "email"
+      ],
+      "words_only_in_b": [
+        "number",
+        "phone"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "address",
+        "email"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "number",
+        "phone"
+      ]
+    },
+    {
+      "id": "neg-37",
+      "label": "miss",
+      "note": "different platform, different fix",
+      "a": "The app crashes on my Android phone.",
+      "b": "The app crashes on my iPhone.",
+      "cosine": 0.6812012094229561,
+      "cosine_in_postgres": 0.6812012005568266,
+      "fts_lexemes_only_in_a": [
+        "android",
+        "phone"
+      ],
+      "fts_lexemes_only_in_b": [
+        "iphon"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.03546241298317909,
+      "words_only_in_a": [
+        "android",
+        "phone"
+      ],
+      "words_only_in_b": [
+        "iphone"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "android",
+        "phone"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "iphone"
+      ]
+    },
+    {
+      "id": "neg-38",
+      "label": "miss",
+      "note": "opposite action",
+      "a": "How do I turn on notifications for new messages?",
+      "b": "How do I mute notifications for new messages?",
+      "cosine": 0.8051175601825399,
+      "cosine_in_postgres": 0.8051176071166992,
+      "fts_lexemes_only_in_a": [
+        "turn"
+      ],
+      "fts_lexemes_only_in_b": [
+        "mute"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.045594532042741776,
+      "words_only_in_a": [
+        "turn"
+      ],
+      "words_only_in_b": [
+        "mute"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "enable"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "mute"
+      ]
+    },
+    {
+      "id": "neg-39",
+      "label": "miss",
+      "note": "different refund method",
+      "a": "Can I get a refund to a different card?",
+      "b": "Can I get a refund as store credit?",
+      "cosine": 0.5128776445321725,
+      "cosine_in_postgres": 0.5128775987886669,
+      "fts_lexemes_only_in_a": [
+        "card",
+        "differ"
+      ],
+      "fts_lexemes_only_in_b": [
+        "credit",
+        "store"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.0303963553160429,
+      "words_only_in_a": [
+        "card",
+        "different"
+      ],
+      "words_only_in_b": [
+        "credit",
+        "store"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "card",
+        "different"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "credit",
+        "store"
+      ]
+    },
+    {
+      "id": "neg-40",
+      "label": "miss",
+      "note": "sign in vs unlink",
+      "a": "How do I log in with my Google account?",
+      "b": "How do I unlink my Google account?",
+      "cosine": 0.6678230711206283,
+      "cosine_in_postgres": 0.6678231358528137,
+      "fts_lexemes_only_in_a": [
+        "log"
+      ],
+      "fts_lexemes_only_in_b": [
+        "unlink"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.040528472512960434,
+      "words_only_in_a": [
+        "log"
+      ],
+      "words_only_in_b": [
+        "unlink"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "log"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "unlink"
+      ]
+    },
+    {
+      "id": "neg-41",
+      "label": "miss",
+      "note": "different billing unit",
+      "a": "Is the Team plan billed per user?",
+      "b": "Is the Team plan billed per workspace?",
+      "cosine": 0.8314109909165449,
+      "cosine_in_postgres": 0.8314109545105142,
+      "fts_lexemes_only_in_a": [
+        "user"
+      ],
+      "fts_lexemes_only_in_b": [
+        "workspac"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.04863416776061058,
+      "words_only_in_a": [
+        "user"
+      ],
+      "words_only_in_b": [
+        "workspace"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "user"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "workspace"
+      ]
+    },
+    {
+      "id": "neg-42",
+      "label": "miss",
+      "note": "retention after cancellation vs backup retention",
+      "a": "How long do you keep my data after I cancel?",
+      "b": "How long do you keep backups of my data?",
+      "cosine": 0.6985006985010478,
+      "cosine_in_postgres": 0.6985007136613346,
+      "fts_lexemes_only_in_a": [
+        "cancel"
+      ],
+      "fts_lexemes_only_in_b": [
+        "backup"
+      ],
+      "fts_each_contains_all_words_of_the_other": false,
+      "fts_rank_any_word": 0.045594532042741776,
+      "words_only_in_a": [
+        "after",
+        "cancel"
+      ],
+      "words_only_in_b": [
+        "backup"
+      ],
+      "words_only_in_a_with_synonyms": [
+        "after",
+        "cancel"
+      ],
+      "words_only_in_b_with_synonyms": [
+        "backup"
+      ]
+    }
+  ],
+  "caveats": [
+    "Both embedding sources here are bag-of-words (feature hashing of words). Two texts are close only when they share words, which is exactly what a keyword check also looks at. A keyword check therefore adds less new information on top of a real embedding model than it appears to add here, and a real model scores look-alikes much closer to paraphrases than these do. Treat the numbers as an upper bound for the benefit, not a measurement of it.",
+    "Tiny, hand-written dataset: 84 pairs (42 should share, 42 should not). A single pair moves a rate by about 2 percentage points; there is no held-out set and no confidence interval.",
+    "The dataset was built so that every should-not-share pair is the SAME sentence with one concept swapped, and every should-share pair is a reworded sentence. A rule that looks for 'same sentence, one word different' is therefore close to the dataset's own definition. Real look-alikes are not always one swapped word, and real paraphrases are sometimes one swapped word ('stop' for 'cancel').",
+    "The synonym list was written after reading the paraphrase pairs, so the 'with synonym list' rows are optimistic. The 'no synonyms' rows show how many true paraphrases the rule would hurt without that help. The ts_rank cut-off rows are tuned on the same pairs and are an upper bound.",
+    "The keyword check cannot see stopwords, so 'ship to Canada' vs 'ship from Canada' passes it. It also cannot catch a look-alike whose difference is a number or a word the stemmer maps to a synonym."
+  ]
+}

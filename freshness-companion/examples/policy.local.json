@@ -1,0 +1,47 @@
+{
+  "_comment": "Freshness policy for the Bifrost freshness companion demo. Durations use Go syntax (5m, 1h, 24h). on_unverifiable: bypass | serve_with_warning. on_unknown: auto | revalidate | serve_with_warning | bypass. Keywords ignore case and match on word boundaries; a trailing * matches any word ending.",
+  "version": 1,
+  "defaults": {
+    "max_age": "15m",
+    "on_unverifiable": "bypass",
+    "on_unknown": "auto"
+  },
+  "categories": [
+    {
+      "name": "price",
+      "keywords": ["price", "prices", "pricing", "cost", "costs", "how much", "fee", "fees", "per month", "per year", "subscription", "plan"],
+      "max_age": "10m",
+      "on_unverifiable": "bypass"
+    },
+    {
+      "name": "policy",
+      "keywords": ["policy", "policies", "refund*", "return policy", "terms", "warranty", "cancellation"],
+      "max_age": "24h",
+      "on_unverifiable": "serve_with_warning"
+    },
+    {
+      "name": "schedule",
+      "keywords": ["schedule", "opening hours", "open today", "deadline", "timetable", "release date", "when does", "when is"],
+      "max_age": "1h",
+      "on_unverifiable": "serve_with_warning"
+    },
+    {
+      "name": "availability",
+      "keywords": ["availability", "available", "in stock", "out of stock", "sold out", "backorder"],
+      "max_age": "5m",
+      "on_unverifiable": "bypass"
+    }
+  ],
+  "facts": [
+    {
+      "_comment": "Replace source_url with the GitHub Pages URL of demo-page/index.html (or http://127.0.0.1:8000/ with go run ./cmd/demoserver and -provider direct). source_pattern targets the sentence in #pro-plan-price; answer_pattern takes a monthly dollar amount from the cached answer.",
+      "name": "Acme Pro plan price",
+      "category": "price",
+      "keywords": ["pro"],
+      "source_url": "http://127.0.0.1:8000/",
+      "source_pattern": "Acme Pro plan[^$0-9]{0,20}\\$\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*per month",
+      "answer_pattern": "(?i)\\$\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*(?:/\\s*mo(?:nth)?|per\\s+month|a\\s+month|monthly)\\b",
+      "compare": "numeric"
+    }
+  ]
+}

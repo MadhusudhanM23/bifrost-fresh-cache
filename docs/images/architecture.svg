@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="560" viewBox="0 0 1180 560" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6472"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#15803d"/>
+    </marker>
+  </defs>
+
+  <rect width="1180" height="560" rx="14" fill="#f8fafc"/>
+
+  <!-- title -->
+  <text x="30" y="40" font-size="20" font-weight="700" fill="#0f172a">How a question travels through Bifrost Fresh Cache</text>
+  <text x="30" y="62" font-size="13" fill="#475569">Blue: the new pgvector backend inside Bifrost (upstream contribution). Green: the freshness companion (hackathon app) and the Tavily evidence it uses.</text>
+
+  <!-- your app -->
+  <rect x="30" y="200" width="150" height="90" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="105" y="238" font-size="15" font-weight="600" fill="#0f172a" text-anchor="middle">Your AI app</text>
+  <text x="105" y="260" font-size="12" fill="#475569" text-anchor="middle">OpenAI-style request</text>
+  <text x="105" y="276" font-size="12" fill="#475569" text-anchor="middle">x-bf-cache-key: tenant</text>
+
+  <!-- companion -->
+  <rect x="226" y="150" width="268" height="190" rx="12" fill="#f0fdf4" stroke="#15803d" stroke-width="2"/>
+  <text x="360" y="180" font-size="16" font-weight="700" fill="#14532d" text-anchor="middle">Freshness companion</text>
+  <text x="360" y="198" font-size="12" fill="#166534" text-anchor="middle">a proxy in front of Bifrost, Go, stdlib only</text>
+  <text x="242" y="226" font-size="12" fill="#14532d">1. Guard: tool data, secrets, PII never cached</text>
+  <text x="242" y="246" font-size="12" fill="#14532d">2. Gate: risky look-alike hit? re-ask first</text>
+  <text x="242" y="266" font-size="12" fill="#14532d">3. Freshness: is the price / policy still true?</text>
+  <text x="242" y="286" font-size="12" fill="#14532d">4. Stampede: one refresh shared by everyone</text>
+  <text x="242" y="306" font-size="12" fill="#14532d">5. Audit, then explain every decision</text>
+  <text x="242" y="326" font-size="12" fill="#14532d">x-freshness-* headers on every reply</text>
+
+  <!-- bifrost -->
+  <rect x="560" y="150" width="300" height="190" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="710" y="180" font-size="16" font-weight="700" fill="#1e3a8a" text-anchor="middle">Bifrost gateway (stock)</text>
+  <text x="710" y="198" font-size="12" fill="#1e40af" text-anchor="middle">github.com/maximhq/bifrost</text>
+  <rect x="580" y="212" width="260" height="46" rx="8" fill="#ffffff" stroke="#93c5fd"/>
+  <text x="710" y="232" font-size="13" font-weight="600" fill="#1e3a8a" text-anchor="middle">Semantic cache plugin</text>
+  <text x="710" y="249" font-size="11.5" fill="#1e40af" text-anchor="middle">exact hash lookup, then cosine search (threshold 0.8)</text>
+  <rect x="580" y="268" width="260" height="58" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="710" y="289" font-size="13" font-weight="700" fill="#1e3a8a" text-anchor="middle">NEW: pgvector VectorStore</text>
+  <text x="710" y="306" font-size="11.5" fill="#1e40af" text-anchor="middle">13 interface methods, binary vectors, HNSW +</text>
+  <text x="710" y="320" font-size="11.5" fill="#1e40af" text-anchor="middle">iterative scan, tenant filter, row-level security</text>
+
+  <!-- postgres -->
+  <rect x="930" y="170" width="220" height="150" rx="12" fill="#ffffff" stroke="#2563eb" stroke-width="2"/>
+  <text x="1040" y="200" font-size="16" font-weight="700" fill="#1e3a8a" text-anchor="middle">PostgreSQL 16</text>
+  <text x="1040" y="220" font-size="13" fill="#1e40af" text-anchor="middle">+ pgvector 0.8</text>
+  <text x="1040" y="250" font-size="12" fill="#334155" text-anchor="middle">one table per namespace</text>
+  <text x="1040" y="268" font-size="11" fill="#334155" text-anchor="middle">id, embedding vector(d), metadata jsonb</text>
+  <text x="1040" y="294" font-size="12" fill="#334155" text-anchor="middle">plain-SQL views: sql/cache_insights</text>
+
+  <!-- model -->
+  <rect x="560" y="420" width="300" height="90" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="710" y="452" font-size="15" font-weight="600" fill="#0f172a" text-anchor="middle">AI model provider</text>
+  <text x="710" y="472" font-size="12" fill="#475569" text-anchor="middle">local mock (default, no key needed)</text>
+  <text x="710" y="490" font-size="12" fill="#475569" text-anchor="middle">or Groq / OpenRouter / xAI through Bifrost</text>
+
+  <!-- tavily -->
+  <rect x="226" y="420" width="268" height="90" rx="12" fill="#f0fdf4" stroke="#15803d" stroke-width="2"/>
+  <text x="360" y="452" font-size="15" font-weight="700" fill="#14532d" text-anchor="middle">Tavily Extract</text>
+  <text x="360" y="472" font-size="12" fill="#166534" text-anchor="middle">reads the live source page</text>
+  <text x="360" y="490" font-size="11" fill="#166534" text-anchor="middle">only the page URL is sent, never prompts or answers</text>
+
+  <!-- dashboard -->
+  <rect x="930" y="420" width="220" height="90" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="1040" y="452" font-size="15" font-weight="600" fill="#0f172a" text-anchor="middle">Dashboard</text>
+  <text x="1040" y="472" font-size="12" fill="#475569" text-anchor="middle">plain-words view of what was</text>
+  <text x="1040" y="490" font-size="12" fill="#475569" text-anchor="middle">saved, stopped and let through</text>
+
+  <!-- arrows -->
+  <line x1="180" y1="245" x2="224" y2="245" stroke="#5b6472" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="494" y1="245" x2="558" y2="245" stroke="#5b6472" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="524" y="236" font-size="11" fill="#475569" text-anchor="middle">HTTP</text>
+  <line x1="860" y1="297" x2="928" y2="297" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <text x="894" y="288" font-size="11" fill="#1e40af" text-anchor="middle">pgx, binary</text>
+  <line x1="710" y1="340" x2="710" y2="418" stroke="#5b6472" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="722" y="384" font-size="11" fill="#475569">on a miss</text>
+  <line x1="360" y1="340" x2="360" y2="418" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="377" y="384" font-size="11" fill="#166534">is it still true?</text>
+  <path d="M 494 300 C 540 360, 900 380, 1040 418" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="820" y="388" font-size="11" fill="#64748b">decision + audit logs</text>
+
+  <!-- footer -->
+  <text x="30" y="545" font-size="12" fill="#64748b">Everything runs from source with one command: docker compose up --build. Ports: companion 8090, Bifrost 18090, demo page 8091, Postgres 5434, dashboard 8095.</text>
+</svg>

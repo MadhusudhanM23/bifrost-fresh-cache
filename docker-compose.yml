@@ -1,0 +1,135 @@
+# Fixed project name: containers are always "hackathon-workspace-<service>-1",
+# whatever the folder is called (sql/*.ps1 and sql/*.sh use those names).
+name: hackathon-workspace
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: bifrost
+      POSTGRES_PASSWORD: bifrost_password
+      POSTGRES_DB: bifrost
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bifrost -d bifrost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "5434:5432" # host access only; services talk to each other as "postgres:5432"
+
+  mock-openai:
+    build:
+      context: ./tools/mock-openai
+      dockerfile: ../../docker/mock-openai.Dockerfile
+    environment:
+      # Same-meaning questions get identical answers and look-alikes get different
+      # ones, so the dashboard's wrong-match audit has something real to measure.
+      MOCK_OPENAI_KNOWLEDGE: /knowledge.json
+    volumes:
+      - ./docker/mock-knowledge.json:/knowledge.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:18080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "18080:18080"
+
+  bifrost:
+    build:
+      context: ./bifrost
+      dockerfile: ../docker/bifrost.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mock-openai:
+        condition: service_healthy
+    volumes:
+      - ./docker/bifrost-config.json:/app-data/config.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    ports:
+      - "18090:8080"
+
+  demoserver:
+    build:
+      context: ./freshness-companion
+      dockerfile: ../docker/freshness-companion.Dockerfile
+    command: ["/usr/local/bin/demoserver", "-dir", "/demo-page", "-addr", "0.0.0.0:8000"]
+    volumes:
+      # Bind mount (not baked into the image) so editing demo-page/index.html on the
+      # host -- the exact "edit the price, re-ask" step of the proven manual demo --
+      # is reflected immediately; demoserver already serves with Cache-Control: no-store.
+      - ./freshness-companion/demo-page:/demo-page
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "8091:8000"
+
+  freshness-companion:
+    build:
+      context: ./freshness-companion
+      dockerfile: ../docker/freshness-companion.Dockerfile
+    command:
+      - "/usr/local/bin/freshness-companion"
+      - "-listen=:8090"
+      - "-bifrost=http://bifrost:8080"
+      - "-policy=/app/policy.json"
+      # DirectFetch provider: a plain HTTP GET of the configured source_url. Works
+      # fully offline, no API key needed -- the default for this compose stack.
+      #
+      # To switch to real Tavily evidence instead:
+      #   1. set TAVILY_API_KEY in a .env file next to this compose file (or export
+      #      it in your shell before `docker compose up`),
+      #   2. change "-provider=direct" below to "-provider=tavily_extract",
+      #   3. change docker/policy.json's fact "source_url" to a page Tavily can
+      #      reach from the public internet (Tavily cannot fetch http://demoserver:8000/
+      #      or any other address private to this compose network -- publish
+      #      freshness-companion/demo-page/index.html somewhere public, e.g. GitHub
+      #      Pages, and point source_url at that).
+      - "-provider=direct"
+      - "-evidence-ttl=5s"
+      # Wrong-match audit: ask the model again for every semantic hit (the demo's
+      # traffic is small and the model is a mock, so auditing everything is free).
+      # On a real model keep -audit-rate low and rely on -audit-near-margin.
+      - "-audit-rate=1"
+      - "-audit-near-margin=0.05"
+      - "-audit-max-per-minute=120"
+      # Pre-serve gate: a semantic hit scoring below 0.90 (the risky band just
+      # above Bifrost's 0.80 threshold, where look-alike and planted entries
+      # match) is checked against a fresh answer BEFORE it is served; a wrong
+      # one is removed and replaced. Hits at 0.90+ are still audited afterwards.
+      - "-verify-below=0.90"
+      # Verified answers: human-approved answers served directly (exact wording only).
+      - "-verified=/app/verified.json"
+    environment:
+      TAVILY_API_KEY: "${TAVILY_API_KEY:-}"
+    depends_on:
+      bifrost:
+        condition: service_healthy
+      demoserver:
+        condition: service_healthy
+    volumes:
+      - ./docker/policy.json:/app/policy.json:ro
+      - ./docker/verified.json:/app/verified.json:ro
+      - companion-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8090/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "8090:8090"
+
+volumes:
+  pgdata:
+  companion-data:

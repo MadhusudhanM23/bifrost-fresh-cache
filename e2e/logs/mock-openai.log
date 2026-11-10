@@ -1,0 +1,1 @@
+2026/11/10 10:24:51 mock-openai listening on http://127.0.0.1:18080 (dim=256, api-key required=true, chat-latency=100ms, models=[mock-chat mock-embedding], knowledge rules=0)

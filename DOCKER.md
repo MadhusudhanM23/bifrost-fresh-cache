@@ -140,6 +140,55 @@ curl.exe -s "http://localhost:8090/freshness/decisions?limit=5"
 Step 3 must come after the evidence cached in step 2 has expired (5 s here) or the
 companion will still see the old page content and confirm `$49` again.
 
+## Reading the receipt
+
+Every answer that went through a freshness check carries one more header,
+`x-freshness-receipt`: a single line that says what was checked, when, and what came of
+it. The quickest way to see it is the demo script, which prints it in words:
+
+```
+powershell -File demo-ask.ps1 -Key receipt-demo
+powershell -File demo-ask.ps1 -Key receipt-demo
+```
+
+```
+Cache:      MISS (the model was asked)
+Freshness:  status=confirmed  action=served  via=direct_fetch (not Tavily)
+Checked:    http://demoserver:8000/
+Receipt:    confirmed, found 49 at http://demoserver:8000/, checked 0s ago via direct_fetch (not Tavily) (fetched)
+Answer:     According to the provided information, The Acme Pro plan costs $49 per month.
+
+Cache:      HIT (answer came from the cache)
+Freshness:  status=confirmed  action=served  via=direct_fetch (not Tavily)
+Checked:    http://demoserver:8000/
+Receipt:    confirmed, found 49 at http://demoserver:8000/, checked 0s ago via direct_fetch (not Tavily) (reused)
+Answer:     According to the provided information, The Acme Pro plan costs $49 per month.
+```
+
+The first ask is a miss, but the demo policy checks new price answers too
+(`verify_new_answers`), so it already has a receipt. The second ask is a hit; `(reused)`
+says the companion did not read the page again but used the notes it kept from the first
+look (they live for `-evidence-ttl`, 5 s in this stack), and `checked 0s ago` says how old
+those notes were. After the `$49` to `$59` edit from the demo above, the receipt reads
+`stale, found 59 at http://demoserver:8000/, checked 0s ago via direct_fetch (not Tavily) (fetched)`.
+A request with no freshness check (a question that is not time-sensitive, or one the guard
+kept out of the cache) prints `Receipt: none (no freshness check ran)`.
+
+The raw header, for a client that wants to parse it:
+
+```
+curl -s -D - -o NUL http://127.0.0.1:8090/v1/chat/completions -H "content-type: application/json" -H "x-bf-cache-key: receipt-demo" --data @docker/request-49.json | findstr /i x-freshness-receipt
+```
+
+```
+X-Freshness-Receipt: v=1; verdict=confirmed; action=served; found="49"; checked_ago_s=0; source="http://demoserver:8000/"; provider="direct_fetch (not Tavily)"; checked_at="2026-11-10T10:54:05Z"; evidence=fetched; stated="49"; fact="Acme Pro plan price"; answer=cached
+```
+
+`GET /freshness/explain/<x-freshness-request-id>` returns the same information as a `receipt`
+object, and the dashboard shows the receipt in words under each Try-it step on the
+companion's side and in the request log's Checks column. The answer body is never changed.
+Format and keys: [freshness-companion/README.md](freshness-companion/README.md#answer-receipts).
+
 ## More demos: wrong answers that look right
 
 The mock model uses `docker/mock-knowledge.json`, so questions with the same meaning get
@@ -179,6 +228,124 @@ SQL views over the cache (needs PowerShell): `powershell -File sql\install.ps1`,
 Everything here uses the mock model and mock embeddings: it proves the mechanics, not
 how a real model behaves. The dashboard (`dashboard/`, run on the host) shows these
 numbers: `dashboard.exe -companion http://127.0.0.1:8090 -bifrost http://127.0.0.1:18090`.
+
+## MCP mode
+
+The companion can also offer its checks as **MCP tools**, and Bifrost can connect to it
+as an MCP client. Then anything that talks to Bifrost's MCP gateway (an agent, a chat
+client, `curl`) can ask "is this price still right?", "why did request X get that
+answer?", "what do you watch?" or "the policy page changed" as tool calls, with the
+companion's own policy and evidence behind them. Off by default; one extra overlay turns
+it on:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.mcp.yml up -d --build --wait
+```
+
+What the overlay changes, and why (details in `docker-compose.mcp.yml`):
+
+- **The companion starts with `-mcp`** and serves `POST /mcp` (plain JSON-RPC over HTTP,
+  MCP `2025-06-18`, no SSE). Tools: `check_freshness`, `explain_request`,
+  `list_watched_sources`, `report_change`. Their arguments and example `curl` calls are
+  in [`freshness-companion/README.md`](freshness-companion/README.md#mcp-mode).
+- **Bifrost reads `docker/bifrost-config.mcp.json`** instead of `docker/bifrost-config.json`.
+  It is the same file plus an `mcp` block (client `freshness` →
+  `http://freshness-companion:8090/mcp`, `tools_to_execute: ["*"]`, re-sync every
+  minute) and a **Postgres config store** in the same database, because Bifrost only
+  registers MCP clients when it has a config store (SQLite is not possible: the image is
+  built with `CGO_ENABLED=0`). The config store brings three side effects, all handled
+  by the overlay:
+  1. **Migrations at boot.** The first start runs the config-store migrations, which
+     takes tens of seconds; Bifrost's healthcheck gets `start_period: 60s`.
+  2. **The admin API is locked.** With a config store and no admin account, every
+     `/api/*` call must carry `X-Bifrost-Setup-Token`. The companion uses that API to
+     delete stale cache entries, so it is started with `-bifrost-admin-header=X-Bifrost-Setup-Token`
+     and `BIFROST_ADMIN_AUTH` set to the token. The token is `BIFROST_SETUP_TOKEN`
+     (default `demo-setup`; put `BIFROST_SETUP_TOKEN=...` in `.env` to change it).
+  3. **Inference auth would be on.** A fresh config store defaults
+     `enforce_auth_on_inference` to true; the config sets it to false so
+     `/v1/chat/completions` stays open like in the default stack, and sets
+     `source_of_truth: config.json` so the file, not the database, is what counts.
+- **No start-order change.** Bifrost marks the companion's client unstable if it is not
+  up yet and retries every 10 s, so the usual order (companion after Bifrost) is kept.
+
+Check it (PowerShell: `Invoke-RestMethod` with the same bodies works too):
+
+```sh
+# 1. The companion's own MCP endpoint answers the handshake.
+curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
+
+# 2. Bifrost shows the client connected with the four tools (give it 10-20 s after start).
+curl -s http://127.0.0.1:18090/api/mcp/clients -H 'X-Bifrost-Setup-Token: demo-setup'
+
+# 3. Through Bifrost's MCP gateway the tools are prefixed with the client name.
+curl -s http://127.0.0.1:18090/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+curl -s http://127.0.0.1:18090/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"freshness-check_freshness","arguments":{"question":"How much does the Acme Pro plan cost per month?","answer":"$49 per month"}}}'
+
+# 4. Bifrost's direct tool-execution endpoint (the shape a chat client's tool call has).
+curl -s http://127.0.0.1:18090/v1/mcp/tool/execute -H 'Content-Type: application/json' \
+  -d '{"id":"c1","type":"function","function":{"name":"freshness-list_watched_sources","arguments":"{}"}}'
+```
+
+The normal demo (`smoke.ps1`, the `$49` → `$59` walk-through above) works unchanged in
+this mode: the proxy path is the same, only the cache-clear calls carry the setup token.
+`report_change` through MCP needs the companion's change-notice token only if
+`FRESHNESS_NOTICE_TOKEN` is set, which the compose files do not do. Note the flip side:
+without that token, anyone who can reach Bifrost's `/mcp` can call `report_change`
+(including `clear_cache_keys`), the same exposure `POST /freshness/changes` has on the
+companion's port. With the token set, the Bifrost client config here uses `auth_type: none`,
+so `report_change` through Bifrost is refused until you add the token as a header in
+`docker/bifrost-config.mcp.json`; the three read-only tools keep working. Back to the default
+stack: `docker compose up -d` (the Bifrost config-store tables stay in the Postgres
+volume and are harmless; `docker compose down -v` removes them).
+
+## Opt-in: smart checking and the background watcher
+
+Both are off by default, and the "Try it" steps above assume they are off (step 3 waits
+for the fixed 5 s evidence TTL). Turn them on from the shell or a `.env` file next to
+`docker-compose.yml`:
+
+```powershell
+$env:CHECK_ADAPTIVE = "true"; $env:WATCH = "true"
+docker compose up -d
+```
+
+Variables: `CHECK_ADAPTIVE` (default `false`), `CHECK_MAX` (longest re-check interval,
+default `60s`), `WATCH` (default `false`), `WATCH_MAX_PER_HOUR` (default `120`; the
+Tavily overlay uses `30`, since each watcher fetch is a Tavily call). Unset them (or set
+them to `false`) and `docker compose up -d` is the documented stack again.
+
+What to look at:
+
+```sh
+# 1. The schedule: one row per source with its interval, last value and next check.
+curl.exe -s http://localhost:8090/freshness/watch
+
+# 2. Ask the price question a few times, 5-10 s apart: interval_seconds grows 5 -> 10 -> 20 -> 40 -> 60.
+curl.exe -s http://localhost:8090/v1/chat/completions -H "Content-Type: application/json" -H "x-bf-cache-key: watch-1" -d "@docker/request-49.json"
+
+# 3. Edit freshness-companion/demo-page/index.html ($49 -> $59). Within the current interval the
+#    watcher sees the change, deletes the cached $49 answers (decision record answer_of=watcher,
+#    action=evicted) and the next ask is a miss that says $59 without waiting for a check.
+curl.exe -s "http://localhost:8090/freshness/decisions?limit=3"
+
+# 4. Check one source right now (bearer token needed when FRESHNESS_NOTICE_TOKEN is set).
+curl.exe -s -X POST http://localhost:8090/freshness/watch/check -H "Content-Type: application/json" -d "{\"fact\":\"Acme Pro plan price\"}"
+```
+
+With smart checking on, a page change is noticed only at that page's next check, which can
+be up to `CHECK_MAX` away: a quiet page is checked less often on purpose. Change notices
+(`POST /freshness/changes`) still take effect at once, and in the simulation
+(`eval-harness/results/checksim-20261110.md`) they were the only way to reach zero stale
+answers; the watcher alone made stale answers rarer to wait for, not rarer to serve.
+
+Two more things to know: turn `WATCH` on together with `CHECK_ADAPTIVE` (on its own the
+watcher re-checks every few seconds and spends its hourly cap within minutes), and
+`POST /freshness/watch/check` spends the same hourly cap, so set `FRESHNESS_NOTICE_TOKEN`
+if anyone else can reach the companion (with the Tavily overlay each check is a Tavily call).
 
 ## Real model (Groq, OpenRouter or Grok)
 

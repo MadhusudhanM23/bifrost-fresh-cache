@@ -1,8 +1,10 @@
 package proxy
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -52,6 +54,34 @@ func (s *Server) handleChangeNotice(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "body must be JSON like {\"fact\": \"...\"}: "+oneLine(err.Error(), 150), "invalid_request_error")
 		return
 	}
+	saved, err := s.applyChangeNotice(r.Context(), in)
+	if err != nil {
+		var refused *noticeError
+		if errors.As(err, &refused) {
+			writeError(w, refused.status, refused.message, refused.kind)
+			return
+		}
+		writeError(w, http.StatusInternalServerError, oneLine(err.Error(), 200), "freshness_companion_error")
+		return
+	}
+	writeJSON(w, http.StatusOK, saved)
+}
+
+// noticeError is why a change notice was refused, with the HTTP status the
+// endpoint answers.
+type noticeError struct {
+	status  int
+	message string
+	kind    string
+}
+
+func (e *noticeError) Error() string { return e.message }
+
+// applyChangeNotice validates and applies one change notice: it drops the
+// cached evidence of the facts it covers, clears the requested Bifrost cache
+// keys and records the notice. It is shared by POST /freshness/changes and
+// the MCP tool report_change, so both have exactly the same effect.
+func (s *Server) applyChangeNotice(ctx context.Context, in changeRequest) (changes.Notice, error) {
 	selectors := 0
 	for _, v := range []string{in.Fact, in.Category, in.SourceURL} {
 		if strings.TrimSpace(v) != "" {
@@ -59,8 +89,7 @@ func (s *Server) handleChangeNotice(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if selectors != 1 || len(in.ClearCacheKeys) > maxClearKeys {
-		writeError(w, http.StatusBadRequest, "send exactly one of fact, category or source_url (and at most "+strconv.Itoa(maxClearKeys)+" clear_cache_keys)", "invalid_request_error")
-		return
+		return changes.Notice{}, &noticeError{http.StatusBadRequest, "send exactly one of fact, category or source_url (and at most " + strconv.Itoa(maxClearKeys) + " clear_cache_keys)", "invalid_request_error"}
 	}
 
 	n := changes.Notice{Note: oneLine(in.Note, 300)}
@@ -69,23 +98,20 @@ func (s *Server) handleChangeNotice(w http.ResponseWriter, r *http.Request) {
 	case strings.TrimSpace(in.Fact) != "":
 		f := s.cfg.Policy.Fact(in.Fact)
 		if f == nil {
-			writeError(w, http.StatusNotFound, "no watched fact with that name", "not_found")
-			return
+			return changes.Notice{}, &noticeError{http.StatusNotFound, "no watched fact with that name", "not_found"}
 		}
 		n.Kind, n.Target, facts = "fact", f.Name, []*policy.Fact{f}
 	case strings.TrimSpace(in.Category) != "":
 		name := strings.TrimSpace(in.Category)
 		if !s.cfg.Policy.HasCategory(name) {
-			writeError(w, http.StatusNotFound, "no category with that name", "not_found")
-			return
+			return changes.Notice{}, &noticeError{http.StatusNotFound, "no category with that name", "not_found"}
 		}
 		n.Kind, n.Target, n.Categories = "category", name, []string{name}
 		facts = s.cfg.Policy.FactsInCategory(name)
 	default:
 		facts = s.cfg.Policy.FactsWithSource(in.SourceURL)
 		if len(facts) == 0 {
-			writeError(w, http.StatusNotFound, "no watched fact reads that source_url", "not_found")
-			return
+			return changes.Notice{}, &noticeError{http.StatusNotFound, "no watched fact reads that source_url", "not_found"}
 		}
 		n.Kind, n.Target = "source_url", strings.TrimSpace(in.SourceURL)
 	}
@@ -110,7 +136,7 @@ func (s *Server) handleChangeNotice(w http.ResponseWriter, r *http.Request) {
 			n.ClearErrors = append(n.ClearErrors, "no cache clearer is configured")
 			break
 		}
-		if err := s.cfg.Clearer.ClearKey(r.Context(), key); err != nil {
+		if err := s.cfg.Clearer.ClearKey(ctx, key); err != nil {
 			n.ClearErrors = append(n.ClearErrors, oneLine(err.Error(), 200))
 			continue
 		}
@@ -122,7 +148,7 @@ func (s *Server) handleChangeNotice(w http.ResponseWriter, r *http.Request) {
 	}
 	s.log.Info("change notice", "id", saved.ID, "kind", saved.Kind, "target", saved.Target,
 		"facts", len(saved.Facts), "evidence_dropped", len(saved.EvidenceDropped), "cleared_keys", len(saved.ClearedCacheKeys))
-	writeJSON(w, http.StatusOK, saved)
+	return saved, nil
 }
 
 func (s *Server) handleChanges(w http.ResponseWriter, r *http.Request) {

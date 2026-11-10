@@ -203,6 +203,43 @@ func TestExplainRingEvictsOldest(t *testing.T) {
 	}
 }
 
+func TestExplainCarriesReceipt(t *testing.T) {
+	page := newFakePage(t, "49")
+	fb := newFakeBifrost(t, "49")
+	c := newCompanion(t, fb.srv.URL, testPolicyDoc(page.srv.URL, "bypass"))
+	miss, _ := postChat(t, c.url, proPrompt, nil)
+	if e := explainOf(t, c.url, miss); e.Receipt != nil {
+		t.Fatalf("a miss without a check has no receipt: %+v", e.Receipt)
+	}
+	hit, _ := postChat(t, c.url, proPrompt, nil)
+	e := explainOf(t, c.url, hit)
+	r := e.Receipt
+	if r == nil {
+		t.Fatalf("the hit explanation has no receipt: %+v", e)
+	}
+	if r.Verdict != "confirmed" || r.Action != "served" || r.Answer != "cached" || r.Found != "49" || r.Stated != "49" ||
+		r.Fact != "Acme Pro plan price" || r.Source != page.srv.URL || r.Provider != "direct_fetch (not Tavily)" || r.Evidence != EvidenceFetched {
+		t.Fatalf("receipt = %+v", *r)
+	}
+	if r.CheckedAt == nil || r.CheckedAgoSeconds == nil || *r.CheckedAgoSeconds < 0 || *r.CheckedAgoSeconds > 5 {
+		t.Fatalf("receipt times = %v / %v", r.CheckedAt, r.CheckedAgoSeconds)
+	}
+	// The explanation and the header agree.
+	if want := hit.Header.Get(HeaderReceipt); !strings.Contains(want, `found="49"`) || !strings.Contains(want, "evidence=fetched") {
+		t.Fatalf("header receipt = %q", want)
+	}
+	// The JSON uses the documented key.
+	resp, err := http.Get(c.url + "/freshness/explain/" + e.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(raw), `"receipt":{"verdict":"confirmed"`) || !strings.Contains(string(raw), `"checked_ago_seconds":`) {
+		t.Fatalf("explain JSON lacks the receipt: %s", raw)
+	}
+}
+
 func TestExplainOnStreamsAndErrorsAndOtherPaths(t *testing.T) {
 	page := newFakePage(t, "49")
 	fb := newFakeBifrost(t, "49")

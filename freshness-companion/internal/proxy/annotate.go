@@ -69,6 +69,13 @@ func annotate(h http.Header, d decision.Decision, action string) {
 	set(HeaderProvider, d.Provider)
 	if !d.CheckedAt.IsZero() {
 		set(HeaderCheckedAt, d.CheckedAt.UTC().Format(time.RFC3339))
+		// Evidence was obtained: say whether it was read for this request or
+		// reused from the evidence cache (the receipt repeats this).
+		if d.EvidenceCached {
+			set(HeaderEvidence, EvidenceReused)
+		} else {
+			set(HeaderEvidence, EvidenceFetched)
+		}
 	}
 	set(HeaderCachedValue, d.CachedValue)
 	set(HeaderCurrentValue, d.CurrentValue)

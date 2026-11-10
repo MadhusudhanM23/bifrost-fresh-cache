@@ -1,0 +1,93 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "source_of_truth": "config.json",
+  "client": {
+    "drop_excess_requests": false,
+    "enable_logging": false,
+    "enforce_auth_on_inference": false
+  },
+  "config_store": {
+    "enabled": true,
+    "type": "postgres",
+    "config": {
+      "host": "postgres",
+      "port": "5432",
+      "user": "bifrost",
+      "password": "bifrost_password",
+      "db_name": "bifrost",
+      "ssl_mode": "disable"
+    }
+  },
+  "logs_store": {
+    "enabled": false
+  },
+  "providers": {
+    "openai": {
+      "keys": [
+        {
+          "name": "mock-openai-local",
+          "value": "sk-mock-local",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "http://mock-openai:18080",
+        "default_request_timeout_in_seconds": 30,
+        "max_retries": 0,
+        "allow_private_network": true
+      }
+    }
+  },
+  "vector_store": {
+    "enabled": true,
+    "type": "pgvector",
+    "config": {
+      "host": "postgres",
+      "port": "5432",
+      "user": "bifrost",
+      "password": "bifrost_password",
+      "database": "bifrost",
+      "ssl_mode": "disable",
+      "schema": "public",
+      "max_conns": "5"
+    }
+  },
+  "plugins": [
+    {
+      "enabled": true,
+      "name": "semantic_cache",
+      "config": {
+        "provider": "openai",
+        "embedding_model": "mock-embedding",
+        "dimension": 256,
+        "threshold": 0.8,
+        "ttl": "30m",
+        "conversation_history_threshold": 3,
+        "cache_by_model": true,
+        "cache_by_provider": true,
+        "exclude_system_prompt": true
+      }
+    }
+  ],
+  "mcp": {
+    "client_configs": [
+      {
+        "client_id": "freshness",
+        "name": "freshness",
+        "connection_type": "http",
+        "connection_string": "http://freshness-companion:8090/mcp",
+        "auth_type": "none",
+        "max_protocol_version": "2025-06-18",
+        "tools_to_execute": ["*"],
+        "tools_to_auto_execute": [],
+        "allow_by_default": true,
+        "tool_sync_interval": "1m"
+      }
+    ],
+    "tool_manager_config": {
+      "tool_execution_timeout": "30s",
+      "disable_auto_tool_inject": true
+    }
+  }
+}

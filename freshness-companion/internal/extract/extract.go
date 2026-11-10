@@ -127,6 +127,24 @@ func Extract(re *regexp.Regexp, text string, mode Mode) (Value, error) {
 	return out, nil
 }
 
+// Normalize turns one already-captured value (for example a value read back
+// from a decision record) into a Value comparable with Equal, applying the
+// same rules as Extract. It returns ErrNoMatch for an empty string.
+func Normalize(raw string, mode Mode) (Value, error) {
+	if !mode.Valid() {
+		return Value{}, fmt.Errorf("unknown compare mode %q", mode)
+	}
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return Value{}, ErrNoMatch
+	}
+	norm, num, err := normalize(raw, mode)
+	if err != nil {
+		return Value{}, fmt.Errorf("value %q is not a valid %s value: %w", truncate(raw, 64), mode, err)
+	}
+	return Value{Raw: truncate(raw, 200), Normalized: norm, Number: num, Matches: 1}, nil
+}
+
 // Equal reports whether a and b are the same value under mode.
 func Equal(a, b Value, mode Mode) bool {
 	if mode == Numeric {

@@ -73,22 +73,25 @@ type ScenarioInfo struct {
 
 // Step is one request, with the parts of the reply that matter.
 type Step struct {
-	Label        string  `json:"label"`
-	Answer       string  `json:"answer,omitempty"`
-	Reused       bool    `json:"reused"` // a saved answer was served
-	HitType      string  `json:"hit_type"`
-	Similarity   string  `json:"similarity,omitempty"`
-	Status       string  `json:"status,omitempty"` // X-Freshness-Status
-	Action       string  `json:"action,omitempty"` // X-Freshness-Action
-	Gate         string  `json:"gate,omitempty"`
-	Guard        string  `json:"guard,omitempty"`
-	Shared       bool    `json:"shared_refresh,omitempty"`
-	CachedValue  string  `json:"cached_value,omitempty"`
-	CurrentValue string  `json:"current_value,omitempty"`
-	Error        string  `json:"error,omitempty"`
-	HTTP         int     `json:"http,omitempty"`
-	LatencyMS    float64 `json:"latency_ms"`
-	usage        chatUsage
+	Label        string `json:"label"`
+	Answer       string `json:"answer,omitempty"`
+	Reused       bool   `json:"reused"` // a saved answer was served
+	HitType      string `json:"hit_type"`
+	Similarity   string `json:"similarity,omitempty"`
+	Status       string `json:"status,omitempty"` // X-Freshness-Status
+	Action       string `json:"action,omitempty"` // X-Freshness-Action
+	Gate         string `json:"gate,omitempty"`
+	Guard        string `json:"guard,omitempty"`
+	Shared       bool   `json:"shared_refresh,omitempty"`
+	CachedValue  string `json:"cached_value,omitempty"`
+	CurrentValue string `json:"current_value,omitempty"`
+	// Receipt is the companion's one-line summary of the freshness check
+	// behind this answer (X-Freshness-Receipt), when a check ran.
+	Receipt   *Receipt `json:"receipt,omitempty"`
+	Error     string   `json:"error,omitempty"`
+	HTTP      int      `json:"http,omitempty"`
+	LatencyMS float64  `json:"latency_ms"`
+	usage     chatUsage
 }
 
 // Side is one road's outcome.
@@ -428,6 +431,7 @@ func (r *scenarioRunner) ask(ctx context.Context, base, key, label string, messa
 	st.Gate, st.Guard = h.Get("X-Freshness-Gate"), h.Get("X-Freshness-Guard")
 	st.Shared = h.Get("X-Freshness-Shared-Refresh") == "true"
 	st.CachedValue, st.CurrentValue = h.Get("X-Freshness-Cached-Value"), h.Get("X-Freshness-Current-Value")
+	st.Receipt = parseReceiptHeader(h.Get("X-Freshness-Receipt"))
 	st.Similarity = h.Get("X-Bifrost-Cache-Similarity")
 	if f, err := strconv.ParseFloat(st.Similarity, 64); err == nil {
 		st.Similarity = fmt.Sprintf("%.2f", f)
@@ -481,7 +485,7 @@ func (r *scenarioRunner) record(st Step) {
 	}
 	ev := TrafficEvent{
 		Time: time.Now().UTC(), Question: "Try it: " + st.Label, Kind: "try-it", HitType: ht, Similarity: st.Similarity,
-		Gate: st.Gate, SharedRefresh: st.Shared, Guard: st.Guard, TotalTokens: st.usage.TotalTokens, LatencyMS: st.LatencyMS,
+		Gate: st.Gate, SharedRefresh: st.Shared, Guard: st.Guard, Receipt: st.Receipt, TotalTokens: st.usage.TotalTokens, LatencyMS: st.LatencyMS,
 		Note: st.Error,
 	}
 	r.tally.record(ev, st.usage, st.Reused)

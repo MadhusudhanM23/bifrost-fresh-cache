@@ -92,13 +92,16 @@ type TrafficEvent struct {
 	// unverified), SharedRefresh is true when the request waited for a refresh
 	// another request was running, and Guard says why the request was kept
 	// out of the cache on purpose. All come from response headers.
-	Gate          string  `json:"gate,omitempty"`
-	SharedRefresh bool    `json:"shared_refresh,omitempty"`
-	Guard         string  `json:"guard,omitempty"`
-	RequestID     string  `json:"request_id,omitempty"` // X-Freshness-Request-Id, for the "Why?" link
-	TotalTokens   int     `json:"total_tokens,omitempty"`
-	LatencyMS     float64 `json:"latency_ms"`
-	Note          string  `json:"note,omitempty"`
+	Gate          string `json:"gate,omitempty"`
+	SharedRefresh bool   `json:"shared_refresh,omitempty"`
+	Guard         string `json:"guard,omitempty"`
+	// Receipt is the companion's one-line summary of the freshness check
+	// behind the answer (X-Freshness-Receipt), when a check ran.
+	Receipt     *Receipt `json:"receipt,omitempty"`
+	RequestID   string   `json:"request_id,omitempty"` // X-Freshness-Request-Id, for the "Why?" link
+	TotalTokens int      `json:"total_tokens,omitempty"`
+	LatencyMS   float64  `json:"latency_ms"`
+	Note        string   `json:"note,omitempty"`
 }
 
 // CacheTally is the dashboard's own running count of real cache outcomes,
@@ -303,6 +306,7 @@ func sendProbe(ctx context.Context, client *http.Client, companionBase string, q
 	ev.Gate = resp.Header.Get("X-Freshness-Gate")
 	ev.SharedRefresh = resp.Header.Get("X-Freshness-Shared-Refresh") == "true"
 	ev.Guard = resp.Header.Get("X-Freshness-Guard")
+	ev.Receipt = parseReceiptHeader(resp.Header.Get("X-Freshness-Receipt"))
 	ev.RequestID = resp.Header.Get("X-Freshness-Request-Id")
 	ev.TotalTokens = respBody.Usage.TotalTokens
 

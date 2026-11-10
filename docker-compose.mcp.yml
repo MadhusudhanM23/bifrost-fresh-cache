@@ -1,0 +1,59 @@
+# MCP mode: the freshness companion also serves a small MCP server on
+# POST /mcp, and Bifrost connects to it as an MCP client. Bifrost's own MCP
+# gateway (POST /mcp on :18090) then exposes the companion's four tools
+# (check_freshness, explain_request, list_watched_sources, report_change) as
+# freshness-check_freshness and so on.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.mcp.yml up -d --build --wait
+#
+# What changes compared with the default stack (all of it is needed, because
+# Bifrost only registers MCP clients when it has a config store):
+#   - Bifrost reads docker/bifrost-config.mcp.json: the same providers, cache
+#     plugin and pgvector store, plus a Postgres config store in the SAME
+#     database and the "mcp" block. On its first start Bifrost runs the
+#     config-store migrations, which takes a while: the healthcheck gets a
+#     longer start_period.
+#   - With a config store, Bifrost's admin API (/api/*) is locked until an
+#     admin account exists; calls must carry X-Bifrost-Setup-Token. The
+#     companion clears stale cache entries through that API, so it sends the
+#     same token (BIFROST_SETUP_TOKEN, default "demo-setup"; set it in .env to
+#     change it). The config also turns enforce_auth_on_inference off so
+#     /v1/chat/completions stays open like in the default stack.
+#   - The companion starts with -mcp.
+#
+# The companion does not need Bifrost to be up to serve /mcp, and Bifrost
+# retries a client that is down at boot every 10 s, so no start order is
+# forced beyond the default stack's.
+services:
+  bifrost:
+    volumes:
+      - ./docker/bifrost-config.mcp.json:/app-data/config.json:ro
+    environment:
+      BIFROST_SETUP_TOKEN: "${BIFROST_SETUP_TOKEN:-demo-setup}"
+    healthcheck:
+      start_period: 60s
+
+  freshness-companion:
+    command:
+      - "/usr/local/bin/freshness-companion"
+      - "-listen=:8090"
+      - "-bifrost=http://bifrost:8080"
+      - "-policy=/app/policy.json"
+      - "-provider=direct"
+      - "-evidence-ttl=5s"
+      - "-audit-rate=1"
+      - "-audit-near-margin=0.05"
+      - "-audit-max-per-minute=120"
+      - "-verify-below=0.90"
+      - "-verified=/app/verified.json"
+      # Smart checking / watcher: off by default (same variables as docker-compose.yml).
+      - "-check-adaptive=${CHECK_ADAPTIVE:-false}"
+      - "-check-max=${CHECK_MAX:-60s}"
+      - "-watch=${WATCH:-false}"
+      - "-watch-max-per-hour=${WATCH_MAX_PER_HOUR:-120}"
+      # MCP server on POST /mcp.
+      - "-mcp"
+      # Bifrost's admin API wants the setup token on cache clears in this mode.
+      - "-bifrost-admin-header=X-Bifrost-Setup-Token"
+    environment:
+      BIFROST_ADMIN_AUTH: "${BIFROST_SETUP_TOKEN:-demo-setup}"

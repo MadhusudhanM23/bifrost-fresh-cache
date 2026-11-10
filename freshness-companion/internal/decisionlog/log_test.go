@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -72,5 +73,36 @@ func TestMemoryOnly(t *testing.T) {
 	_ = l.Append(Record{Outcome: "confirmed"})
 	if got := l.Recent(0); len(got) != 1 {
 		t.Fatalf("Recent(0) should return all, got %d", len(got))
+	}
+}
+
+func TestSubscribeGetsEveryRecord(t *testing.T) {
+	l, err := Open("", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = l.Append(Record{CacheID: "before"}) // not delivered: subscribed later
+	var got []string
+	var seenFromInside int
+	l.Subscribe(func(r Record) {
+		got = append(got, r.CacheID)
+		// The callback runs after unlock, so it may read the log.
+		seenFromInside = len(l.Recent(0))
+	})
+	l.Subscribe(nil) // ignored
+	for _, id := range []string{"a", "b", "c"} {
+		if err := l.Append(Record{CacheID: id, AnswerOf: "watcher", Evicted: []string{"x"}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(got) != 3 || got[0] != "a" || got[2] != "c" {
+		t.Fatalf("subscriber got %v, want a b c in order", got)
+	}
+	if seenFromInside != 2 {
+		t.Fatalf("Recent from inside the callback saw %d records, want the ring size 2", seenFromInside)
+	}
+	line, _ := json.Marshal(Record{AnswerOf: "watcher", Evicted: []string{"id-1"}})
+	if s := string(line); !strings.Contains(s, `"evicted":["id-1"]`) || !strings.Contains(s, `"answer_of":"watcher"`) {
+		t.Fatalf("watcher record JSON = %s", s)
 	}
 }

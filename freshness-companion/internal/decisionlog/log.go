@@ -58,6 +58,9 @@ type Record struct {
 	// Gate is what the pre-serve check did to a risky semantic hit:
 	// verified, trusted, blocked or unverified (empty = it did not apply).
 	Gate string `json:"gate,omitempty"`
+	// Evicted lists the cache ids the background watcher deleted because
+	// they stated the old value of a fact that changed (AnswerOf "watcher").
+	Evicted []string `json:"evicted,omitempty"`
 }
 
 // Log appends records to a JSON Lines file and a bounded in-memory ring.
@@ -67,6 +70,19 @@ type Log struct {
 	ring []Record
 	next int
 	full bool
+	subs []func(Record)
+}
+
+// Subscribe registers fn to be called with every record appended from now
+// on. Callbacks run on the appending goroutine after the log's lock is
+// released, so they may call back into the log; they must not block for long.
+func (l *Log) Subscribe(fn func(Record)) {
+	if fn == nil {
+		return
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.subs = append(l.subs, fn)
 }
 
 // Open opens (or creates) the JSONL file in append mode. An empty path keeps
@@ -98,16 +114,19 @@ func (l *Log) Append(r Record) error {
 	}
 	line = append(line, '\n')
 	l.mu.Lock()
-	defer l.mu.Unlock()
 	l.ring[l.next] = r
 	l.next = (l.next + 1) % len(l.ring)
 	if l.next == 0 {
 		l.full = true
 	}
-	if l.file == nil {
-		return nil
+	if l.file != nil {
+		_, err = l.file.Write(line)
 	}
-	_, err = l.file.Write(line)
+	subs := l.subs
+	l.mu.Unlock()
+	for _, fn := range subs {
+		fn(r)
+	}
 	return err
 }
 

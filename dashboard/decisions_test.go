@@ -120,6 +120,48 @@ func TestComputeDecisionStats_Empty(t *testing.T) {
 	}
 }
 
+// TestWatcherRecordsCountedSeparately: the background watcher writes one
+// record per source change it sees (answer_of "watcher", outcome "changed").
+// Those are not answers anyone was given, so they must not inflate the stale
+// counts or trip the repeat-stale warning; they get their own counter.
+func TestWatcherRecordsCountedSeparately(t *testing.T) {
+	watcher := func(action string, evicted ...string) DecisionRecord {
+		return DecisionRecord{
+			AnswerOf: "watcher", Outcome: "changed", Action: action, Fact: "Acme Pro plan price", Category: "price",
+			SourceURL: "http://demoserver:8000/", Provider: "direct_fetch (not Tavily)", CheckedAt: "2026-11-10T09:00:00Z",
+			CachedValue: "49", CurrentValue: "59", Reason: "the source changed", Evicted: evicted,
+		}
+	}
+	records := []DecisionRecord{
+		watcher("evicted", "entry-1", "entry-2"),
+		{Fact: "Acme Pro plan price", Outcome: "stale", AnswerOf: "cached", Category: "price"},
+		watcher("noted"),
+		{Fact: "Acme Pro plan price", Outcome: "confirmed", AnswerOf: "cached", Category: "price"},
+	}
+	s := computeDecisionStats(records, 2)
+	if s.WatcherChanges != 2 {
+		t.Fatalf("WatcherChanges = %d, want 2", s.WatcherChanges)
+	}
+	if s.Total != 2 || s.Outcomes["stale"] != 1 || s.Outcomes["confirmed"] != 1 || s.StaleStopped != 1 {
+		t.Fatalf("stats = total %d outcomes %v staleStopped %d", s.Total, s.Outcomes, s.StaleStopped)
+	}
+	if _, leaked := s.Outcomes["changed"]; leaked {
+		t.Fatalf("\"changed\" must not appear as an answer outcome: %v", s.Outcomes)
+	}
+	if len(s.Facts) != 1 || s.Facts[0].Total != 2 || s.Facts[0].Stale != 1 {
+		t.Fatalf("facts = %+v", s.Facts)
+	}
+	// One real stale catch is below the warning threshold; the two watcher
+	// records must not push it over.
+	if len(s.Warnings) != 0 {
+		t.Fatalf("warnings = %+v", s.Warnings)
+	}
+	// The records themselves stay in the list, with what they evicted.
+	if len(s.Decisions) != 4 || len(s.Decisions[0].Evicted) != 2 {
+		t.Fatalf("decisions = %+v", s.Decisions)
+	}
+}
+
 func TestComputeDecisionStats_SharedRefreshAndStopped(t *testing.T) {
 	st := computeDecisionStats([]DecisionRecord{
 		{Outcome: "stale", SharedRefresh: true},

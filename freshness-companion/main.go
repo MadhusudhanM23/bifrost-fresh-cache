@@ -128,11 +128,13 @@ func run(args []string) error {
 		verifiedScope  = fs.String("verified-scope-header", proxy.DefaultVerifiedScopeHeader, "request header compared with an entry's scope")
 		verifiedEvery  = fs.Duration("verified-reload", 5*time.Second, "how often the verified file is checked for changes")
 		explainRing    = fs.Int("explain-ring", proxy.DefaultExplainRing, "request explanations kept in memory for /freshness/explain (negative = none)")
+		mcpOn          = fs.Bool("mcp", false, "serve an MCP server on POST /mcp with the tools check_freshness, explain_request, list_watched_sources and report_change (for Bifrost's MCP gateway)")
 	)
 	setHeaders := headerSet{}
 	var dropHeaders stringList
 	fs.Var(setHeaders, "refresh-set-header", `header set on the re-request, "Name: value" (repeatable)`)
 	fs.Var(&dropHeaders, "refresh-drop-header", "header removed from the re-request (repeatable)")
+	wf := addWatchFlags(fs) // -check-adaptive, -check-max, -check-growth, -watch, -watch-* (main_watch.go)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -162,7 +164,11 @@ func run(args []string) error {
 	if provider.Name() == evidence.DirectFetchName {
 		logger.Warn("evidence provider is direct_fetch: a plain HTTP GET of each source URL, NOT Tavily")
 	}
-	cache := evidence.NewCache(provider, evidence.CacheConfig{TTL: *evidenceTTL, ErrorTTL: *evidenceErrTTL, FetchTimeout: *evidenceTO})
+	ws, err := newWatchSetup(wf, pol, *evidenceTTL) // smart checking + watcher; nil schedule with the defaults
+	if err != nil {
+		return err
+	}
+	cache := evidence.NewCache(provider, ws.cacheConfig(evidence.CacheConfig{TTL: *evidenceTTL, ErrorTTL: *evidenceErrTTL, FetchTimeout: *evidenceTO}))
 
 	ages, err := agetrack.Open(agetrack.Options{Path: *agesPath, MaxEntries: *agesMax, Logger: logger})
 	if err != nil {
@@ -266,10 +272,13 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := enableMCP(srv, *mcpOn, logger); err != nil {
+		return err
+	}
 
 	httpServer := &http.Server{
 		Addr:              *listen,
-		Handler:           srv.Handler(),
+		Handler:           ws.wire(srv.Handler(), cache, ages, dlog, clearer, provider.Name(), noticeToken, logger), // adds /freshness/watch in front of the proxy
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 		// No WriteTimeout: streamed responses can legitimately run long.
@@ -289,6 +298,7 @@ func run(args []string) error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	go ws.run(ctx) // background watcher (-watch); returns at once when off
 	errCh := make(chan error, 1)
 	go func() { errCh <- httpServer.ListenAndServe() }()
 	select {

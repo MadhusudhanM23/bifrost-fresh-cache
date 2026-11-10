@@ -77,6 +77,11 @@ type Explanation struct {
 	VerifiedLabel  string `json:"verified_label,omitempty"`
 	VerifiedStatus string `json:"verified_status,omitempty"`
 
+	// Receipt is the structured form of the X-Freshness-Receipt header: the
+	// one-line summary of the freshness check behind the answer. Absent when
+	// no check ran.
+	Receipt *Receipt `json:"receipt,omitempty"`
+
 	Plain string `json:"plain"`
 }
 
@@ -161,10 +166,17 @@ type captureWriter struct {
 	// onHeader runs once, before the headers go out, so the explanation is
 	// stored before the caller can ask for it.
 	onHeader func(*captureWriter)
+	// beforeHeader runs once, just before the headers are captured and sent,
+	// with the live header map: a last chance to add a header that sums up
+	// the others (the receipt). Whatever it sets is captured too.
+	beforeHeader func(http.Header)
 }
 
 func (c *captureWriter) WriteHeader(code int) {
 	if c.header == nil {
+		if c.beforeHeader != nil {
+			c.beforeHeader(c.ResponseWriter.Header())
+		}
 		c.status = code
 		c.header = c.ResponseWriter.Header().Clone()
 		if c.onHeader != nil {
@@ -221,6 +233,9 @@ func (s *Server) explain(id string, cw *captureWriter) *Explanation {
 	}
 	e.VerifiedLabel = h.Get(HeaderVerifiedLabel)
 	e.VerifiedStatus = h.Get(HeaderVerified)
+	if r, ok := receiptFromHeaders(h, e.Time); ok {
+		e.Receipt = &r
+	}
 	if t, err := time.Parse(time.RFC3339, h.Get(HeaderCheckedAt)); err == nil {
 		e.CheckedAt = &t
 		ago := e.Time.Sub(t).Seconds()

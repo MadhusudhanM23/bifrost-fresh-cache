@@ -220,6 +220,8 @@
   .answer { margin: 10px 0 0; padding: 8px 12px; border-left: 3px solid var(--axis); color: var(--ink); font-size: 14px; font-style: italic; }
   .facts { margin: 10px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); }
   .facts li { margin: 3px 0; }
+  .receipt { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-2); overflow-wrap: anywhere; }
+  .steps .receipt { margin-left: 2px; }
   .takeaway { margin: 14px 0 0; padding: 12px 16px; border-radius: 10px; background: var(--wash); font-weight: 600; max-width: 90ch; }
   details.steps { margin-top: 10px; }
   details.steps summary { font-size: 13px; font-weight: 600; color: var(--ink-2); }
@@ -570,6 +572,7 @@
       <div class="card wide">
         <h3>Recent checks</h3>
         <p class="desc">Live from the companion's decision log (<code>GET /freshness/decisions</code>).</p>
+        <p class="desc muted" id="watcherNote" hidden></p>
         <div class="table-wrap">
           <table id="decisionsTable">
             <thead><tr><th>Time</th><th>Fact</th><th>What it found</th><th>Saved → live</th><th>What it did</th><th>Why</th></tr></thead>
@@ -1163,13 +1166,21 @@ function chip(key) {
 function renderDecisionsTable(d) {
   const tbody = document.querySelector('#decisionsTable tbody');
   const rows = (d.decisions || []).slice(0, 25);
+  const watcherNote = $('watcherNote');
+  if (watcherNote) {
+    const n = d.watcher_changes || 0;
+    watcherNote.textContent = n ? 'The background watcher saw ' + plural(n, 'change', 'changes') + ' on a source page. Those rows are marked "(background watcher)" and are not counted as answers.' : '';
+    watcherNote.hidden = !n;
+  }
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="muted">No checks logged yet.</td></tr>'; return; }
   tbody.innerHTML = rows.map((r) =>
     '<tr><td class="muted">' + esc(fmtTime(r.time)) + '</td>' +
-    '<td>' + esc(r.fact || '–') + (r.answer_of === 'new' ? ' <span class="muted">(new answer)</span>' : '') + '</td>' +
+    '<td>' + esc(r.fact || '–') + (r.answer_of === 'new' ? ' <span class="muted">(new answer)</span>' : '') +
+      (r.answer_of === 'watcher' ? ' <span class="muted">(background watcher)</span>' : '') + '</td>' +
     '<td>' + chip(r.outcome) + '</td>' +
     '<td>' + (r.cached_value || r.current_value ? esc(r.cached_value || '–') + ' → ' + esc(r.current_value || '–') : '–') + '</td>' +
     '<td class="muted">' + esc(r.action || '–') + (r.change_notice ? ' (after ' + esc(r.change_notice) + ')' : '') +
+      (r.evicted && r.evicted.length ? ' (removed ' + plural(r.evicted.length, 'saved answer', 'saved answers') + ')' : '') +
       (r.shared_refresh ? ' (shared another request\'s refresh)' : '') + (r.gate ? ' (checked first: ' + esc(r.gate === 'blocked' ? 'wrong match, stopped' : r.gate === 'verified' ? 'was right' : r.gate === 'trusted' ? 'trusted' : 'could not be checked') + ')' : '') + '</td>' +
     '<td class="muted">' + esc(r.reason || '') + '</td></tr>'
   ).join('');
@@ -1202,8 +1213,10 @@ function renderTrafficTable(s) {
       else marks.push(r.verdict === 'same' ? mark('var(--good)', '✓', 'Right match') : mark('var(--critical)', '✕', 'Wrong match got through'));
     }
     const why = e.request_id ? '<div><button type="button" class="whybtn" data-rid="' + esc(e.request_id) + '" aria-label="Why did I get this answer?">Why?</button><div class="whytext muted" role="status"></div></div>' : '';
-    if (!marks.length) return (why || '<span class="muted">–</span>');
-    return '<div class="marks">' + marks.join('') + '</div>' + why;
+    // The receipt: the companion's own one-line account of the freshness check.
+    const receipt = e.receipt && e.receipt.text ? '<div class="receipt muted">' + esc(e.receipt.text) + '</div>' : '';
+    if (!marks.length) return (receipt + why) || '<span class="muted">–</span>';
+    return '<div class="marks">' + marks.join('') + '</div>' + receipt + why;
   };
   tbody.innerHTML = rows.map((e) => {
     const o = outcomeByKey[e.hit_type] || outcomeByKey.error;
@@ -1849,10 +1862,24 @@ function renderSide(side, cls) {
     '<div class="verdict ' + esc(side.verdict) + '"><span class="ico" aria-hidden="true"><span>' + v.icon + '</span></span><span class="vt">' + esc(v.title) + '<small>' + esc(side.verdict_text) + '</small></span></div>' +
     (side.answer ? '<p class="answer">“' + esc(side.answer) + '”</p>' : '') +
     ((side.facts || []).length ? '<ul class="facts">' + side.facts.map((f) => '<li>' + esc(f) + '</li>').join('') + '</ul>' : '') +
+    receiptLine(lastReceipt(steps), 'p') +
     (steps.length ? '<details class="steps"><summary>Each request (' + steps.length + ')</summary><ol>' +
-      steps.map((st) => '<li><b>' + esc(st.label) + ':</b> ' + esc(stepWhat(st)) + (st.answer ? ' <span class="muted">“' + esc(st.answer.length > 90 ? st.answer.slice(0, 87) + '…' : st.answer) + '”</span>' : '') + '</li>').join('') +
+      steps.map((st) => '<li><b>' + esc(st.label) + ':</b> ' + esc(stepWhat(st)) + (st.answer ? ' <span class="muted">“' + esc(st.answer.length > 90 ? st.answer.slice(0, 87) + '…' : st.answer) + '”</span>' : '') +
+        receiptLine(st.receipt, 'div') + '</li>').join('') +
       '</ol></details>' : '') +
     '</section>';
+}
+
+// The receipt is the companion's own one-line account of the freshness check
+// behind an answer (the x-freshness-receipt header). Only the companion road
+// has one; the plain cache runs no check.
+function lastReceipt(steps) {
+  for (let i = steps.length - 1; i >= 0; i--) if (steps[i].receipt && steps[i].receipt.text) return steps[i].receipt;
+  return null;
+}
+function receiptLine(rc, tag) {
+  if (!rc || !rc.text) return '';
+  return '<' + tag + ' class="receipt"><b>Receipt:</b> ' + esc(rc.text) + '</' + tag + '>';
 }
 
 function takeawayFor(res) {

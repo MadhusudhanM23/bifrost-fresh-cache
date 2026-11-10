@@ -67,7 +67,7 @@ Freshness headers are set only on time-sensitive cache hits. Misses and non-time
 | `x-freshness-fact` | a fact was evaluated | fact name |
 | `x-freshness-source` | a fact was evaluated | the fact's `source_url` |
 | `x-freshness-provider` | evidence was fetched | `tavily_extract`, `tavily_search` or `direct_fetch (not Tavily)` |
-| `x-freshness-checked-at` | evidence was fetched | when the evidence was fetched (RFC 3339). With the evidence cache this can be up to `-evidence-ttl` old. |
+| `x-freshness-checked-at` | evidence was fetched | when the evidence was fetched (RFC 3339). With the evidence cache this can be up to `-evidence-ttl` old, or the source's learned interval with `-check-adaptive`. |
 | `x-freshness-cached-value` / `x-freshness-current-value` | values were extracted | the two compared values |
 | `x-freshness-age-seconds` | age known | tracked entry age |
 | `x-freshness-warning` | `served_with_warning` | warning text |
@@ -81,6 +81,8 @@ Freshness headers are set only on time-sensitive cache hits. Misses and non-time
 | `x-freshness-verified-label` | as above, when the entry has a label | the entry's label |
 | `x-freshness-verified-check` | a verified answer was served | `confirmed`, `unable_to_verify` or `not_checked` (see "Verified answers") |
 | `x-freshness-answer-source` | the companion answered by itself | `verified` |
+| `x-freshness-receipt` | whenever `x-freshness-status` is set | one line that sums up the check, for example `v=1; verdict=confirmed; action=served; found="59"; checked_ago_s=12; source="http://demoserver:8000/"; provider="direct_fetch (not Tavily)"; checked_at="2026-11-10T09:00:00Z"; evidence=reused; stated="59"; fact="Acme Pro plan price"; answer=cached` (see "Answer receipts") |
+| `x-freshness-evidence` | evidence was obtained | `fetched` (the source was read for this request) or `reused` (evidence kept from an earlier read, at most `-evidence-ttl` old) |
 
 The request id is the one header that is not about freshness: it is added even to responses that carry no other `x-freshness-*` header.
 
@@ -177,6 +179,14 @@ See [`examples/policy.example.json`](examples/policy.example.json). Unknown fiel
 | `-verified-scope-header` | `x-bf-vk` | request header compared with an entry's `scope` |
 | `-verified-reload` | `5s` | how often the verified file is checked for changes (a modification-time poll; works on Windows) |
 | `-explain-ring` | `2000` | request explanations kept in memory for `/freshness/explain` (oldest dropped; negative = keep none) |
+| `-mcp` | `false` | also serve an MCP server on `POST /mcp` with four tools (see "MCP mode"). Off by default; `POST /mcp` answers 404 until it is on |
+| `-check-adaptive` | `false` | smart checking: a source that keeps saying the same thing is re-checked less often, from `-evidence-ttl` up to `-check-max`; any change resets it (needs `-evidence-ttl` > 0; see "Smart checking") |
+| `-check-max` | `5m` | longest re-check interval with `-check-adaptive` (must be >= `-evidence-ttl`) |
+| `-check-growth` | `2` | with `-check-adaptive`, multiply the interval by this after an unchanged check (> 1) |
+| `-watch` | `false` | background watcher: re-check active sources shortly before their evidence expires, and delete cached answers that state a value that changed |
+| `-watch-max-per-hour` | `60` | most watcher fetches per rolling hour; over the cap, checks are skipped and requests fetch as usual |
+| `-watch-idle` | `30m` | a source nobody asked about for this long is not watched (`0` = watch every source that was ever asked about) |
+| `-watch-evict` | `true` | delete cached answers that state the old value when the watcher sees a change (`false` = only record it) |
 
 **Environment variables (secrets are never passed as flags):**
 
@@ -204,6 +214,9 @@ Extra headers can be added on top of the default strategy too, for example `-ref
 - `GET /freshness/guard`: how many requests the cache guard kept out of the cache, per reason (counts only; reasons are `tool_results`, `side_effect_tool` or `sensitive:<kind>`, never any text).
 - `GET /freshness/explain/{id}`: "why did I get this answer?" for one request (see below). `GET /freshness/explain?limit=N`: the newest ids with a one-line summary (default 50, maximum 500).
 - `GET /freshness/verified`: the verified-answer table as counts, ids (hashes) and labels. No questions, no answers.
+- `POST /mcp` (only with `-mcp`): the MCP server, see "MCP mode".
+- `GET /freshness/watch`: the check schedule and the watcher (see "Smart checking and the background watcher"): the rules in force, watcher counters, evidence-cache counters and one row per source URL with its facts, last values, current interval, next check time, streaks and errors. Values only, never a prompt or an answer.
+- `POST /freshness/watch/check` with `{"source_url": "..."}` or `{"fact": "..."}`: check one source now. Answers `200` with that source's row plus `"changed": true` when the check found a new value; `401` without the bearer token when `FRESHNESS_NOTICE_TOKEN` is set (same rule as notices); `404` unknown source or fact; `409` when `-watch` is off; `429` when the hourly cap is used up; `502` when the fetch itself failed (the row is included).
 
 Each decision record also has `shared_refresh` (this request waited for a refresh another request ran) and `gate` (what the pre-serve check did) when they apply.
 
@@ -448,6 +461,40 @@ Example of a reply. This is an illustration of the shape, written by hand; the p
 - **Where it comes from.** An explanation is built from the headers the companion actually sent back, so it cannot disagree with what the caller saw. That also means it covers every path. A stream carries only what its headers say (`streamed: true`).
 - **Memory only.** The last `-explain-ring` (default 2000) explanations are kept in memory; the oldest are dropped, and all are lost on restart. An unknown, mistyped, evicted or pre-restart id gives `404` with a plain message. Only `POST /v1/chat/completions` gets an id; other `/v1/*` routes do not.
 
+## Answer receipts
+
+Every answer that went through a freshness check carries a receipt: one header, `x-freshness-receipt`, that says in a single line what was checked, when, and what came of it. It repeats facts that other `x-freshness-*` headers already carry, but in one place and in a fixed order, so a client or a person reading a log does not have to collect them from a dozen headers. Like a till receipt stapled to a parcel, it describes the answer without changing it: the body is never touched, and there is no flag to put the receipt in the body.
+
+```
+x-freshness-receipt: v=1; verdict=confirmed; action=served; found="59"; checked_ago_s=12; source="http://demoserver:8000/"; provider="direct_fetch (not Tavily)"; checked_at="2026-11-10T09:00:00Z"; evidence=reused; stated="59"; fact="Acme Pro plan price"; answer=cached
+```
+
+**Format.** `;`-separated `key=value` pairs. Strings are quoted, with `\"` and `\\` escaped; fixed words and numbers are bare. The value is printable ASCII only (the same rules as every other freshness header: control characters become spaces, non-ASCII is written as `\uXXXX`) and at most 1024 characters. When it would be longer, trailing pairs are dropped whole; a value is never cut in the middle. Pairs appear in order of usefulness, so whatever is dropped matters least.
+
+| Key | Meaning | Taken from |
+|---|---|---|
+| `v` | format version, `1` | |
+| `verdict` | `confirmed`, `stale`, `unable_to_verify`, `unknown` or `contradicted` | `x-freshness-status` |
+| `action` | what was done: `served`, `served_with_warning`, `refreshed`, `refresh_failed`, `corrected` or `uncached` | `x-freshness-action` |
+| `found` | the value the source states now | `x-freshness-current-value` |
+| `checked_ago_s` | whole seconds between the evidence fetch and this answer | computed from `x-freshness-checked-at` |
+| `source` | the fact's `source_url` | `x-freshness-source` |
+| `provider` | `tavily_extract`, `tavily_search` or `direct_fetch (not Tavily)` | `x-freshness-provider` |
+| `checked_at` | when the evidence was fetched (RFC 3339) | `x-freshness-checked-at` |
+| `evidence` | `fetched` (the source was read for this request) or `reused` (evidence kept from an earlier read) | `x-freshness-evidence` |
+| `stated` | the value the checked answer stated | `x-freshness-cached-value` (a cached answer) or `x-freshness-answer-value` (a new answer) |
+| `served_check` | after a refresh or correction, how the answer you got compares with the source: `matches_current`, `differs_from_current` or `no_value` | `x-freshness-corrected-check` when the answer was corrected, otherwise `x-freshness-refreshed-check` |
+| `fact` | the watched fact that decided | `x-freshness-fact` |
+| `answer` | `cached` (a hit was checked) or `new` (a fresh answer was checked) | `x-freshness-answer` |
+
+A pair whose value is empty is left out, so a confirmed hit has no `served_check` and a check whose fetch failed has no `found`, `checked_at` or `evidence`.
+
+**When it is set.** Exactly when `x-freshness-status` is set: a checked cache hit (served, served with a warning, refreshed, corrected or uncached), a checked new answer (`verify_new_answers`), and a refused stale answer (the 502). `GET /freshness/explain/{id}` returns the same receipt as a `receipt` object (there the field is `checked_ago_seconds`). `demo-ask.ps1` prints it in words, and the dashboard shows it under each Try-it step and in the request list.
+
+**What it is honest about.** `checked_ago_s` counts from the real fetch, so with `evidence=reused` it tells you how old the notes about the page were when this answer went out: up to `-evidence-ttl`, or the source's learned interval with `-check-adaptive`. When a question matches several watched facts, the receipt describes the fact that decided, as the other headers do.
+
+**Not covered in this version.** Verified answers (served from the table) and streamed answers carry no status header, so they have no receipt. The check behind a verified answer is in `x-freshness-verified-check` instead.
+
 ## Verified answers (known answers written by a person)
 
 For questions where a person has already written the right answer, the companion can give that answer itself. Start it with `-verified answers.json`:
@@ -469,6 +516,75 @@ For questions where a person has already written the right answer, the companion
 - **Reloading.** Every `-verified-reload` (default 5 s) the file's modification time and size are checked, and a changed file is loaded. This works on Windows (there is no `SIGHUP` there). A changed file that does not validate is rejected: the previous table stays in use and `last_reload_error` in `GET /freshness/verified` says why.
 - **When the answer states a watched fact.** If the question falls in a policy category that has a watched fact (a price), the curated text is run through the same check as a new model answer (`Engine.CheckNewAnswer`) against the source page. If the page **contradicts** it, the entry is not served: the request carries on to the cache and the model as usual, and the response says `x-freshness-verified: stale_verified` (plus the label). The entry shows `"stale": true` in `GET /freshness/verified` until a later check agrees. If the check agrees the reply says `x-freshness-verified-check: confirmed`; if it cannot be run (source down, no value in the text) the entry is served and says `unable_to_verify`. Limit: this uses the policy's fact patterns, so it only catches what those patterns can read, and it costs an evidence fetch (shared with the evidence cache, `-evidence-ttl`) per such request.
 - **Listing.** `GET /freshness/verified` returns `enabled`, `count`, `loaded_at`, `last_reload_error`, `served`, `stale_skipped` and, per entry, a 12-character hash id, the label, whether it is scoped and whether it is stale. No questions, answers, sources or scope values.
+
+## MCP mode
+
+With `-mcp` the companion also answers `POST /mcp` as a small [MCP](https://modelcontextprotocol.io) server, so an MCP client (Bifrost's MCP gateway, or any other) can call the companion's checks as tools instead of reading headers. The default stays off; nothing else changes when it is on. The one command for the Docker stack is in [DOCKER.md](../DOCKER.md#mcp-mode); locally it is just:
+
+```sh
+./freshness-companion -policy examples/policy.local.json -provider direct -mcp
+```
+
+**What it speaks.** The plain-HTTP shape of MCP's Streamable HTTP transport, version `2025-06-18`: one JSON-RPC 2.0 object per `POST`, one JSON object back. There are no server-sent events, no session ids and no batches; a notification (no `id`) gets `202` with an empty body; `GET /mcp` is `405`. That is enough for a client that lists and calls tools, and it is what Bifrost uses when its `max_protocol_version` is `2025-06-18`. A client asking for a newer version is offered `2025-06-18`. Methods: `initialize`, `ping`, `tools/list`, `tools/call`; anything else (resources, prompts, `server/discover`) is `-32601 method not found`. Standard library only, like the rest.
+
+**The four tools.** Each returns one `text` content block in plain words plus `structuredContent` with the same facts.
+
+| Tool | Arguments | What it does |
+|---|---|---|
+| `check_freshness` | `question` (required), `answer`, `category` | Classifies the question with the policy; for each watched fact that applies, reads the live source through the evidence cache (same `-evidence-ttl`) and extracts the current value. With an `answer`, compares the value it states: `outcome` is `confirmed`, `stale` or `unable_to_verify`, and `action` is what the policy would do (`serve`, `refresh`, `serve_with_warning`). Without an answer it returns the current values (`not_compared`). A question in no time-sensitive category gives `not_time_sensitive`. `category` forces a category when the keywords would not pick it. |
+| `explain_request` | `request_id` (required) | The same record as `GET /freshness/explain/{id}`: the plain-words text and the structured fields. An unknown id is a tool error that says so (`isError: true`). |
+| `list_watched_sources` | none | The policy's categories (with `max_age`) and watched facts (name, category, source URL, compare mode), the evidence provider's name, and the last 50 change notices. |
+| `report_change` | exactly one of `fact`, `category`, `source_url`; optional `note`, `clear_cache_keys` | Exactly `POST /freshness/changes`: the two share one function, so the record, the dropped evidence, the cleared keys and the refusals (unknown fact, two selectors, more than 10 keys) are the same, word for word. If `FRESHNESS_NOTICE_TOKEN` is set, the MCP request must carry it too, as `Authorization: Bearer <token>` or, for a client whose `Authorization` header is taken, `X-Freshness-Notice-Token: <token>`. The three read tools never need it. |
+
+Tool errors (a missing argument, an unknown fact, a source that cannot be read) come back as a result with `isError: true` and a plain message, so a model-driven client can read them and try again; only an unknown tool or malformed params is a JSON-RPC error (`-32602`).
+
+**Examples** (against the Docker stack on `:8090`; the demo policy watches `http://demoserver:8000/`):
+
+```sh
+# Handshake (the same body Bifrost sends first)
+curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
+# -> {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":false}},"serverInfo":{"name":"freshness-companion","version":"0.1"},...}}
+
+curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+
+# Is "$49 per month" still right?
+curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"check_freshness","arguments":{"question":"How much does the Acme Pro plan cost per month?","answer":"The Pro plan is $49 per month."}}}'
+# -> result.structuredContent: {"time_sensitive":true,"category":"price","max_age":"10m0s","facts":[{"name":"Acme Pro plan price","source_url":"http://demoserver:8000/","current_value":"49","value_in_answer":"49","verdict":"confirmed",...}],"outcome":"confirmed","action":"serve",...}
+
+# Why did I get that answer?  (id from the x-freshness-request-id response header)
+curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"explain_request","arguments":{"request_id":"req-3fa9c2d1-7"}}}'
+
+curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"list_watched_sources","arguments":{}}}'
+
+# The price changed: drop the cached evidence and mark older entries suspect.
+curl -s http://127.0.0.1:8090/mcp -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"report_change","arguments":{"fact":"Acme Pro plan price","note":"price page updated"}}}'
+```
+
+**Through Bifrost.** When Bifrost is configured with the companion as an MCP client named `freshness` (the Docker overlay does this), the tools appear as `freshness-check_freshness`, `freshness-explain_request`, `freshness-list_watched_sources` and `freshness-report_change` on Bifrost's own MCP gateway (`POST /mcp` on Bifrost) and on `POST /v1/mcp/tool/execute`. See [DOCKER.md](../DOCKER.md#mcp-mode) for the exact calls and the side effects of that mode.
+
+**Privacy.** `check_freshness` sends only the policy's `source_url` to the evidence provider, as always; the question and answer stay in the companion and are not logged. `explain_request` returns records that hold no prompt or answer text. Results go back to whoever called the tool, so the companion treats `/mcp` like its other endpoints: keep it on a trusted network, or in front of something that checks callers.
+
+## Smart checking and the background watcher
+
+Both are **off by default**. With the defaults the companion behaves exactly as described everywhere else in this file: evidence per source is reused for a fixed `-evidence-ttl` and nothing runs in the background.
+
+**Smart checking (`-check-adaptive`).** Think of a shop you walk past: if the price in the window has not changed the last ten times you looked, you start looking less often; the moment it changes, you look every day again. Each source URL gets its own re-check interval *I*:
+
+- *I* starts at the floor, `-evidence-ttl`.
+- After every successful fetch the companion reads **every** fact that uses that URL. Same values as last time: *I* becomes `min(I x growth, -check-max)`. A different value: *I* drops back to the floor, the change is counted, and the watcher (below) is told what changed (old and new value per fact). A fact the pattern cannot read (no match, or conflicting values on the page): *I* drops to the floor and does not grow.
+- A fetch error leaves *I* alone; the retry is due after the floor.
+- A change notice (`POST /freshness/changes`) drops the evidence and resets *I* to the floor.
+- Evidence is kept for *I*. With `-check-adaptive=false`, *I* is always the floor: today's behaviour, byte for byte.
+
+**What this does and does not change (stated plainly).** The rule for "confirmed" does not change: an answer is confirmed only by comparing it with evidence the companion holds. What changes is how old that evidence may be: up to *I* (at most `-check-max`) instead of up to `-evidence-ttl`. The worst case is a page that was quiet long enough to reach the cap and then changes just after a check: answers stating the old value can be served as "confirmed" for up to `-check-max` (5 min by default, 60 s in the docker stack). After any change *I* drops back to the floor, so a run of changes is tracked closely. What bounds the window: change notices reset it at once; the watcher moves the check off the request path and deletes old answers; and `-check-adaptive=false` restores the fixed window. The measured trade-off is in [`eval-harness/results/checksim-20261110.md`](../eval-harness/results/checksim-20261110.md): on a quiet page about 92% fewer fetches for a few stale answers around the one change; on a page that changes every 10 minutes with a 5-minute cap, 24% of answers were stale, so for such a page use a short cap or send notices.
+
+**Background watcher (`-watch`).** A loop ticks every second. When a source's evidence has only a little time left (lead = `min(I/5, 5 s)`), the watcher fetches it through `Cache.Refresh`, so the next request finds fresh evidence and does not wait. Only *active* sources are watched: a request looked the source up within `-watch-idle`; a source nobody has asked about is never fetched. `-watch-max-per-hour` is a hard rolling-hour cap; over it, checks are skipped and counted, and the request path still fetches when evidence expires, so the watcher is never worse than no watcher. At low traffic the watcher can fetch *more* than on-demand checking (it keeps evidence warm that nobody asks for within the interval); the measurements show that case.
+
+**Reaction to a change.** Whenever a fetch, by the watcher or by a request, shows a fact with a new readable value, the watcher deletes every Bifrost entry it knows states a different value (`DELETE /api/cache/clear/{id}` plus the age store), skipping entries the age store says were written after the change was seen (a refresh under Bifrost's deterministic id may already have rewritten them). It learns which entries state which value from the decision log: a served hit, a refreshed answer that matches the current value, and a checked new answer each name their entry and value; uncached ones are dropped; the index is bounded at 10,000 entries. Each change writes one decision record per fact with `answer_of: "watcher"`, `outcome: "changed"`, `action: "evicted"` or `"noted"`, `cached_value` (old), `current_value` (new) and `evicted: [ids]`. Dashboards must count these separately: they are not request decisions. With `-watch-evict=false` the change is only noted. Changes are queued (16 slots); when the queue is full a change is dropped and counted (`changes_dropped`), and the entries it would have deleted are refreshed on their next hit as usual.
+
+**State is in memory**, per process: intervals and the entry index reset on restart.
+
+**Measuring it without paid APIs.** `go run ./cmd/checksim` drives the real cache, schedule, watcher and decision engine on a virtual clock with a fake page and Poisson requests, deterministic per seed, and prints the table that is in `eval-harness/results/`.
 
 ## Tests
 
@@ -515,7 +631,7 @@ Tavily API shapes implemented, as documented at [Extract](https://docs.tavily.co
 ## Limitations
 
 - **Tavily is not a truth oracle.** The evidence is whatever the source page says, as extracted by Tavily, possibly from Tavily's own cache, a CDN cache or a stale page. `confirmed` means "matches the configured source at `x-freshness-checked-at`", nothing more.
-- **The evidence cache leaves a window.** A change on the source page is noticed only once the cached evidence for it expires (`-evidence-ttl`, default 60 s). This trades a short lag for not calling Tavily on every hit.
+- **The evidence cache leaves a window.** A change on the source page is noticed only once the cached evidence for it expires: after `-evidence-ttl` (default 60 s), or, with `-check-adaptive`, after that source's learned interval, which can be as long as `-check-max` (default 5 min) for a page that has been quiet. Until then answers stating the old value are served as "confirmed", because they do match the evidence the companion holds. This trades a lag for not calling Tavily on every hit. A change notice closes the window at once; the background watcher (`-watch`) moves the check off the request path and deletes old answers once a change is seen, but does not shorten the interval itself.
 - **Extraction depends on patterns.** If the page or the answer is worded differently, the pattern matches nothing. That gives `unable_to_verify`, never `confirmed`. The patterns must be maintained with the page. If the model states the price differently ("$49 a seat"), the answer pattern may not match.
 - **Streams are not checked.** `stream: true` requests and `text/event-stream` responses pass through untouched. The companion only reads their cache headers to record entry ages. Bodies larger than the size limits, non-chat endpoints (`/v1/responses`, `/v1/embeddings`, …) and other gateway routes are not checked either.
 - **Entry age is the companion's own record.** Entries written while the companion was not in the path, or before its age file existed, have an unknown age until their next miss. A request sent around the companion is invisible to it.

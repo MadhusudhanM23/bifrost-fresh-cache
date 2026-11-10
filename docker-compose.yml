@@ -98,6 +98,18 @@ services:
       #      Pages, and point source_url at that).
       - "-provider=direct"
       - "-evidence-ttl=5s"
+      # Smart checking and the background watcher. Both OFF by default so the
+      # demos above behave exactly as documented (Try-it waits a fixed 6 s for the
+      # 5 s evidence TTL). Opt in from the shell or a .env file:
+      #   CHECK_ADAPTIVE=true   check a page that keeps saying the same thing less
+      #                         often, from 5 s up to CHECK_MAX (default 60s)
+      #   WATCH=true            re-check active pages before their evidence expires
+      #                         and delete cached answers that state the old value
+      #   WATCH_MAX_PER_HOUR    cap on watcher fetches per rolling hour (default 120)
+      - "-check-adaptive=${CHECK_ADAPTIVE:-false}"
+      - "-check-max=${CHECK_MAX:-60s}"
+      - "-watch=${WATCH:-false}"
+      - "-watch-max-per-hour=${WATCH_MAX_PER_HOUR:-120}"
       # Wrong-match audit: ask the model again for every semantic hit (the demo's
       # traffic is small and the model is a mock, so auditing everything is free).
       # On a real model keep -audit-rate low and rely on -audit-near-margin.

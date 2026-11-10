@@ -216,3 +216,29 @@ func TestCompilePatternRequiresOneGroup(t *testing.T) {
 		t.Errorf("non-capturing groups should be allowed: %v", err)
 	}
 }
+
+func TestNormalizeMatchesExtract(t *testing.T) {
+	fromText := mustExtract(t, demoSource, "Acme Pro plan — $1,299.00 per month", Numeric)
+	fromValue, err := Normalize(" 1299 ", Numeric)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !Equal(fromText, fromValue, Numeric) {
+		t.Fatalf("Normalize(%q) = %+v, does not equal the extracted %+v", "1299", fromValue, fromText)
+	}
+	if v, err := Normalize("Monday  9AM", Exact); err != nil || v.Normalized != "monday 9am" {
+		t.Fatalf("exact: got %+v, %v", v, err)
+	}
+	if v, err := Normalize("currently unavailable", Boolean); err != nil || v.Normalized != "false" {
+		t.Fatalf("boolean: got %+v, %v", v, err)
+	}
+	if _, err := Normalize("", Numeric); !errors.Is(err, ErrNoMatch) {
+		t.Fatalf("empty: got %v, want ErrNoMatch", err)
+	}
+	if _, err := Normalize("free", Numeric); err == nil {
+		t.Fatal("a non-number must not normalize as numeric")
+	}
+	if _, err := Normalize("49", Mode("fuzzy")); err == nil {
+		t.Fatal("an unknown mode must be rejected")
+	}
+}

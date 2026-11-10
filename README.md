@@ -24,8 +24,9 @@ So we built both halves.
 | Part | What it does | Where |
 |---|---|---|
 | **pgvector VectorStore** for Bifrost | A full `VectorStore` implementation (all 13 methods), config and Helm wiring, docs, and 32 tests that run against a real PostgreSQL. Written to be a PR, not a hack. | [`bifrost/`](bifrost) fork, branch `feat/pgvector-vectorstore`, mainly `framework/vectorstore/pgvector.go` |
-| **Freshness companion** | A reverse proxy in front of Bifrost. Before it reuses a time-sensitive answer, it reads the live source (through Tavily Extract) and compares. It also gates risky look-alike hits, keeps tool results and secrets out of the cache, shares one refresh across a stampede, audits a sample of reuses, and explains every decision. Go, standard library only. | [`freshness-companion/`](freshness-companion) |
+| **Freshness companion** | A reverse proxy in front of Bifrost. Before it reuses a time-sensitive answer, it reads the live source (through Tavily Extract) and compares. It also gates risky look-alike hits, keeps tool results and secrets out of the cache, shares one refresh across a stampede, audits a sample of reuses, and explains every decision. With `-mcp` it also offers these checks as four MCP tools, which Bifrost's MCP gateway can expose. Go, standard library only. | [`freshness-companion/`](freshness-companion) |
 | **Postgres-only extras** | Row-level security as a second tenant wall enforced by the database, cleanup of expired rows (they otherwise live forever), `halfvec` compact vectors (about half the disk in our test), and plain SQL views over the cache. | `bifrost/` docs, [`sql/`](sql) |
+| **New: receipts, smart checking, watcher, MCP** | Every checked answer now carries a one-line **receipt** (what was checked, when, what the page said). Opt-in: **smart checking** re-checks pages that never change less often (92% fewer page reads on a quiet page in our simulation), a **background watcher** re-checks busy pages ahead of time and deletes answers that state an old value, and **MCP mode** lets any agent call the checks as tools through Bifrost's MCP gateway. | [Answer receipts](#answer-receipts-every-checked-answer-says-what-was-checked), [Checking less often](#checking-less-often-and-checking-before-you-ask), [DOCKER.md](DOCKER.md#mcp-mode) |
 | **Dashboard** | Answers "is the cache saving money, and is it telling the truth?" in plain words, with a Try-it panel that runs the same scenario through a plain cache and through ours, side by side. | [`dashboard/`](dashboard) |
 | **Evidence** | Store benchmarks against Qdrant, a threshold-quality harness, an impact benchmark, and a 16-step end-to-end run through the real gateway. | [`eval-harness/`](eval-harness), [`e2e/`](e2e) |
 
@@ -122,7 +123,7 @@ Proven live on 10 Nov 2026: the price question was cached while the page said $4
 
 ## How the two technologies are used
 
-**Bifrost** is the thing we extend, not just a thing we call. The pgvector store plugs into Bifrost's `VectorStore` interface, registers through its config schema and Helm chart, and is covered by Bifrost's own shared contract tests plus our own. The companion sits in front of a *stock* Bifrost build and drives it through its public API: `x-bf-cache-key` for tenant buckets, `x-bf-cache-no-store` to keep things out, `DELETE /api/cache/clear/{id}` to evict a stale entry. Nothing in the companion depends on a private hook.
+**Bifrost** is the thing we extend, not just a thing we call. The pgvector store plugs into Bifrost's `VectorStore` interface, registers through its config schema and Helm chart, and is covered by Bifrost's own shared contract tests plus our own. The companion sits in front of a *stock* Bifrost build and drives it through its public API: `x-bf-cache-key` for tenant buckets, `x-bf-cache-no-store` to keep things out, `DELETE /api/cache/clear/{id}` to evict a stale entry. Nothing in the companion depends on a private hook. The connection also runs the other way: in MCP mode (`docker-compose.mcp.yml`) the companion serves a small MCP server and Bifrost registers it as an MCP client, so Bifrost's MCP gateway exposes `freshness-check_freshness`, `freshness-explain_request`, `freshness-list_watched_sources` and `freshness-report_change` to any agent or client that uses it. Off by default; see [DOCKER.md](DOCKER.md#mcp-mode).
 
 **Tavily** is the companion's evidence. When a cached answer is about a watched fact (a price, a policy, an opening time), the companion asks Tavily Extract for the current page, pulls the value with a configured pattern, and compares it with the value in the cached answer. Only the source URL ever goes to Tavily; prompts, answers and credentials never leave the box. If Tavily is unreachable the response says so in a header (`unable_to_verify`) instead of pretending.
 
@@ -142,6 +143,16 @@ app  →  Bifrost  →  semantic-cache plugin  →  VectorStore interface  →  
 
 32 pgvector tests plus Bifrost's shared contract tests pass against PostgreSQL 16.15 / pgvector 0.8.7 (`go test ./vectorstore/ -run PgVector -count=1` in `bifrost/framework`). `go build`, `go vet` and `gofmt` are clean.
 
+## Answer receipts: every checked answer says what was checked
+
+Every answer that went through a freshness check carries one extra header, `x-freshness-receipt`, that sums the check up in a single line: the verdict, what the source page said, how many seconds before this answer it was read, where and how it was read, and whether that reading was fresh or reused notes.
+
+```
+x-freshness-receipt: v=1; verdict=confirmed; action=served; found="59"; checked_ago_s=12; source="http://demoserver:8000/"; provider="direct_fetch (not Tavily)"; checked_at="2026-11-10T09:00:00Z"; evidence=reused; stated="59"; fact="Acme Pro plan price"; answer=cached
+```
+
+Think of it as the till receipt stapled to the parcel: it does not change what is inside, and you can check the sum. The answer body is never touched, so receipts are always on (no flag): they only add the `x-freshness-receipt` and `x-freshness-evidence` headers. `demo-ask.ps1` prints the receipt in words, `GET /freshness/explain/{id}` returns it as a `receipt` object, and the dashboard shows it under each Try-it step on the companion's side and in the request list. Verified answers and streamed answers have no receipt, because they have no freshness status. Format and keys: [freshness-companion/README.md](freshness-companion/README.md#answer-receipts).
+
 ## What the companion checks, in order
 
 1. **Guard.** Requests that carry a tool result, offer an action tool, or contain an email, card number, token or similar never touch the cache.
@@ -152,9 +163,20 @@ app  →  Bifrost  →  semantic-cache plugin  →  VectorStore interface  →  
 6. **Change notices.** `POST /freshness/changes` marks entries for re-check on their next hit.
 7. **Stampede.** Everyone waiting on the same refresh shares one model call.
 8. **Audit.** A sample of reuses is re-asked afterwards and turned into a wrong-match rate and a suggested threshold.
-9. **Explain.** `GET /freshness/explain/{id}` says in plain words how a request was answered, without the prompt or answer text.
+9. **Explain.** `GET /freshness/explain/{id}` says in plain words how a request was answered, without the prompt or answer text, and every checked answer carries a receipt header.
 
-Every response carries `x-freshness-*` headers with the outcome. Details, flags and the test list are in [freshness-companion/README.md](freshness-companion/README.md). `go test ./...` there runs 183 tests counting subtests.
+Opt-in extras (off by default): **smart checking** re-checks quiet pages less often, the **background watcher** re-checks active pages ahead of time and deletes answers that state an old value, and **MCP mode** offers the checks as tools through Bifrost's MCP gateway. See the sections above.
+
+Every response carries `x-freshness-*` headers with the outcome. Details, flags and the test list are in [freshness-companion/README.md](freshness-companion/README.md). `go test ./...` there runs 265 tests counting subtests (10 Nov 2026).
+
+## Checking less often, and checking before you ask
+
+Two opt-in features, both **off by default** so every demo above is unchanged:
+
+- **Smart checking** (`CHECK_ADAPTIVE=true`): a page that keeps saying the same thing is re-checked less and less often, from the evidence TTL up to a cap (`CHECK_MAX`, 60 s in docker, 5 min as the flag default); the moment it changes, the checks go back to the fastest rate. Measured on a virtual clock with the real code ([`eval-harness/results/checksim-20261110.md`](eval-harness/results/checksim-20261110.md)): on a page that changes once a day, 92% fewer evidence fetches than a fixed 5 s check, at the cost of a handful of stale answers around the change (up to the cap); on a page that changes every 10 minutes with a 5-minute cap, a quarter of the answers were stale, so such a page needs a short cap or change notices. What "confirmed" means does not change; how old the evidence behind it may be does, and the header `x-freshness-checked-at` says exactly when it was checked.
+- **Background watcher** (`WATCH=true`): re-checks pages people are actually asking about shortly before their evidence expires, so requests find fresh evidence and do not wait, and deletes the cached answers it knows state the old value once it sees a change. Capped per hour (`WATCH_MAX_PER_HOUR`). Two honest caveats from the same report: at low traffic it can fetch more than on-demand checking, and combined with smart checking it served **more** stale answers in the simulation than smart checking alone (quiet trace 11 vs 5, busy-sale trace 263 vs 180), because keeping evidence warm also keeps old evidence in use until the next scheduled look. It only reached zero stale answers when the page owner also sent change notices (`POST /freshness/changes`). Use it with `CHECK_ADAPTIVE=true`: on its own it re-checks every few seconds and uses up its hourly cap in minutes.
+
+`GET /freshness/watch` shows every source's interval, last values and next check. Details in [freshness-companion/README.md](freshness-companion/README.md#smart-checking-and-the-background-watcher), the docker opt-in in [DOCKER.md](DOCKER.md#opt-in-smart-checking-and-the-background-watcher).
 
 ## Proof it works end to end
 
@@ -164,7 +186,7 @@ Every response carries `x-freshness-*` headers with the outcome. Details, flags 
 
 ```
 bifrost/              Bifrost fork (git submodule) with the pgvector store, branch feat/pgvector-vectorstore
-freshness-companion/  the proxy, its tests, demo page, Tavily client
+freshness-companion/  the proxy, its tests, demo page, Tavily client, watcher (internal/watch), MCP server (internal/mcpserver)
 dashboard/            Go server + single HTML page
 eval-harness/         storebench, cachequality, hybridspike, impactbench + results/
 e2e/                  end-to-end harness and the recorded run
@@ -182,6 +204,7 @@ DOCKER.md             the walkthrough judges should follow
 - The gate covers hits below its line and fails open if it cannot run. Exact-hash hits on a pre-planted answer in a shared bucket are not gated.
 - Row-level security guards against bugs and forgotten filters, not against someone holding the app role's password.
 - The companion keeps its state in one process. Two copies would not share it. The store is benchmarked (10,000 rows, 8 clients); the whole gateway plus companion is not load-tested.
+- Smart checking trades freshness for fetches, and the simulator says by how much: with a 5-minute cap, a page that changes every 10 minutes had 24% of its answers served stale (all within the cap). The simulator uses a fake page and Poisson traffic, not real users; the saving on real traffic depends on how often the page actually changes.
 - Latency measured from a Windows host through Docker Desktop is dominated by Docker's port proxy (60 ms vs about 8 ms inside the network). Representative numbers in `eval-harness/` come from a Linux client on the Docker network.
 - We measured a keyword-plus-meaning hybrid search and chose not to build it; the mock embeddings flatter it and it would cost privacy. See `eval-harness/results/hybridspike-recommendation.md`.
 

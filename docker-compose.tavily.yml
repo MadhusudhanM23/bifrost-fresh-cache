@@ -20,6 +20,12 @@ services:
       - "-policy=/app/policy.json"
       - "-provider=tavily_extract"
       - "-evidence-ttl=5s"
+      # Smart checking / watcher: off by default (same variables as docker-compose.yml).
+      # The watcher cap defaults lower here because every watcher fetch is a Tavily call.
+      - "-check-adaptive=${CHECK_ADAPTIVE:-false}"
+      - "-check-max=${CHECK_MAX:-60s}"
+      - "-watch=${WATCH:-false}"
+      - "-watch-max-per-hour=${WATCH_MAX_PER_HOUR:-30}"
       - "-audit-rate=1"
       - "-audit-near-margin=0.05"
       - "-audit-max-per-minute=120"

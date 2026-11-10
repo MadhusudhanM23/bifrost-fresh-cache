@@ -91,6 +91,7 @@ type Server struct {
 	log     *slog.Logger
 	started time.Time
 	mux     *http.ServeMux
+	mcp     atomic.Pointer[http.Handler] // set by EnableMCP (mcp.go)
 	changes *changes.Store
 	auditor *auditor
 	flights *flights[*refreshOutcome]
@@ -157,6 +158,7 @@ func New(cfg Config) (*Server, error) {
 	mux.HandleFunc("GET /freshness/verified", s.handleVerified)
 	mux.HandleFunc("GET /freshness/changes", s.handleChanges)
 	mux.HandleFunc("POST /freshness/changes", s.handleChangeNotice)
+	mux.HandleFunc("POST /mcp", s.handleMCP) // MCP server (see mcp.go); off until EnableMCP is called
 	mux.HandleFunc("/v1/", s.handleV1)
 	s.mux = mux
 	return s, nil
@@ -171,6 +173,7 @@ func (s *Server) handleV1(w http.ResponseWriter, r *http.Request) {
 		id := s.newRequestID()
 		w.Header().Set(HeaderRequestID, id)
 		cw := &captureWriter{ResponseWriter: w}
+		cw.beforeHeader = func(h http.Header) { setReceipt(h, s.cfg.Now()) }
 		cw.onHeader = func(c *captureWriter) { s.explains.add(s.explain(id, c)) }
 		w = cw
 		defer func() {

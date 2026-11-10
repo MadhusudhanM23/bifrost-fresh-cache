@@ -41,7 +41,17 @@ type DecisionRecord struct {
 	// Gate: what the check before serving did to a risky semantic hit:
 	// verified | trusted | blocked | unverified (empty = it did not apply).
 	Gate string `json:"gate,omitempty"`
+	// Evicted lists the cache entries a background-watcher record removed
+	// (answer_of "watcher", outcome "changed"). Such a record describes a
+	// change the watcher saw on a source page, not an answer anyone was given.
+	Evicted []string `json:"evicted,omitempty"`
 }
+
+// answerOfWatcher marks a decision record written by the background watcher
+// when a source page changed (outcome "changed", action "evicted" or "noted").
+// It is not a verdict on an answer, so it stays out of the outcome and
+// per-fact counts and is counted on its own.
+const answerOfWatcher = "watcher"
 
 // decisionsEnvelope is the wrapper GET /freshness/decisions returns.
 type decisionsEnvelope struct {
@@ -90,6 +100,10 @@ type DecisionStats struct {
 	// WrongNewStopped counts wrong new answers that were corrected or removed
 	// from the cache, leaving out any record already counted in StaleStopped.
 	WrongNewStopped int `json:"wrong_new_stopped"`
+	// WatcherChanges counts source changes the background watcher saw
+	// (answer_of "watcher"). Those records are left out of every count above
+	// and of Total; they are still listed in Decisions.
+	WatcherChanges int `json:"watcher_changes"`
 }
 
 // StaleWarning is one "this fact keeps going stale" alert.
@@ -126,8 +140,12 @@ func computeDecisionStats(records []DecisionRecord, staleThreshold int) Decision
 	byFact := map[string]*FactStat{}
 	var factOrder []string
 
-	var newChecked, newContradicted, corrected, uncached, noticeDriven, shared, staleStopped, wrongNewStopped int
+	var newChecked, newContradicted, corrected, uncached, noticeDriven, shared, staleStopped, wrongNewStopped, watcherChanges int
 	for _, r := range records {
+		if r.AnswerOf == answerOfWatcher {
+			watcherChanges++
+			continue // a page change the watcher saw, not an answer anyone got
+		}
 		if r.AnswerOf == "new" {
 			newChecked++
 			if r.Outcome == "contradicted" {
@@ -204,7 +222,7 @@ func computeDecisionStats(records []DecisionRecord, staleThreshold int) Decision
 	})
 
 	return DecisionStats{
-		Total:          len(records),
+		Total:          len(records) - watcherChanges,
 		Outcomes:       outcomes,
 		Facts:          facts,
 		Warnings:       warnings,
@@ -219,6 +237,7 @@ func computeDecisionStats(records []DecisionRecord, staleThreshold int) Decision
 		SharedRefreshes: shared,
 		StaleStopped:    staleStopped,
 		WrongNewStopped: wrongNewStopped,
+		WatcherChanges:  watcherChanges,
 	}
 }
 

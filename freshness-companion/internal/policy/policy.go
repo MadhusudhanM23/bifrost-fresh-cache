@@ -542,7 +542,28 @@ func (p *Policy) Resolve(text string) (eff Effective, ok bool) {
 	if len(cats) == 0 {
 		return Effective{}, false
 	}
-	eff = Effective{
+	return p.effective(cats, text), true
+}
+
+// ResolveCategory is Resolve for one named category, whether or not its
+// keywords appear in text: the category's own settings apply, and its facts
+// are kept when their keywords (if any) match text. ok is false when no
+// category has that name.
+func (p *Policy) ResolveCategory(name, text string) (eff Effective, ok bool) {
+	name = strings.TrimSpace(name)
+	for _, c := range p.Categories {
+		if c.Name == name {
+			return p.effective([]*Category{c}, text), true
+		}
+	}
+	return Effective{}, false
+}
+
+// EffectiveMaxAge is the category's max_age after the defaults are applied.
+func (c *Category) EffectiveMaxAge() time.Duration { return c.maxAge }
+
+func (p *Policy) effective(cats []*Category, text string) Effective {
+	eff := Effective{
 		MaxAge:         cats[0].maxAge,
 		OnUnverifiable: UnverifiableServeWithWarning,
 		OnUnknown:      cats[0].onUnknown,
@@ -569,7 +590,7 @@ func (p *Policy) Resolve(text string) (eff Effective, ok bool) {
 			eff.Facts = append(eff.Facts, f)
 		}
 	}
-	return eff, true
+	return eff
 }
 
 // FactNames returns the names of the facts in eff, in policy order.

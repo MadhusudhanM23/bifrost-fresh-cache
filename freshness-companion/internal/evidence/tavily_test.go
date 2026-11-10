@@ -239,3 +239,33 @@ func TestTavilySearchValidationErrorList(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestTavilyExtractFreshStampBypassesRememberedCopy(t *testing.T) {
+	// Tavily returns a remembered copy for a URL it has seen. With FreshStamp
+	// the request carries a never-seen URL (a _fresh=<unix> parameter), Tavily
+	// echoes that URL back, and the evidence is still filed under the source URL.
+	srv, got := fakeTavily(t, http.StatusOK, `{
+		"results": [{"url": "https://example.github.io/pricing/?_fresh=1762800000", "raw_content": "Acme Pro plan — $59 per month", "images": []}],
+		"failed_results": [], "response_time": 0.4, "request_id": "abc"
+	}`, nil)
+	p, err := NewTavilyExtract(TavilyConfig{APIKey: testKey, BaseURL: srv.URL, FreshStamp: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ev, err := p.Fetch(context.Background(), "https://example.github.io/pricing/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	urls, _ := got.body["urls"].([]any)
+	if len(urls) != 1 || !strings.HasPrefix(urls[0].(string), "https://example.github.io/pricing/?_fresh=") {
+		t.Fatalf("urls = %v, want the source URL with a _fresh stamp", got.body["urls"])
+	}
+	if ev.URL != "https://example.github.io/pricing/" || !strings.Contains(ev.Content, "$59") {
+		t.Fatalf("evidence = %+v", ev)
+	}
+	// A stamp that is already present is replaced, not stacked; other params survive.
+	u := freshStampURL("https://x.test/p?a=1&_fresh=5", time.Unix(99, 0))
+	if u != "https://x.test/p?_fresh=99&a=1" {
+		t.Fatalf("freshStampURL = %s", u)
+	}
+}

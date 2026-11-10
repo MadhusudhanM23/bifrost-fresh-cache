@@ -94,6 +94,7 @@ func run(args []string) error {
 		tavilyDepth    = fs.String("tavily-depth", "basic", "Tavily extract_depth: basic | advanced")
 		tavilyFormat   = fs.String("tavily-format", "text", "Tavily content format: text | markdown")
 		tavilyTimeout  = fs.Duration("tavily-timeout", 10*time.Second, `Tavily's server-side "timeout" parameter (1s-60s)`)
+		tavilyFresh    = fs.Bool("tavily-fresh", true, "add a unique _fresh=<unix> query parameter so Tavily fetches the live page instead of a remembered copy")
 		directRaw      = fs.Bool("direct-raw", false, "direct provider: match patterns against raw HTML instead of visible text")
 		evidenceTTL    = fs.Duration("evidence-ttl", 60*time.Second, "reuse evidence per source URL for this long (0 disables)")
 		evidenceErrTTL = fs.Duration("evidence-error-ttl", 10*time.Second, "remember an evidence failure for this long (0 disables)")
@@ -154,7 +155,7 @@ func run(args []string) error {
 		pol = p
 	}
 
-	provider, err := newProvider(*providerName, *tavilyURL, *tavilyDepth, *tavilyFormat, *tavilyTimeout, *directRaw, *maxEvidence, *evidenceTO)
+	provider, err := newProvider(*providerName, *tavilyURL, *tavilyDepth, *tavilyFormat, *tavilyTimeout, *tavilyFresh, *directRaw, *maxEvidence, *evidenceTO)
 	if err != nil {
 		return err
 	}
@@ -301,13 +302,14 @@ func run(args []string) error {
 	return httpServer.Shutdown(shutdownCtx)
 }
 
-func newProvider(name, tavilyURL, depth, format string, serverTimeout time.Duration, directRaw bool, maxBytes int64, timeout time.Duration) (evidence.Provider, error) {
+func newProvider(name, tavilyURL, depth, format string, serverTimeout time.Duration, fresh, directRaw bool, maxBytes int64, timeout time.Duration) (evidence.Provider, error) {
 	tavily := evidence.TavilyConfig{
 		APIKey:        os.Getenv("TAVILY_API_KEY"),
 		BaseURL:       tavilyURL,
 		ExtractDepth:  depth,
 		Format:        format,
 		ServerTimeout: serverTimeout,
+		FreshStamp:    fresh,
 		MaxBodyBytes:  maxBytes,
 		HTTPClient:    &http.Client{Timeout: timeout + 5*time.Second},
 	}

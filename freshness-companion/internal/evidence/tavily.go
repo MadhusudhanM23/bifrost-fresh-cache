@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -49,6 +50,13 @@ type TavilyConfig struct {
 	ServerTimeout time.Duration
 	// MaxBodyBytes bounds the response size (default 4 MiB).
 	MaxBodyBytes int64
+	// FreshStamp adds a unique "_fresh=<unix seconds>" query parameter to the
+	// source URL on every Extract call. Tavily serves a remembered copy of a URL
+	// it has seen before (observed on 10 Nov 2026: a page changed from $49 to
+	// $59 and the bare URL kept returning $49 while a never-seen URL form
+	// returned $59), so a freshness check needs a URL Tavily has not seen.
+	// The evidence is still reported under the configured source URL.
+	FreshStamp bool
 	// HTTPClient is optional. The caller's context bounds every call.
 	HTTPClient *http.Client
 }
@@ -259,8 +267,12 @@ func (t *TavilyExtract) Name() string { return TavilyExtractName }
 
 // Fetch implements Provider: POST /extract with {"urls": [sourceURL], ...}.
 func (t *TavilyExtract) Fetch(ctx context.Context, sourceURL string) (Evidence, error) {
+	requestURL := sourceURL
+	if t.c.cfg.FreshStamp {
+		requestURL = freshStampURL(sourceURL, time.Now())
+	}
 	payload := tavilyExtractRequest{
-		URLs:         []string{sourceURL},
+		URLs:         []string{requestURL},
 		ExtractDepth: t.c.cfg.ExtractDepth,
 		Format:       t.c.cfg.Format,
 		Timeout:      t.c.serverTimeoutSeconds(),
@@ -271,7 +283,7 @@ func (t *TavilyExtract) Fetch(ctx context.Context, sourceURL string) (Evidence, 
 	}
 	content, found := "", false
 	for _, r := range resp.Results {
-		if sameURL(r.URL, sourceURL) {
+		if sameURL(r.URL, requestURL) || sameURL(r.URL, sourceURL) {
 			content, found = r.RawContent, true
 			break
 		}
@@ -282,7 +294,7 @@ func (t *TavilyExtract) Fetch(ctx context.Context, sourceURL string) (Evidence, 
 	}
 	if !found {
 		for _, f := range resp.FailedResults {
-			if sameURL(f.URL, sourceURL) || len(resp.FailedResults) == 1 {
+			if sameURL(f.URL, requestURL) || sameURL(f.URL, sourceURL) || len(resp.FailedResults) == 1 {
 				return Evidence{}, fmt.Errorf("tavily extract: source URL not extracted: %s", t.c.redact(truncateText(f.Error, 300)))
 			}
 		}
@@ -292,6 +304,20 @@ func (t *TavilyExtract) Fetch(ctx context.Context, sourceURL string) (Evidence, 
 		return Evidence{}, errors.New("tavily extract: empty raw_content for the source URL")
 	}
 	return Evidence{URL: sourceURL, Content: content, Provider: TavilyExtractName, FetchedAt: time.Now()}, nil
+}
+
+// freshStampURL returns sourceURL with a "_fresh=<unix seconds>" query
+// parameter added (replacing any earlier one), so the URL is one Tavily has
+// not fetched before. An unparseable URL is returned unchanged.
+func freshStampURL(sourceURL string, now time.Time) string {
+	u, err := url.Parse(sourceURL)
+	if err != nil {
+		return sourceURL
+	}
+	q := u.Query()
+	q.Set("_fresh", strconv.FormatInt(now.Unix(), 10))
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 // tavilySearchRequest is the POST /search body the companion sends. The

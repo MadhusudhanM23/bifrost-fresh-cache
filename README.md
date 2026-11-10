@@ -181,9 +181,9 @@ DOCKER.md             the walkthrough judges should follow
 
 Go 1.27 · PostgreSQL 16 · pgvector 0.8 (`pgx` driver, binary protocol) · Bifrost (Go AI gateway) · Tavily Extract API · Docker Compose · plain HTML/JS for the dashboard and demo page · PowerShell and Bash for the scripts.
 
-## Tools used
+## Team and tools
 
-Built during the two-week hackathon window. AI coding assistants (Claude Code) were used for drafting code, tests and documentation; everything was then verified by running it, and every number in this README comes from a recorded run that lives in this repository.
+Built solo by **Madhusudhan M** ([MadhusudhanM23](https://github.com/MadhusudhanM23)) during the two-week hackathon window. AI coding assistants were used for drafting code, tests and documentation; everything was then verified by running it, and every number in this README comes from a recorded run that lives in this repository.
 
 ## Licence
 

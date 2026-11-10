@@ -1,0 +1,29 @@
+# Tavily mode: the freshness companion reads the watched price through Tavily
+# Extract instead of fetching the local demo page directly.
+#
+#   1. put TAVILY_API_KEY=... in .env (never commit it)
+#   2. docker compose -f docker-compose.yml -f docker-compose.tavily.yml up -d
+#
+# The watched page is the public GitHub Pages copy of the demo page:
+#   https://madhusudhanm23.github.io/bifrost-fresh-cache/acme-pricing/
+# (source: docs/acme-pricing/index.html). Tavily cannot read pages that only
+# exist on your machine, which is why this mode needs a public page.
+#
+# Cost: each freshness check that is not answered from the companion's short
+# evidence cache is one Tavily Extract call (basic extract = 1 credit per 5 pages).
+services:
+  freshness-companion:
+    command:
+      - "/usr/local/bin/freshness-companion"
+      - "-listen=:8090"
+      - "-bifrost=http://bifrost:8080"
+      - "-policy=/app/policy.json"
+      - "-provider=tavily_extract"
+      - "-evidence-ttl=5s"
+      - "-audit-rate=1"
+      - "-audit-near-margin=0.05"
+      - "-audit-max-per-minute=120"
+      - "-verify-below=0.90"
+      - "-verified=/app/verified.json"
+    volumes:
+      - ./docker/policy.tavily.json:/app/policy.json:ro

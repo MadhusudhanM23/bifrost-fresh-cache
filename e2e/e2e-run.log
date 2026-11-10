@@ -1,7 +1,7 @@
 Bifrost semantic cache + pgvector end-to-end run
 started:  2026-11-10T10:24:50+05:30
-file:     C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\bifrost-http.exe (180250112 bytes, modified 2026-11-10T10:21:41+05:30)
-file:     C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\mock-openai.exe (10411520 bytes, modified 2026-11-10T10:20:37+05:30)
+file:     <build-dir>\e2e-check\bifrost-http.exe (180250112 bytes, modified 2026-11-10T10:21:41+05:30)
+file:     <build-dir>\e2e-check\mock-openai.exe (10411520 bytes, modified 2026-11-10T10:20:37+05:30)
 file:     config.json (1318 bytes, modified 2026-11-02T16:51:20+05:30)
 source:   ..\bifrost\framework\vectorstore\pgvector.go sha256 93895c0083adfb9828891bd1e70780112cccea16265d23f3e30ed73e753279e4 (modified 2026-11-06T10:24:27+05:30; the binary must be newer than this to contain it)
 source:   ..\bifrost\framework\vectorstore\store.go sha256 0cdf763f4658a9b392dcdbf808a64454a43715192dfdcc3ecf1ac5051d0b9fb4 (modified 2026-11-03T16:49:23+05:30; the binary must be newer than this to contain it)
@@ -16,9 +16,9 @@ gateway:  http://127.0.0.1:18090   mock: http://127.0.0.1:18080   postgres: dock
   [ok]   port 127.0.0.1:18090 is free
   psql> DROP TABLE IF EXISTS "public"."BifrostSemanticCachePlugin"
         DROP TABLE
-  started mock-openai pid=13448: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\mock-openai.exe -host 127.0.0.1 -port 18080 -dim 256 -api-key sk-mock-local -chat-latency 100ms
-  started bifrost-http (run 1) pid=23868: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\bifrost-http.exe -app-dir C:\Madhusudhan\Geeks\hackathon-workspace\e2e -port 18090 -host 127.0.0.1 -log-level info -log-style pretty
-  gateway log: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\logs\gateway-run1.log
+  started mock-openai pid=13448: <build-dir>\e2e-check\mock-openai.exe -host 127.0.0.1 -port 18080 -dim 256 -api-key sk-mock-local -chat-latency 100ms
+  started bifrost-http (run 1) pid=23868: <build-dir>\e2e-check\bifrost-http.exe -app-dir C:\Madhusudhan\Geeks\hackathon-workspace\e2e -port 18090 -host 127.0.0.1 -log-level info -log-style pretty
+  gateway log: <build-dir>\e2e-check\logs\gateway-run1.log
   gateway healthy after 5.3s
   psql> \d "public"."BifrostSemanticCachePlugin"
                   Table "public.BifrostSemanticCachePlugin"
@@ -323,8 +323,8 @@ gateway:  http://127.0.0.1:18090   mock: http://127.0.0.1:18080   postgres: dock
   stopping gateway pid 23868 (process kill, no graceful shutdown)
   [ok]   gateway port 127.0.0.1:18090 closed
   [ok]   rows in Postgres while the gateway is down: 4
-  started bifrost-http (run 2) pid=23516: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\bifrost-http.exe -app-dir C:\Madhusudhan\Geeks\hackathon-workspace\e2e -port 18090 -host 127.0.0.1 -log-level info -log-style pretty
-  gateway log: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\logs\gateway-run2.log
+  started bifrost-http (run 2) pid=23516: <build-dir>\e2e-check\bifrost-http.exe -app-dir C:\Madhusudhan\Geeks\hackathon-workspace\e2e -port 18090 -host 127.0.0.1 -log-level info -log-style pretty
+  gateway log: <build-dir>\e2e-check\logs\gateway-run2.log
   gateway healthy after 4.3s
   gateway log: [90m10:25AM[0m [32mINF[0m [1mconnecting to vectorstore[0m
   gateway log: [90m10:25AM[0m [32mINF[0m [1mplugin status: semantic_cache - active[0m
@@ -554,7 +554,7 @@ gateway:  http://127.0.0.1:18090   mock: http://127.0.0.1:18080   postgres: dock
         DROP TABLE
         NOTICE:  table "bifrost_e2e_authprobe" does not exist, skipping
   [ok]   start auth-probe gateway: <nil>
-  started auth-probe gateway pid=25404 (config store: postgres db bifrost_e2e_configstore; setup_token set) log: C:\Users\PC1\AppData\Local\Temp\claude\c7499e7fccbe43de\908fdc55-aa3b-4ebf-83be-02dc30abe5c9\scratchpad\e2e-check\logs\gateway-authprobe.log
+  started auth-probe gateway pid=25404 (config store: postgres db bifrost_e2e_configstore; setup_token set) log: <build-dir>\e2e-check\logs\gateway-authprobe.log
   [ok]   auth-probe gateway healthy
   gateway log: [90m10:25AM[0m [33mWRN[0m [1mNo admin account is configured for this Bifrost instance yet.[0m
   gateway log: [90m10:25AM[0m [33mWRN[0m [1mpass the configured setup token as auth_config.setup_token in the[0m
@@ -649,5 +649,5 @@ x5     PASS   extra     auth on /api/cache/* when a config store IS enabled (OSS
                         config store on: inference without x-bf-vk -> 401; /api/cache/clear without credential -> 401, wrong setup token -> 403, X-Bifrost-Setup-Token -> 200 (until dashboard auth is enabled; then Basic/Bearer session auth applies)
 
 required steps failed: 0, extra steps failed: 0, steps run: 16
-console log: C:/Users/PC1/AppData/Local/Temp/claude/c7499e7fccbe43de/908fdc55-aa3b-4ebf-83be-02dc30abe5c9/scratchpad/e2e-check/e2e-run.log; process logs: C:/Users/PC1/AppData/Local/Temp/claude/c7499e7fccbe43de/908fdc55-aa3b-4ebf-83be-02dc30abe5c9/scratchpad/e2e-check/logs
+console log: <build-dir>/e2e-check/e2e-run.log; process logs: <build-dir>/e2e-check/logs
 OVERALL: PASS

@@ -87,7 +87,7 @@ cd bifrost-fresh-cache
 docker compose up --build --wait
 ```
 
-The first build takes a few minutes (it compiles Bifrost from the fork). Then:
+Be patient the first time: on our test machine the clone (with the Bifrost fork) took about 5 minutes and the first build about 13 minutes, because it compiles Bifrost from source. Later starts take seconds. Then:
 
 | What | Where |
 |---|---|

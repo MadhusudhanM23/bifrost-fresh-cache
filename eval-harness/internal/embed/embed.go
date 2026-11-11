@@ -176,7 +176,9 @@ func LooksLikeMockServer(ctx context.Context, baseURL string) bool {
 type Hash struct{ Dim int }
 
 // Name implements Embedder.
-func (h Hash) Name() string { return fmt.Sprintf("in-process word hashing, dim=%d (NOT a semantic model)", h.Dim) }
+func (h Hash) Name() string {
+	return fmt.Sprintf("in-process word hashing, dim=%d (NOT a semantic model)", h.Dim)
+}
 
 // Embed implements Embedder.
 func (h Hash) Embed(_ context.Context, texts []string) ([][]float32, error) {

@@ -59,7 +59,7 @@ Same scripted workload, same Bifrost, three setups. `plain` is Bifrost with its 
 
 The honest reading: the companion removes every stale answer and most wrong matches, and it survives a burst with one model call instead of sixteen. It is not free. It makes more model calls and answers more slowly than a plain cache that is happy to be wrong, because every refresh is a real call the plain cache skipped. Against the short-TTL workaround it wins on all three counts: fewer bad answers, a slightly higher hit rate, fewer model calls. The two wrong matches it still lets through are a "two-factor on / two-factor off" pair that the mock embedding scores at similarity 1.0, which no threshold can separate; the background audit flags them afterwards.
 
-### With a real model
+### Measured on a real model
 
 The same workload was run once (not three times) with answers from a real model, `groq/openai/gpt-oss-20b` on Groq's free tier. Embeddings stayed on the mock, so the cache's idea of "similar" is unchanged. Full report, with every setting that differs from the mock run and why: [`eval-harness/results/impactbench-real-groq-20261110-173322.md`](eval-harness/results/impactbench-real-groq-20261110-173322.md). 91 model requests in total.
 
@@ -116,7 +116,7 @@ go run . -demo-page ../freshness-companion/demo-page/index.html
 
 **Smoke test** of the running stack (18 checks): `powershell -File smoke.ps1`. **SQL views** test (45 checks): `powershell -File sql/test.ps1`. Bash versions of the SQL scripts are in `sql/` too.
 
-### With a real model
+### Run it with a real model
 
 Put a key in `.env` (copy `.env.example`; Groq, OpenRouter and xAI are wired) and start with the overlay:
 
